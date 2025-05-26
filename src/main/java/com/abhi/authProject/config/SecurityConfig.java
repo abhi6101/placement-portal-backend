@@ -47,15 +47,15 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET,
-                    "/", "/home", "/index", "/login", "/css/**", "/js/**", 
-                    "/images/**", "/jobs", "/api/resume/download/**" // Example: if you have a public resume download
-                ).permitAll()
+    "/", "/home", "/index", "/login", "/css/**", "/js/**", 
+    "/images/**", "/jobs", "/api/resume/download/**" // Example: if you have a public resume download
+).permitAll()
                 .requestMatchers(HttpMethod.POST,
-                    "/api/auth/register",
-                    "/api/auth/login",
-                    "/api/auth/logout",
-                    "/api/resume/generate-pdf" // If this is a public endpoint
-                ).permitAll()
+    "/api/auth/register",
+    "/api/auth/login", // This is correct for POST
+    "/api/auth/logout",
+    "/api/resume/generate-pdf"
+).permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN") // All admin endpoints require ADMIN role
                 .requestMatchers("/api/user/**").hasRole("USER")   // All user endpoints require USER role
                 .requestMatchers(HttpMethod.POST, "/api/apply-job").hasRole("USER") // Specific endpoint with role
@@ -84,10 +84,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5500", 
-            "http://127.0.0.1:5500",
-            "http://localhost:8080" // If your frontend is on 8080 (less common for SPAs)
-        ));
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "http://localhost:8080", // <-- This is your BACKEND'S port, not a frontend origin
+    "https://placement-portal-frontend-XYZ.onrender.com" // <-- THIS IS A PLACEHOLDER. Replace XYZ with your actual frontend Render ID.
+));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
