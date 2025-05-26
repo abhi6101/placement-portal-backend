@@ -29,7 +29,7 @@ public class AuthController {
     private JWTService jwtService;
 
     @PostMapping("/login")
-    @CrossOrigin(origins = "http://localhost:5500", allowCredentials = "true")
+   
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
