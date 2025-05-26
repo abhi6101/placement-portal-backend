@@ -27,7 +27,7 @@ WORKDIR /app
 # It's safer to use a wildcard if the name changes, or ensure it's exact.
 # If you used 'target/*.jar' in previous examples, stick to that
 # or use your specific JAR name:
-COPY --from=builder /build/target/authProject-00.1-SNAPSHOT.jar /app/app.jar
+COPY --from=builder /build/target/*.jar /app/app.jar
 # OR, if you prefer a wildcard (more robust if version changes):
 # COPY --from=builder /build/target/*.jar /app/app.jar
 
