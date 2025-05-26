@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 import org.xhtmlrenderer.pdf.ITextRenderer;
+import jakarta.annotation.PostConstruct; // Add this line
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
