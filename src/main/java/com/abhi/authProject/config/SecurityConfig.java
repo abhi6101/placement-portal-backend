@@ -85,8 +85,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
-    "http://localhost:5500", // Keep for local development
-    "http://127.0.0.1:5500", // Keep for local development
+    // "http://localhost:5500", // Keep for local development
+    // "http://127.0.0.1:5500", // Keep for local development
     "https://hack-2-hired.onrender.com" // <-- ADD THIS EXACT URL
     // Ensure http://localhost:8080 is REMOVED if it's still there
 ));
