@@ -8,15 +8,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime; // Import for LocalDateTime
+
 @Data
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
 public class Users {
 
-
-    // @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "jobdetails_seq")
-    // @SequenceGenerator(name = "jobdetails_seq", sequenceName = "jobdetails_seq", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     private int id;
@@ -24,5 +23,7 @@ public class Users {
     private String password;
     private String email;
     private String role;
-
+    private boolean isVerified; // NEW FIELD: Default to false for new registrations
+    private String verificationToken; // NEW FIELD: To store the unique token
+    private LocalDateTime verificationTokenExpires; // NEW FIELD: To store token expiry time
 }

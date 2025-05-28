@@ -1,16 +1,17 @@
 package com.abhi.authProject.config;
 
-import java.util.Arrays;
-
+import com.abhi.authProject.Jwt.JwtFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity; // IMPORT NEEDED
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -23,18 +24,18 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.abhi.authProject.Jwt.JwtFilter;
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // CRITICAL: Enables @PreAuthorize on methods
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Autowired
     private UserDetailsService userDetailsService;
 
     @Autowired
-    private JwtFilter jwtFilter; // Ensure your JwtFilter correctly extracts roles/authorities
+    private JwtFilter jwtFilter;
 
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
@@ -48,27 +49,39 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET,
-    "/", "/home", "/index", "/login", "/css/**", "/js/**", 
-    "/images/**", "/jobs", "/api/resume/download/**" // Example: if you have a public resume download
-).permitAll()
+                    "/", "/home", "/index", "/login.html", "/css/**", "/js/**",
+                    "/images/**", "/jobs", "/api/resume/download/**",
+                    "/api/auth/verify-email", // NEW: Allow access to email verification link
+                    "/error.html", // If you create a generic error page
+                    "/login.html" // Allow login.html directly if it's the target of redirect
+                ).permitAll()
                 .requestMatchers(HttpMethod.POST,
-    "/api/auth/register",
-    "/api/auth/login", // This is correct for POST
-    "/api/auth/logout",
-    "/api/resume/generate-pdf"
-).permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN") // All admin endpoints require ADMIN role
-                .requestMatchers("/api/user/**").hasRole("USER")   // All user endpoints require USER role
-                .requestMatchers(HttpMethod.POST, "/api/apply-job").hasRole("USER") // Specific endpoint with role
-                .anyRequest().authenticated() // All other requests require authentication
+                    "/api/auth/register",
+                    "/api/auth/login",
+                    "/api/auth/logout",
+                    "/api/resume/generate-pdf"
+                ).permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/user/**").hasRole("USER")
+                .requestMatchers(HttpMethod.POST, "/api/apply-job").hasRole("USER")
+                .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((req, res, e) -> {
-                    res.setStatus(401);
-                    res.getWriter().write("Unauthorized: Please login first");
+                    // Check if it's an unverified user attempting to log in
+                    if (e instanceof BadCredentialsException && e.getMessage().contains("Please verify your email address")) {
+                        res.setStatus(HttpStatus.FORBIDDEN.value()); // Use 403 Forbidden
+                        res.getWriter().write(e.getMessage());
+                    } else if (e instanceof BadCredentialsException) {
+                        res.setStatus(HttpStatus.UNAUTHORIZED.value());
+                        res.getWriter().write("Invalid username or password");
+                    } else {
+                        res.setStatus(HttpStatus.UNAUTHORIZED.value());
+                        res.getWriter().write("Unauthorized: Please login first");
+                    }
                 })
                 .accessDeniedHandler((req, res, e) -> {
-                    res.setStatus(403);
+                    res.setStatus(HttpStatus.FORBIDDEN.value());
                     res.getWriter().write("Forbidden: You don't have permission");
                 })
             )
@@ -85,15 +98,14 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
-    // "http://localhost:5500", // Keep for local development
-    // "http://127.0.0.1:5500", // Keep for local development
-    "https://hack-2-hired.onrender.com" // <-- ADD THIS EXACT URL
-    // Ensure http://localhost:8080 is REMOVED if it's still there
-));
+            "http://localhost:5500", // Keep for local development
+            "http://127.0.0.1:5500", // Keep for local development
+            "https://hack-2-hired.onrender.com" // Your deployed frontend
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
