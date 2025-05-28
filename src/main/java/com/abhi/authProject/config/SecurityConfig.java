@@ -49,15 +49,14 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET,
-                    "/", "/home", "/index", "/login.html", "/css/**", "/js/**",
-                    "/images/**", "/jobs", "/api/resume/download/**",
-                    "/api/auth/verify-email", // NEW: Allow access to email verification link
-                    "/error.html", // If you create a generic error page
-                    "/login.html" // Allow login.html directly if it's the target of redirect
+                    "/", "/home", "/index", "/login.html", "/register.html", "/verify-account.html", // NEW HTML FILE PERMITTED
+                    "/css/**", "/js/**", "/images/**", "/jobs", "/api/resume/download/**",
+                    "/error.html"
                 ).permitAll()
                 .requestMatchers(HttpMethod.POST,
                     "/api/auth/register",
                     "/api/auth/login",
+                    "/api/auth/verify-code", // NEW: Allow access to this endpoint
                     "/api/auth/logout",
                     "/api/resume/generate-pdf"
                 ).permitAll()
@@ -68,9 +67,8 @@ public class SecurityConfig {
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((req, res, e) -> {
-                    // Check if it's an unverified user attempting to log in
                     if (e instanceof BadCredentialsException && e.getMessage().contains("Please verify your email address")) {
-                        res.setStatus(HttpStatus.FORBIDDEN.value()); // Use 403 Forbidden
+                        res.setStatus(HttpStatus.FORBIDDEN.value());
                         res.getWriter().write(e.getMessage());
                     } else if (e instanceof BadCredentialsException) {
                         res.setStatus(HttpStatus.UNAUTHORIZED.value());
@@ -98,9 +96,9 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5500", // Keep for local development
-            "http://127.0.0.1:5500", // Keep for local development
-            "https://hack-2-hired.onrender.com" // Your deployed frontend
+            "http://localhost:5500",
+            "http://127.0.0.1:5500",
+            "https://hack-2-hired.onrender.com"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));

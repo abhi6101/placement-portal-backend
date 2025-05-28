@@ -14,7 +14,7 @@ public class EmailService {
     private JavaMailSender mailSender;
 
     @Value("${spring.mail.username}")
-    private String senderEmail; // Renamed from adminEmail for clarity, as it's the sender's email
+    private String senderEmail;
 
     /**
      * Generic method to send an email.
@@ -25,16 +25,16 @@ public class EmailService {
     public void sendEmail(String to, String subject, String body) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(senderEmail); // Sender's email (from your application.properties)
-            message.setTo(to);            // Recipient's email
-            message.setSubject(subject);  // Email subject
-            message.setText(body);        // Email body
+            message.setFrom(senderEmail);
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(body);
             mailSender.send(message);
             System.out.println("Email sent successfully to: " + to + " with subject: " + subject);
         } catch (MailException e) {
             System.err.println("Error sending email to " + to + ": " + e.getMessage());
             // In a production app, you'd want to log this error more robustly
-            // throw new RuntimeException("Failed to send email", e); // Consider rethrowing for upstream handling
+            // throw new RuntimeException("Failed to send email", e);
         }
     }
 
@@ -45,8 +45,8 @@ public class EmailService {
                                         String position, double cgpa) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(senderEmail); // Sender's email
-            message.setTo(senderEmail);   // Admin's email
+            message.setFrom(senderEmail);
+            message.setTo(senderEmail);
             message.setSubject("New Interview Slot Booking: " + company);
 
             String emailContent = "A new interview slot has been booked!\n\n" +
@@ -76,8 +76,8 @@ public class EmailService {
                                              String position) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(senderEmail); // Sender's email
-            message.setTo(studentEmail);  // Student's email
+            message.setFrom(senderEmail);
+            message.setTo(studentEmail);
             message.setSubject("Interview Slot Confirmation: " + company);
 
             String emailContent = "Dear " + studentName + ",\n\n" +

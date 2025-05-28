@@ -8,7 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime; // Import for LocalDateTime
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -23,7 +23,7 @@ public class Users {
     private String password;
     private String email;
     private String role;
-    private boolean isVerified; // NEW FIELD: Default to false for new registrations
-    private String verificationToken; // NEW FIELD: To store the unique token
-    private LocalDateTime verificationTokenExpires; // NEW FIELD: To store token expiry time
+    private boolean isVerified;
+    private String verificationToken; // This will now store the OTP code
+    private LocalDateTime verificationTokenExpires;
 }

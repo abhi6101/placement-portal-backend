@@ -1,8 +1,8 @@
 package com.abhi.authProject.controller;
 
 import com.abhi.authProject.Jwt.JWTService;
-import com.abhi.authProject.model.Users; // Assuming your Users model is here
-import com.abhi.authProject.service.UserService; // Changed to UserService
+import com.abhi.authProject.model.Users;
+import com.abhi.authProject.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,13 +18,13 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI; // Import for URI (if you decide to redirect)
+import java.net.URI;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
 @CrossOrigin(origins = "https://hack-2-hired.onrender.com") // Adjust this based on your frontend's actual origin
-@RequestMapping("/api/auth") // Added a base mapping for auth endpoints
+@RequestMapping("/api/auth")
 public class AuthController {
 
     @Autowired
@@ -34,19 +34,16 @@ public class AuthController {
     private JWTService jwtService;
 
     @Autowired
-    private UserService userService; // Changed to UserService
+    private UserService userService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
-            // Call the modified UserService login method
             String token = userService.verifyAndLogin(
                 loginRequest.getUsername(),
                 loginRequest.getPassword()
             );
 
-            // If verifyAndLogin succeeds, manually set authentication for SecurityContextHolder
-            // This is needed because verifyAndLogin might not automatically set it.
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                     loginRequest.getUsername(),
@@ -64,14 +61,14 @@ public class AuthController {
             ));
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid username or password"));
-        } catch (IllegalStateException e) { // Catch the specific exception for unverified users
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage())); // Will send "Please verify your email address to log in."
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An error occurred during login: " + e.getMessage()));
         }
     }
 
-    // --- NEW REGISTRATION ENDPOINT ---
+    // --- REGISTER ENDPOINT (MODIFIED RESPONSE) ---
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
         try {
@@ -81,8 +78,8 @@ public class AuthController {
             newUser.setPassword(registerRequest.getPassword());
             newUser.setRole(registerRequest.getRole());
 
-            userService.registerUser(newUser); // Call UserService to handle registration logic
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Registration successful! Please check your email to verify your account."));
+            userService.registerUser(newUser); // This will send the OTP email
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Registration successful! A verification code has been sent to your email. Please check your inbox and enter the code on the verification page."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
@@ -90,39 +87,30 @@ public class AuthController {
         }
     }
 
-    // --- NEW EMAIL VERIFICATION ENDPOINT ---
-    @GetMapping("/verify-email")
-    public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
+    // --- NEW EMAIL VERIFICATION CODE ENDPOINT ---
+    @PostMapping("/verify-code")
+    public ResponseEntity<?> verifyCode(@RequestBody VerificationCodeRequest request) {
         try {
-            boolean verified = userService.verifyEmail(token);
+            boolean verified = userService.verifyAccountWithCode(request.getIdentifier(), request.getCode());
             if (verified) {
-                // Redirect to a frontend success page after successful verification
-                // IMPORTANT: Adjust this URL to your actual frontend's "Email Verified" page
-                // Or you can redirect directly to login.html if you prefer.
-                return ResponseEntity.status(HttpStatus.FOUND)
-                                 .location(URI.create("https://hack-2-hired.onrender.com/login.html?verified=true")) // Adjust URL
-                                 .build();
+                return ResponseEntity.ok(Map.of("message", "Account successfully verified! You can now log in."));
             } else {
-                // Redirect to a frontend error page for invalid/expired token
-                return ResponseEntity.status(HttpStatus.FOUND)
-                                 .location(URI.create("https://hack-2-hired.onrender.com/error.html?reason=invalid_token")) // Adjust URL
-                                 .build();
+                return ResponseEntity.badRequest().body(Map.of("message", "Invalid or expired verification code. Please try again or re-register if the code has expired."));
             }
         } catch (Exception e) {
-            System.err.println("Error verifying email: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.FOUND)
-                             .location(URI.create("https://hack-2-hired.onrender.com/error.html?reason=server_error")) // Adjust URL
-                             .build();
+            System.err.println("Error verifying account with code: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An error occurred during verification: " + e.getMessage()));
         }
     }
 
+    // Removed the old /verify-email GET endpoint for link-based verification
 
     // --- DTOs for Request Bodies ---
 
     @Getter
     @Setter
     @NoArgsConstructor
-    @AllArgsConstructor // Add @AllArgsConstructor for convenience if needed
+    @AllArgsConstructor
     static class LoginRequest {
         private String username;
         private String password;
@@ -137,5 +125,15 @@ public class AuthController {
         private String email;
         private String password;
         private String role;
+    }
+
+    // NEW DTO for verification code request
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    static class VerificationCodeRequest {
+        private String identifier; // Can be username or email
+        private String code;
     }
 }

@@ -13,10 +13,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.UUID; // For generating unique tokens
+import java.util.Random; // For generating OTP
 
 @Service
-public class UserService { // Renamed from AuthService for consistency with your provided code
+public class UserService {
 
     @Autowired
     private UserRepo repo;
@@ -31,48 +31,56 @@ public class UserService { // Renamed from AuthService for consistency with your
     private BCryptPasswordEncoder encoder;
 
     @Autowired
-    private EmailService emailService; // NEW: Inject EmailService
+    private EmailService emailService;
 
     /**
-     * Registers a new user, hashes password, generates verification token,
-     * and sends a verification email.
+     * Generates a random 6-digit numeric OTP.
+     * @return The generated OTP as a String.
+     */
+    private String generateOTP() {
+        Random random = new Random();
+        int otp = 100000 + random.nextInt(900000); // 6-digit OTP
+        return String.valueOf(otp);
+    }
+
+    /**
+     * Registers a new user, hashes password, generates OTP,
+     * and sends a verification email with the OTP.
      * @param user The Users object containing registration details.
      * @return The saved Users object.
      * @throws IllegalArgumentException if username or email already exists.
      */
-    public Users registerUser(Users user) { // Renamed from 'register' for clarity
+    public Users registerUser(Users user) {
         // Check if username already exists
-        if (repo.findByUsername(user.getUsername()).isPresent()) { // Use Optional.isPresent()
+        if (repo.findByUsername(user.getUsername()).isPresent()) {
             throw new IllegalArgumentException("Username already exists");
         }
 
         // Check if email already exists
-        if (repo.findByEmail(user.getEmail()).isPresent()) { // Use Optional.isPresent()
+        if (repo.findByEmail(user.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Email already registered");
         }
 
         // Encode password
         user.setPassword(encoder.encode(user.getPassword()));
 
-        // NEW: Set initial verification status to false
+        // Set initial verification status to false
         user.setVerified(false);
 
-        // NEW: Generate and set verification token and expiry
-        String verificationToken = UUID.randomUUID().toString();
-        user.setVerificationToken(verificationToken);
-        user.setVerificationTokenExpires(LocalDateTime.now().plusHours(24)); // Token valid for 24 hours
+        // Generate and set OTP and expiry
+        String otp = generateOTP();
+        user.setVerificationToken(otp); // Store OTP in verificationToken field
+        user.setVerificationTokenExpires(LocalDateTime.now().plusMinutes(15)); // OTP valid for 15 minutes
 
         // Save the user
         Users savedUser = repo.save(user);
 
-        // NEW: Send verification email
-        // IMPORTANT: Replace the base URL with your actual backend's public URL (e.g., your Render URL)
-        String verificationLink = "https://placement-portal-backend-nwaj.onrender.com/api/auth/verify-email?token=" + verificationToken;
-        String emailSubject = "Verify your Placement Portal Account";
+        // Send OTP email
+        String emailSubject = "Placement Portal Account Verification Code (OTP)";
         String emailBody = "Dear " + user.getUsername() + ",\n\n"
-                         + "Thank you for registering with Placement Portal. Please click the link below to verify your email address:\n\n"
-                         + verificationLink + "\n\n"
-                         + "This link will expire in 24 hours.\n\n"
+                         + "Thank you for registering with Placement Portal. Your verification code is:\n\n"
+                         + "OTP: " + otp + "\n\n"
+                         + "This code will expire in 15 minutes. Please enter it on the verification page to activate your account.\n\n"
                          + "If you did not register for this account, please ignore this email.\n\n"
                          + "Best regards,\n"
                          + "Placement Portal Team";
@@ -91,68 +99,67 @@ public class UserService { // Renamed from AuthService for consistency with your
      * @throws BadCredentialsException if authentication fails.
      * @throws IllegalStateException if email is not verified.
      */
-    public String verifyAndLogin(String username, String password) { // Renamed from 'verify' for clarity in login context
+    public String verifyAndLogin(String username, String password) {
         Authentication authentication = authManager.authenticate(
             new UsernamePasswordAuthenticationToken(username, password)
         );
 
-        // Get the user from the repository after authentication
         Optional<Users> userOptional = repo.findByUsername(username);
 
         if (userOptional.isEmpty()) {
-            // This case should ideally not happen if authentication was successful
-            // but is a good safeguard.
             throw new BadCredentialsException("User not found after authentication.");
         }
 
         Users user = userOptional.get();
 
-        // NEW: Check if the user's email is verified
+        // Check if the user's email is verified
         if (!user.isVerified()) {
-            throw new IllegalStateException("Please verify your email address to log in.");
+            throw new IllegalStateException("Please verify your email address with the code to log in.");
         }
 
         if (authentication.isAuthenticated()) {
             return jwtservice.generateToken(username);
         } else {
-            // This path might not be reached if authenticate() throws BadCredentialsException
             throw new BadCredentialsException("Authentication failed");
         }
     }
 
     /**
-     * Verifies a user's email using the provided token.
-     * @param token The verification token from the email link.
+     * Verifies a user's account using the provided OTP code.
+     * @param identifier The username or email of the user trying to verify.
+     * @param otpCode The OTP code entered by the user.
      * @return true if verification is successful, false otherwise.
      */
-    public boolean verifyEmail(String token) {
-        Optional<Users> userOptional = repo.findByVerificationToken(token);
+    public boolean verifyAccountWithCode(String identifier, String otpCode) {
+        Optional<Users> userOptional = repo.findByUsername(identifier); // Try finding by username first
 
         if (userOptional.isEmpty()) {
-            return false; // Token not found
+            userOptional = repo.findByEmail(identifier); // If not found by username, try by email
+        }
+
+        if (userOptional.isEmpty()) {
+            return false; // User not found with given identifier
         }
 
         Users user = userOptional.get();
 
-        // Check if token has expired
-        if (user.getVerificationTokenExpires() != null && user.getVerificationTokenExpires().isBefore(LocalDateTime.now())) {
-            // Optionally, you might want to remove the expired token here
-            // user.setVerificationToken(null);
-            // user.setVerificationTokenExpires(null);
-            // repo.save(user); // If you uncomment the above, uncomment this
-            return false; // Token expired
-        }
-
-        // Check if already verified (optional, but good for idempotency)
+        // Check if already verified
         if (user.isVerified()) {
             return true; // Already verified, consider it a success
         }
 
-        // Mark user as verified
-        user.setVerified(true);
-        user.setVerificationToken(null); // Clear the token after use
-        user.setVerificationTokenExpires(null); // Clear expiry
-        repo.save(user);
-        return true;
+        // Check if OTP matches and is not expired
+        if (user.getVerificationToken() != null && user.getVerificationToken().equals(otpCode) &&
+            user.getVerificationTokenExpires() != null && user.getVerificationTokenExpires().isAfter(LocalDateTime.now())) {
+
+            // Mark user as verified
+            user.setVerified(true);
+            user.setVerificationToken(null); // Clear the OTP after use
+            user.setVerificationTokenExpires(null); // Clear expiry
+            repo.save(user);
+            return true;
+        }
+
+        return false; // OTP mismatch or expired
     }
 }
