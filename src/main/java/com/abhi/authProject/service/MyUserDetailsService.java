@@ -14,21 +14,19 @@ import org.springframework.stereotype.Service;
 @Service
 public class MyUserDetailsService implements UserDetailsService {
 
-    //we have to override the methods of UserDetailsService
-    //UserRepo will connect us with DB
     @Autowired
-    private UserRepo userRepo;
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException{
-    //This method will return UserDetails object but UserDetails is an interface
-        //so we have to create a class which implements UserDetails interface
-        //And implement all details necessary right now
-        Users user = userRepo.findByUsername(username);
+    private UserRepo repo;
 
-        if(user==null){
-            System.out.println("User not found");
-            throw new UsernameNotFoundException("User not found");
-        }
-        return new UserPrincipal(user);
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        // CORRECTED CODE FOR LINE 26 (or nearby)
+        Users user = repo.findByUsername(username)
+                         .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+
+        return new User(user.getUsername(), user.getPassword(), getAuthorities(user.getRole()));
+    }
+
+    private Collection<? extends GrantedAuthority> getAuthorities(String role) {
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
     }
 }
