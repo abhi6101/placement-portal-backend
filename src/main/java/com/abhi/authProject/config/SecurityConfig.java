@@ -28,7 +28,7 @@ import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+@EnableMethodSecurity // Keep this enabled for @PreAuthorize
 public class SecurityConfig {
 
     @Autowired
@@ -45,25 +45,43 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(AbstractHttpConfigurer::disable) // Disable CSRF for stateless REST APIs
+            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS with custom source
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET,
-                    "/", "/home", "/index", "/login.html", "/register.html", "/verify-account.html", // NEW HTML FILE PERMITTED
+                    "/", "/home", "/index", "/login.html", "/register.html", "/verify-account.html",
                     "/css/**", "/js/**", "/images/**", "/jobs", "/api/resume/download/**",
-                    "/error.html"
+                    "/error.html",
+                    // --- NEW: Permit access to Previous Papers HTML/CSS/JS if they are served directly ---
+                    "/papers.html", "/papers.css", "/papers.js"
                 ).permitAll()
                 .requestMatchers(HttpMethod.POST,
                     "/api/auth/register",
                     "/api/auth/login",
-                    "/api/auth/verify-code", // NEW: Allow access to this endpoint
+                    "/api/auth/verify-code",
                     "/api/auth/logout",
                     "/api/resume/generate-pdf"
                 ).permitAll()
+
+                // --- NEW: Access rule for Previous Year Papers API endpoint ---
+                // Choose ONE of these options for /api/papers based on your requirement:
+
+                // Option 1: Allow anyone (public) to access papers (NO LOGIN REQUIRED)
+                .requestMatchers(HttpMethod.GET, "/api/papers").permitAll()
+
+                // Option 2: Require authentication for papers (ANY LOGGED-IN USER)
+                // .requestMatchers(HttpMethod.GET, "/api/papers").authenticated()
+
+                // Option 3: Require specific roles for papers (e.g., only 'USER' role for students)
+                // This matches the @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+                // from PaperController if you choose that option.
+                // .requestMatchers(HttpMethod.GET, "/api/papers").hasAnyRole("USER", "ADMIN")
+                // ----------------------------------------------------
+
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/user/**").hasRole("USER")
                 .requestMatchers(HttpMethod.POST, "/api/apply-job").hasRole("USER")
-                .anyRequest().authenticated()
+                .anyRequest().authenticated() // All other requests require authentication
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((req, res, e) -> {
@@ -85,7 +103,9 @@ public class SecurityConfig {
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            );
+            )
+            // Ensure the authentication provider is set in the HttpSecurity chain
+            .authenticationProvider(authenticationProvider()); // ADD THIS LINE
 
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -95,10 +115,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        // IMPORTANT: Ensure your frontend's deployed Render URL is included here.
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:5500",
             "http://127.0.0.1:5500",
-            "https://hack-2-hired.onrender.com"
+            "https://hack-2-hired.onrender.com" // Your deployed frontend URL
+            // Add any other specific frontend origins as needed
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
