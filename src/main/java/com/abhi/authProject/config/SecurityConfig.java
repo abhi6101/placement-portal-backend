@@ -28,7 +28,7 @@ import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // Keep this enabled for @PreAuthorize
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Autowired
@@ -45,37 +45,41 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable) // Disable CSRF for stateless REST APIs
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS with custom source
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.GET,
-                    "/", "/home", "/index", "/login.html", "/register.html", "/verify-account.html",
-                    "/css/**", "/js/**", "/images/**", "/jobs", "/api/resume/download/**",
-                    "/error.html",
-                    "/papers.html", "/papers.css", "/papers.js",
-                    // --- NEW: Permit access to Forgot Password and Reset Password HTML/CSS/JS if they are served directly ---
-                    "/forgot-password.html", "/reset-password.html",
-                    "/forgot-password.css", "/forgot-password.js", // If you create separate files
-                    "/reset-password.css", "/reset-password.js"     // If you create separate files
-                ).permitAll()
+                // Permit ALL requests to your public API endpoints
                 .requestMatchers(HttpMethod.POST,
                     "/api/auth/register",
                     "/api/auth/login",
                     "/api/auth/verify-code",
-                    "/api/auth/logout",
-                    "/api/resume/generate-pdf",
-                    // --- NEW: Permit access to Forgot Password and Reset Password API endpoints ---
                     "/api/auth/forgot-password", // Endpoint to request a password reset link
                     "/api/auth/reset-password"   // Endpoint to submit the new password with token
                 ).permitAll()
+                .requestMatchers(HttpMethod.GET,
+                    "/api/auth/forgot-password", // If you have a GET endpoint for forgot password, permit it.
+                    "/api/auth/reset-password"   // If you have a GET endpoint for reset password, permit it.
+                                                 // Note: Your frontend will send a POST to /api/auth/reset-password,
+                                                 // but a GET might be needed for initial token validation or similar.
+                    "/api/papers" // Your public papers API
+                    // Add any other truly public GET API endpoints here
+                ).permitAll()
 
-                // Existing rules for /api/papers
-                .requestMatchers(HttpMethod.GET, "/api/papers").permitAll() // Example: Public access
+                // Remove ALL frontend specific paths from here, as they are served by the Static Site.
+                // For example, remove: "/", "/home", "/index", "/login.html", "/register.html",
+                // "/verify-account.html", "/css/**", "/js/**", "/images/**", "/jobs",
+                // "/error.html", "/papers.html", "/papers.css", "/papers.js",
+                // "/forgot-password.html", "/reset-password.html",
+                // "/forgot-password.css", "/forgot-password.js",
+                // "/reset-password.css", "/reset-password.js"
 
+                // Secure your admin and user specific API endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/user/**").hasRole("USER")
                 .requestMatchers(HttpMethod.POST, "/api/apply-job").hasRole("USER")
-                .anyRequest().authenticated() // All other requests require authentication
+
+                // All other API requests require authentication
+                .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((req, res, e) -> {
@@ -87,7 +91,7 @@ public class SecurityConfig {
                         res.getWriter().write("Invalid username or password");
                     } else {
                         res.setStatus(HttpStatus.UNAUTHORIZED.value());
-                        res.getWriter().write("Unauthorized: Please login first");
+                        res.getWriter().write("Unauthorized: Please login first"); //
                     }
                 })
                 .accessDeniedHandler((req, res, e) -> {
@@ -110,10 +114,10 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         // IMPORTANT: Ensure your frontend's deployed Render URL is included here.
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5500",
-            "http://127.0.0.1:5500",
-            "https://hack-2-hired.onrender.com" // Your deployed frontend URL
-            // Add any other specific frontend origins as needed
+            "http://localhost:5500", // For local development
+            "http://127.0.0.1:5500", // For local development
+            "https://placement-portal-backend-nwaj.onrender.com" // Your deployed frontend URL
+            // Add any other specific frontend origins if they access this backend
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
