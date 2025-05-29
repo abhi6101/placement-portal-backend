@@ -184,11 +184,6 @@ public class UserService {
         return false; // OTP mismatch or expired
     }
 
-    ---
-
-    ### New: Forgot Password Functionality
-
-    ---
 
     /**
      * Initiates the password reset process for a user.
