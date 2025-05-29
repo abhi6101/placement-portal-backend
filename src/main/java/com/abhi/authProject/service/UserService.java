@@ -191,22 +191,26 @@ public class UserService {
      * @param emailOrUsername The email or username of the user requesting a password reset.
      * @throws IllegalArgumentException if the user is not found or email sending fails.
      */
-    @Transactional
-    public void initiatePasswordReset(String emailOrUsername) {
-        // Try to find the user by username or email
-        Optional<Users> userOptional = repo.findByUsername(emailOrUsername);
-        if (userOptional.isEmpty()) {
-            userOptional = repo.findByEmail(emailOrUsername);
-        }
+   // Inside UserService.java
 
-        // IMPORTANT: For security, do NOT throw an error like "User not found".
-        // Instead, return a generic success message even if the user doesn't exist.
-        // This prevents email/username enumeration attacks.
-        if (userOptional.isEmpty()) {
-            System.out.println("Password reset request for non-existent user: " + emailOrUsername);
-            // Still proceed to send a 'fake' success to the frontend
-            return;
-        }
+@Transactional
+public void initiatePasswordReset(String emailOrUsername) {
+    // --- ADD THIS LINE AT THE VERY TOP OF THE METHOD ---
+    System.out.println("UserService.initiatePasswordReset received identifier: '" + emailOrUsername + "'");
+    // --- END ADDITION ---
+
+    // Try to find the user by username or email
+    Optional<Users> userOptional = repo.findByUsername(emailOrUsername);
+    if (userOptional.isEmpty()) {
+        userOptional = repo.findByEmail(emailOrUsername);
+    }
+
+    if (userOptional.isEmpty()) {
+        System.out.println("Password reset request for non-existent user: " + emailOrUsername + ". Returning generic success.");
+        return;
+    }
+    // ... rest of the method
+}
 
         Users user = userOptional.get();
 
