@@ -3,7 +3,6 @@ package com.abhi.authProject.model;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
-
 @Data
 public class ResumeData {
 

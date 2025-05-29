@@ -54,4 +54,3 @@ public class AdminJobController {
         return ResponseEntity.notFound().build();
     }
 }
-

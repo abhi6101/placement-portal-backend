@@ -18,6 +18,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -30,7 +31,7 @@ public class AuthController {
     private AuthenticationManager authenticationManager;
 
     @Autowired
-    private JWTService jwtService; // Keep if used elsewhere, otherwise can be removed.
+    private JWTService jwtService;
 
     @Autowired
     private UserService userService;
@@ -38,13 +39,11 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
-            // The verifyAndLogin method likely handles email verification and throws IllegalStateException
             String token = userService.verifyAndLogin(
                 loginRequest.getUsername(),
                 loginRequest.getPassword()
             );
 
-            // If verifyAndLogin succeeds, proceed with Spring Security authentication
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                     loginRequest.getUsername(),
@@ -61,19 +60,15 @@ public class AuthController {
                             .collect(Collectors.toList())
             ));
         } catch (BadCredentialsException e) {
-            // This catches both incorrect username/password AND unverified email (if verifyAndLogin throws BadCredentialsException for unverified)
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid username or password."));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid username or password"));
         } catch (IllegalStateException e) {
-            // This specifically catches the "Please verify your email address" message from UserService
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            // Catch any other unexpected errors
-            System.err.println("Error during login: " + e.getMessage()); // Log unexpected errors
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An unexpected error occurred during login."));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An error occurred during login: " + e.getMessage()));
         }
     }
 
-    // --- REGISTER ENDPOINT ---
+    // --- REGISTER ENDPOINT (MODIFIED RESPONSE) ---
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
         try {
@@ -83,17 +78,16 @@ public class AuthController {
             newUser.setPassword(registerRequest.getPassword());
             newUser.setRole(registerRequest.getRole());
 
-            userService.registerUser(newUser); // This should handle sending the OTP email
+            userService.registerUser(newUser); // This will send the OTP email
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Registration successful! A verification code has been sent to your email. Please check your inbox and enter the code on the verification page."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            System.err.println("Error during registration: " + e.getMessage()); // Log unexpected errors
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An unexpected error occurred during registration."));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Registration failed: " + e.getMessage()));
         }
     }
 
-    // --- EMAIL VERIFICATION CODE ENDPOINT ---
+    // --- NEW EMAIL VERIFICATION CODE ENDPOINT ---
     @PostMapping("/verify-code")
     public ResponseEntity<?> verifyCode(@RequestBody VerificationCodeRequest request) {
         try {
@@ -104,47 +98,12 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(Map.of("message", "Invalid or expired verification code. Please try again or re-register if the code has expired."));
             }
         } catch (Exception e) {
-            System.err.println("Error verifying account with code: " + e.getMessage()); // Log unexpected errors
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An unexpected error occurred during verification."));
+            System.err.println("Error verifying account with code: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An error occurred during verification: " + e.getMessage()));
         }
     }
 
-    // --- NEW: FORGOT PASSWORD ENDPOINT (Security-Enhanced) ---
-    @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
-        // Generic message for security to prevent user enumeration attacks
-        String genericSuccessMessage = "If an account with the provided email or username exists, a password reset link has been sent. Please check your inbox.";
-        try {
-            // Call the service method. This method should internally handle user lookup
-            // and send the email. If the user is not found, it should NOT throw an
-            // exception that leaks this information to the frontend. It should just
-            // log the event internally and proceed without sending an email.
-            userService.initiatePasswordReset(request.getEmailOrUsername());
-            return ResponseEntity.ok(Map.of("message", genericSuccessMessage));
-        } catch (Exception e) {
-            // Catch any exception and log it for internal debugging
-            System.err.println("Error initiating password reset for identifier '" + request.getEmailOrUsername() + "': " + e.getMessage());
-            // Always return the generic success message to the frontend for security
-            return ResponseEntity.ok(Map.of("message", genericSuccessMessage));
-        }
-    }
-
-    // --- NEW: RESET PASSWORD ENDPOINT ---
-    @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
-        try {
-            // This method in your UserService will handle token validation and password update
-            userService.resetPassword(request.getToken(), request.getNewPassword());
-            return ResponseEntity.ok(Map.of("message", "Your password has been successfully reset. You can now log in with your new password."));
-        } catch (IllegalArgumentException e) {
-            // Catches invalid/expired token or password policy violations
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        } catch (Exception e) {
-            System.err.println("Error resetting password: " + e.getMessage()); // Log unexpected errors
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An unexpected error occurred while resetting your password."));
-        }
-    }
-
+    // Removed the old /verify-email GET endpoint for link-based verification
 
     // --- DTOs for Request Bodies ---
 
@@ -168,6 +127,7 @@ public class AuthController {
         private String role;
     }
 
+    // NEW DTO for verification code request
     @Getter
     @Setter
     @NoArgsConstructor
@@ -175,27 +135,5 @@ public class AuthController {
     static class VerificationCodeRequest {
         private String identifier; // Can be username or email
         private String code;
-    }
-
-    // --- FIXED DTO for Forgot Password Request ---
-    // This DTO now perfectly matches the 'emailOrUsername' key expected by the service layer.
-    // Ensure your frontend (forgot-password.js) sends a JSON body like:
-    // { "emailOrUsername": "user@example.com" }
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    static class ForgotPasswordRequest {
-        private String emailOrUsername; // Field to accept either email or username
-    }
-
-    // --- NEW DTO for Reset Password Request ---
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    static class ResetPasswordRequest {
-        private String token;
-        private String newPassword;
     }
 }

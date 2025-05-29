@@ -26,4 +26,3 @@ public class JobController {
         return jobService.addJob(jobDetails);
     }
 }
-
