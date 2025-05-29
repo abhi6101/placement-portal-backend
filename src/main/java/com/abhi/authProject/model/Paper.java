@@ -6,6 +6,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+
 import java.util.Date; // For the 'uploadedAt' timestamp
 
 @Entity // Marks this Java object as an entity that maps to a database table

@@ -6,6 +6,7 @@ import io.github.cdimascio.dotenv.Dotenv; // Make sure this import is present
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+
 @SpringBootApplication
 public class AuthProjectApplication {
 

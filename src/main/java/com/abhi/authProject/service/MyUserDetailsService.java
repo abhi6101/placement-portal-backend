@@ -16,6 +16,7 @@ import java.util.Collections;
 
 import org.springframework.security.core.userdetails.User; // This import is crucial for Spring Security's User class
 
+
 @Service
 public class MyUserDetailsService implements UserDetailsService {
 

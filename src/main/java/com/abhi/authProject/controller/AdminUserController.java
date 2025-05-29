@@ -22,3 +22,4 @@ public class AdminUserController {
         return ResponseEntity.ok(userRepo.findAll());
     }
 }
+

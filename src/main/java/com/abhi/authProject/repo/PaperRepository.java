@@ -13,6 +13,7 @@ public interface PaperRepository extends JpaRepository<Paper, Long> { // Paper i
     // It fetches all papers and orders them by 'uploadedAt' in descending order (newest first).
     List<Paper> findAllByOrderByUploadedAtDesc();
 
+    
     // You can add more custom query methods here if needed, for example:
     // List<Paper> findBySubject(String subject);
     // List<Paper> findByYear(int year);

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
+
 public class InterviewScheduleRequest {
     @NotNull
     private Long jobApplicationId;

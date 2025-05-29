@@ -2,6 +2,7 @@ package com.abhi.authProject.model;
 
 
 
+
 import lombok.Data; // Assuming you use Lombok for boilerplate code
 
 @Data // Generates getters, setters, toString, equals, hashCode

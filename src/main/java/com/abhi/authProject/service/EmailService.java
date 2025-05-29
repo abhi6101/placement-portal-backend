@@ -16,6 +16,7 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String senderEmail;
 
+    
     /**
      * Generic method to send an email.
      * @param to The recipient's email address.

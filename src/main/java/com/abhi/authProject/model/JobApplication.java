@@ -5,6 +5,7 @@ package com.abhi.authProject.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+
 @Entity
 @Table(name = "job_applications")
 public class JobApplication {

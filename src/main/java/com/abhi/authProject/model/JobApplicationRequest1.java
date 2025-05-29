@@ -4,6 +4,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 public class JobApplicationRequest1 {
 
+    
     private String jobId; // Corresponds to appliedJobId from frontend
     private String jobTitle;
     private String companyName;
