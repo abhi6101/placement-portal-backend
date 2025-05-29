@@ -118,7 +118,7 @@ public class SecurityConfig {
             "http://localhost:5500",    // For local frontend development
             "http://127.0.0.1:5500",    // For local frontend development
             // "https://placement-portal-backend-nwaj.onrender.com", // REMOVE this if it's not your frontend!
-            "https://YOUR-ACTUAL-FRONTEND-URL.onrender.com" // <--- REPLACE THIS WITH YOUR DEPLOYED FRONTEND URL
+           "https://hack-2-hired.onrender.com" // Your deployed frontend URL // <--- REPLACE THIS WITH YOUR DEPLOYED FRONTEND URL
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*")); // Allow all headers
