@@ -30,7 +30,7 @@ public class AuthController {
     private AuthenticationManager authenticationManager;
 
     @Autowired
-    private JWTService jwtService; // You might not directly use this for forgotten passwords, but keep it if used elsewhere.
+    private JWTService jwtService; // Keep if used elsewhere, otherwise can be removed.
 
     @Autowired
     private UserService userService;
@@ -68,7 +68,8 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             // Catch any other unexpected errors
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An error occurred during login: " + e.getMessage()));
+            System.err.println("Error during login: " + e.getMessage()); // Log unexpected errors
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An unexpected error occurred during login."));
         }
     }
 
@@ -87,7 +88,8 @@ public class AuthController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Registration failed: " + e.getMessage()));
+            System.err.println("Error during registration: " + e.getMessage()); // Log unexpected errors
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An unexpected error occurred during registration."));
         }
     }
 
@@ -102,27 +104,28 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(Map.of("message", "Invalid or expired verification code. Please try again or re-register if the code has expired."));
             }
         } catch (Exception e) {
-            System.err.println("Error verifying account with code: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An error occurred during verification: " + e.getMessage()));
+            System.err.println("Error verifying account with code: " + e.getMessage()); // Log unexpected errors
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An unexpected error occurred during verification."));
         }
     }
 
-    // --- NEW: FORGOT PASSWORD ENDPOINT ---
+    // --- NEW: FORGOT PASSWORD ENDPOINT (Security-Enhanced) ---
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        // Generic message for security to prevent user enumeration attacks
+        String genericSuccessMessage = "If an account with the provided email or username exists, a password reset link has been sent. Please check your inbox.";
         try {
-            // This method in your UserService will handle token generation and email sending
+            // Call the service method. This method should internally handle user lookup
+            // and send the email. If the user is not found, it should NOT throw an
+            // exception that leaks this information to the frontend. It should just
+            // log the event internally and proceed without sending an email.
             userService.initiatePasswordReset(request.getEmailOrUsername());
-            // It's good practice to send a generic success message to prevent email enumeration attacks
-            return ResponseEntity.ok(Map.of("message", "If an account with the provided email or username exists, a password reset link has been sent. Please check your inbox."));
-        } catch (IllegalArgumentException e) {
-            // This might catch cases where the email/username is not found,
-            // but for security, you might still return the generic success message.
-            // For now, returning specific message, but consider security implications.
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+            return ResponseEntity.ok(Map.of("message", genericSuccessMessage));
         } catch (Exception e) {
-            System.err.println("Error initiating password reset: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An error occurred while initiating password reset. Please try again later."));
+            // Catch any exception and log it for internal debugging
+            System.err.println("Error initiating password reset for identifier '" + request.getEmailOrUsername() + "': " + e.getMessage());
+            // Always return the generic success message to the frontend for security
+            return ResponseEntity.ok(Map.of("message", genericSuccessMessage));
         }
     }
 
@@ -137,8 +140,8 @@ public class AuthController {
             // Catches invalid/expired token or password policy violations
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            System.err.println("Error resetting password: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An error occurred while resetting your password. Please try again."));
+            System.err.println("Error resetting password: " + e.getMessage()); // Log unexpected errors
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An unexpected error occurred while resetting your password."));
         }
     }
 
@@ -174,7 +177,10 @@ public class AuthController {
         private String code;
     }
 
-    // --- NEW DTO for Forgot Password Request ---
+    // --- FIXED DTO for Forgot Password Request ---
+    // This DTO now perfectly matches the 'emailOrUsername' key expected by the service layer.
+    // Ensure your frontend (forgot-password.js) sends a JSON body like:
+    // { "emailOrUsername": "user@example.com" }
     @Getter
     @Setter
     @NoArgsConstructor
