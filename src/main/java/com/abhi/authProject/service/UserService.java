@@ -94,12 +94,12 @@ public class UserService {
         // Send OTP email
         String emailSubject = "Placement Portal Account Verification Code (OTP)";
         String emailBody = "Dear " + user.getUsername() + ",\n\n"
-                         + "Thank you for registering with Placement Portal. Your verification code is:\n\n"
-                         + "OTP: " + otp + "\n\n"
-                         + "This code will expire in 15 minutes. Please enter it on the verification page to activate your account.\n\n"
-                         + "If you did not register for this account, please ignore this email.\n\n"
-                         + "Best regards,\n"
-                         + "Placement Portal Team";
+                            + "Thank you for registering with Placement Portal. Your verification code is:\n\n"
+                            + "OTP: " + otp + "\n\n"
+                            + "This code will expire in 15 minutes. Please enter it on the verification page to activate your account.\n\n"
+                            + "If you did not register for this account, please ignore this email.\n\n"
+                            + "Best regards,\n"
+                            + "Placement Portal Team";
 
         emailService.sendEmail(user.getEmail(), emailSubject, emailBody);
 
@@ -191,63 +191,51 @@ public class UserService {
      * @param emailOrUsername The email or username of the user requesting a password reset.
      * @throws IllegalArgumentException if the user is not found or email sending fails.
      */
-   // Inside UserService.java
+    @Transactional
+    public void initiatePasswordReset(String emailOrUsername) {
+        System.out.println("UserService.initiatePasswordReset received identifier: '" + emailOrUsername + "'"); //
 
-@Transactional
-public void initiatePasswordReset(String emailOrUsername) {
-    // --- ADD THIS LINE AT THE VERY TOP OF THE METHOD ---
-    System.out.println("UserService.initiatePasswordReset received identifier: '" + emailOrUsername + "'");
-    // --- END ADDITION ---
+        // Try to find the user by username or email
+        Optional<Users> userOptional = repo.findByUsername(emailOrUsername);
+        if (userOptional.isEmpty()) {
+            userOptional = repo.findByEmail(emailOrUsername);
+        }
 
-    // Try to find the user by username or email
-    Optional<Users> userOptional = repo.findByUsername(emailOrUsername);
-    if (userOptional.isEmpty()) {
-        userOptional = repo.findByEmail(emailOrUsername);
-    }
-
-    if (userOptional.isEmpty()) {
-        System.out.println("Password reset request for non-existent user: " + emailOrUsername + ". Returning generic success.");
-        return;
-    }
-    // ... rest of the method
-}
-
+        if (userOptional.isEmpty()) {
+            System.out.println("Password reset request for non-existent user: " + emailOrUsername + ". Returning generic success."); //
+            return; // Returning here for security to avoid exposing if user exists
+        }
+        
         Users user = userOptional.get();
 
         // Generate a new, secure password reset token
-        String resetToken = generatePasswordResetToken();
+        String resetToken = generatePasswordResetToken(); //
         // Set expiry for the reset token (e.g., 30 minutes)
-        LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(30);
+        LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(30); //
 
-        user.setPasswordResetToken(resetToken);
-        user.setPasswordResetTokenExpires(expiryTime);
+        user.setPasswordResetToken(resetToken); //
+        user.setPasswordResetTokenExpires(expiryTime); //
         repo.save(user); // Save the user with the new token and expiry
 
         // Construct the password reset link
-        // This assumes your frontend's reset password page is at /reset-password.html?token=...
-        // Make sure to replace `https://hack-2-hired.onrender.com` with your actual frontend domain
-        String resetLink = "https://hack-2-hired.onrender.com/reset-password.html?token=" + resetToken;
+        // !!! IMPORTANT: Replace "https://YOUR_ACTUAL_FRONTEND_URL.onrender.com" with your deployed frontend URL !!!
+        String resetLink = "https://placement-portal-backend-nwaj.onrender.com/reset-password.html?token=" + resetToken;
 
-        String emailSubject = "Placement Portal - Password Reset Request";
-        String emailBody = "Dear " + user.getUsername() + ",\n\n"
-                         + "You have requested to reset your password for your Placement Portal account.\n\n"
-                         + "Please click on the following link to reset your password:\n"
-                         + resetLink + "\n\n"
-                         + "This link will expire in 30 minutes.\n\n"
-                         + "If you did not request a password reset, please ignore this email.\n\n"
-                         + "Best regards,\n"
-                         + "Placement Portal Team";
+        String emailSubject = "Placement Portal - Password Reset Request"; //
+        String emailBody = "Dear " + user.getUsername() + ",\n\n" //
+                            + "You have requested to reset your password for your Placement Portal account.\n\n" //
+                            + "Please click on the following link to reset your password:\n" //
+                            + resetLink + "\n\n" //
+                            + "This link will expire in 30 minutes.\n\n" //
+                            + "If you did not request a password reset, please ignore this email.\n\n" //
+                            + "Best regards,\n" //
+                            + "Placement Portal Team"; //
 
         try {
-            emailService.sendEmail(user.getEmail(), emailSubject, emailBody);
+            emailService.sendEmail(user.getEmail(), emailSubject, emailBody); //
         } catch (Exception e) {
-            // Log the error but don't re-throw if you want to keep the generic success message
-            System.err.println("Failed to send password reset email to " + user.getEmail() + ": " + e.getMessage());
-            // Optionally, you might want to remove the token from the user if email sending truly failed and it's critical
-            // user.setPasswordResetToken(null);
-            // user.setPasswordResetTokenExpires(null);
-            // repo.save(user);
-            throw new RuntimeException("Could not send password reset email. Please try again later.", e);
+            System.err.println("Failed to send password reset email to " + user.getEmail() + ": " + e.getMessage()); //
+            throw new RuntimeException("Could not send password reset email. Please try again later.", e); //
         }
     }
 
@@ -259,35 +247,33 @@ public void initiatePasswordReset(String emailOrUsername) {
      */
     @Transactional
     public void resetPassword(String token, String newPassword) {
-        if (newPassword == null || newPassword.trim().isEmpty()) {
-            throw new IllegalArgumentException("New password cannot be empty.");
-        }
-        // Add more robust password policy checks here (e.g., min length, complexity)
-        // Example: if (newPassword.length() < 8) { throw new IllegalArgumentException("Password must be at least 8 characters long."); }
-
-        Optional<Users> userOptional = repo.findByPasswordResetToken(token);
-
-        if (userOptional.isEmpty()) {
-            throw new IllegalArgumentException("Invalid or unrecognized password reset token.");
+        if (newPassword == null || newPassword.trim().isEmpty()) { //
+            throw new IllegalArgumentException("New password cannot be empty."); //
         }
 
-        Users user = userOptional.get();
+        Optional<Users> userOptional = repo.findByPasswordResetToken(token); //
+
+        if (userOptional.isEmpty()) { //
+            throw new IllegalArgumentException("Invalid or unrecognized password reset token."); //
+        }
+
+        Users user = userOptional.get(); //
 
         // Check if the token has expired
-        if (user.getPasswordResetTokenExpires() == null || user.getPasswordResetTokenExpires().isBefore(LocalDateTime.now())) {
+        if (user.getPasswordResetTokenExpires() == null || user.getPasswordResetTokenExpires().isBefore(LocalDateTime.now())) { //
             // Invalidate the expired token to prevent reuse attempts
-            user.setPasswordResetToken(null);
-            user.setPasswordResetTokenExpires(null);
-            repo.save(user);
-            throw new IllegalArgumentException("Password reset token has expired. Please request a new one.");
+            user.setPasswordResetToken(null); //
+            user.setPasswordResetTokenExpires(null); //
+            repo.save(user); //
+            throw new IllegalArgumentException("Password reset token has expired. Please request a new one."); //
         }
 
         // Hash the new password and update the user's password
-        user.setPassword(encoder.encode(newPassword));
+        user.setPassword(encoder.encode(newPassword)); //
 
         // Clear the used token and its expiry
-        user.setPasswordResetToken(null);
-        user.setPasswordResetTokenExpires(null);
+        user.setPasswordResetToken(null); //
+        user.setPasswordResetTokenExpires(null); //
 
         repo.save(user); // Save the updated user
     }
