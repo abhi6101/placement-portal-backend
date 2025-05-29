@@ -58,7 +58,7 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers(HttpMethod.GET,
                     "/api/auth/forgot-password", // If you have a GET endpoint for forgot password, permit it.
-                    "/api/auth/reset-password"   // If you have a GET endpoint for reset password, permit it.
+                    "/api/auth/reset-password" ,  // If you have a GET endpoint for reset password, permit it.
                                                  // Note: Your frontend will send a POST to /api/auth/reset-password,
                                                  // but a GET might be needed for initial token validation or similar.
                     "/api/papers" // Your public papers API
