@@ -52,31 +52,25 @@ public class SecurityConfig {
                     "/", "/home", "/index", "/login.html", "/register.html", "/verify-account.html",
                     "/css/**", "/js/**", "/images/**", "/jobs", "/api/resume/download/**",
                     "/error.html",
-                    // --- NEW: Permit access to Previous Papers HTML/CSS/JS if they are served directly ---
-                    "/papers.html", "/papers.css", "/papers.js"
+                    "/papers.html", "/papers.css", "/papers.js",
+                    // --- NEW: Permit access to Forgot Password and Reset Password HTML/CSS/JS if they are served directly ---
+                    "/forgot-password.html", "/reset-password.html",
+                    "/forgot-password.css", "/forgot-password.js", // If you create separate files
+                    "/reset-password.css", "/reset-password.js"     // If you create separate files
                 ).permitAll()
                 .requestMatchers(HttpMethod.POST,
                     "/api/auth/register",
                     "/api/auth/login",
                     "/api/auth/verify-code",
                     "/api/auth/logout",
-                    "/api/resume/generate-pdf"
+                    "/api/resume/generate-pdf",
+                    // --- NEW: Permit access to Forgot Password and Reset Password API endpoints ---
+                    "/api/auth/forgot-password", // Endpoint to request a password reset link
+                    "/api/auth/reset-password"   // Endpoint to submit the new password with token
                 ).permitAll()
 
-                // --- NEW: Access rule for Previous Year Papers API endpoint ---
-                // Choose ONE of these options for /api/papers based on your requirement:
-
-                // Option 1: Allow anyone (public) to access papers (NO LOGIN REQUIRED)
-                .requestMatchers(HttpMethod.GET, "/api/papers").permitAll()
-
-                // Option 2: Require authentication for papers (ANY LOGGED-IN USER)
-                // .requestMatchers(HttpMethod.GET, "/api/papers").authenticated()
-
-                // Option 3: Require specific roles for papers (e.g., only 'USER' role for students)
-                // This matches the @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-                // from PaperController if you choose that option.
-                // .requestMatchers(HttpMethod.GET, "/api/papers").hasAnyRole("USER", "ADMIN")
-                // ----------------------------------------------------
+                // Existing rules for /api/papers
+                .requestMatchers(HttpMethod.GET, "/api/papers").permitAll() // Example: Public access
 
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/user/**").hasRole("USER")
@@ -104,8 +98,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            // Ensure the authentication provider is set in the HttpSecurity chain
-            .authenticationProvider(authenticationProvider()); // ADD THIS LINE
+            .authenticationProvider(authenticationProvider());
 
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

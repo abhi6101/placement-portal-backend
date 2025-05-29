@@ -4,17 +4,20 @@ import com.abhi.authProject.model.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional; // Import for Optional
+import java.util.Optional;
 
 @Repository
 public interface UserRepo extends JpaRepository<Users, Integer> {
 
-    // Change return type to Optional<Users> for better null handling
+    // Find a user by their username
     Optional<Users> findByUsername(String username);
 
-    // Change return type to Optional<Users> for better null handling
+    // Find a user by their email
     Optional<Users> findByEmail(String email);
 
-    // NEW: Method to find a user by their verification token
+    // Find a user by their email verification token (OTP)
     Optional<Users> findByVerificationToken(String verificationToken);
+
+    // --- NEW: Method to find a user by their password reset token ---
+    Optional<Users> findByPasswordResetToken(String passwordResetToken);
 }
