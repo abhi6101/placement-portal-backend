@@ -1,4 +1,4 @@
-.30.package com.abhi.authProject.config;
+package com.abhi.authProject.config;
 
 import com.abhi.authProject.Jwt.JwtFilter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.DisabledException; // Import DisabledException
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -29,14 +28,14 @@ import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+@EnableMethodSecurity // Keep this enabled for @PreAuthorize
 public class SecurityConfig {
 
     @Autowired
     private UserDetailsService userDetailsService;
 
     @Autowired
-    private JwtFilter jwtFilter; // Assuming you have a JwtFilter class
+    private JwtFilter jwtFilter;
 
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
@@ -47,63 +46,67 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable) // Disable CSRF for stateless REST APIs
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS
+            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS with custom source
             .authorizeHttpRequests(auth -> auth
-                // Permit ALL requests to your public API endpoints
+                .requestMatchers(HttpMethod.GET,
+                    "/", "/home", "/index", "/login.html", "/register.html", "/verify-account.html",
+                    "/css/**", "/js/**", "/images/**", "/jobs", "/api/resume/download/**",
+                    "/error.html",
+                    // --- NEW: Permit access to Previous Papers HTML/CSS/JS if they are served directly ---
+                    "/papers.html", "/papers.css", "/papers.js"
+                ).permitAll()
                 .requestMatchers(HttpMethod.POST,
                     "/api/auth/register",
                     "/api/auth/login",
                     "/api/auth/verify-code",
-                    "/api/auth/forgot-password", // Endpoint to request a password reset link
-                    "/api/auth/reset-password"   // Endpoint to submit the new password with token
-                ).permitAll()
-                .requestMatchers(HttpMethod.GET,
-                    "/api/auth/forgot-password", // If you have a GET endpoint for forgot password, permit it.
-                    "/api/auth/reset-password",  // If you have a GET endpoint for reset password, permit it.
-                                                 // Note: Your frontend will send a POST to /api/auth/reset-password,
-                                                 // but a GET might be needed for initial token validation or similar.
-                    "/api/papers" // Your public papers API
-                    // Add any other truly public GET API endpoints here
+                    "/api/auth/logout",
+                    "/api/resume/generate-pdf"
                 ).permitAll()
 
-                // Secure your admin and user specific API endpoints
+                // --- NEW: Access rule for Previous Year Papers API endpoint ---
+                // Choose ONE of these options for /api/papers based on your requirement:
+
+                // Option 1: Allow anyone (public) to access papers (NO LOGIN REQUIRED)
+                .requestMatchers(HttpMethod.GET, "/api/papers").permitAll()
+
+                // Option 2: Require authentication for papers (ANY LOGGED-IN USER)
+                // .requestMatchers(HttpMethod.GET, "/api/papers").authenticated()
+
+                // Option 3: Require specific roles for papers (e.g., only 'USER' role for students)
+                // This matches the @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+                // from PaperController if you choose that option.
+                // .requestMatchers(HttpMethod.GET, "/api/papers").hasAnyRole("USER", "ADMIN")
+                // ----------------------------------------------------
+
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/user/**").hasRole("USER")
                 .requestMatchers(HttpMethod.POST, "/api/apply-job").hasRole("USER")
-
-                // All other API requests require authentication
-                .anyRequest().authenticated()
+                .anyRequest().authenticated() // All other requests require authentication
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((req, res, e) -> {
-                    // Handle DisabledException for unverified accounts
-                    if (e instanceof DisabledException) {
-                        res.setStatus(HttpStatus.FORBIDDEN.value()); // Or HttpStatus.UNAUTHORIZED
+                    if (e instanceof BadCredentialsException && e.getMessage().contains("Please verify your email address")) {
+                        res.setStatus(HttpStatus.FORBIDDEN.value());
                         res.getWriter().write(e.getMessage());
-                    }
-                    // Handle BadCredentialsException for invalid username/password
-                    else if (e instanceof BadCredentialsException) {
+                    } else if (e instanceof BadCredentialsException) {
                         res.setStatus(HttpStatus.UNAUTHORIZED.value());
                         res.getWriter().write("Invalid username or password");
-                    }
-                    // Handle other unauthorized access attempts
-                    else {
+                    } else {
                         res.setStatus(HttpStatus.UNAUTHORIZED.value());
                         res.getWriter().write("Unauthorized: Please login first");
                     }
                 })
                 .accessDeniedHandler((req, res, e) -> {
-                    // Handle forbidden access (authenticated but insufficient role)
                     res.setStatus(HttpStatus.FORBIDDEN.value());
                     res.getWriter().write("Forbidden: You don't have permission");
                 })
             )
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Use stateless sessions for JWT
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            .authenticationProvider(authenticationProvider()); // Set custom authentication provider
+            // Ensure the authentication provider is set in the HttpSecurity chain
+            .authenticationProvider(authenticationProvider()); // ADD THIS LINE
 
-        // Add the JWT filter before Spring Security's default username/password authentication filter
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -112,33 +115,32 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // IMPORTANT: Add your actual deployed frontend URL(s) here.
-        // If your frontend is deployed on Render at e.g., "https://hack-2-hired.onrender.com", add it.
+        // IMPORTANT: Ensure your frontend's deployed Render URL is included here.
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5500",    // For local frontend development
-            "http://127.0.0.1:5500",    // For local frontend development
-            // "https://placement-portal-backend-nwaj.onrender.com", // REMOVE this if it's not your frontend!
-           "https://hack-2-hired.onrender.com" // Your deployed frontend URL // <--- REPLACE THIS WITH YOUR DEPLOYED FRONTEND URL
+            "http://localhost:5500",
+            "http://127.0.0.1:5500",
+            "https://hack-2-hired.onrender.com" // Your deployed frontend URL
+            // Add any other specific frontend origins as needed
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*")); // Allow all headers
-        configuration.setAllowCredentials(true); // Allow sending of cookies/authorization headers
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Apply this CORS config to all paths
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setPasswordEncoder(bCryptPasswordEncoder()); // Set the password encoder
-        provider.setUserDetailsService(userDetailsService); // Set your custom UserDetailsService
+        provider.setPasswordEncoder(bCryptPasswordEncoder());
+        provider.setUserDetailsService(userDetailsService);
         return provider;
     }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager(); // Expose AuthenticationManager
+        return config.getAuthenticationManager();
     }
 }
