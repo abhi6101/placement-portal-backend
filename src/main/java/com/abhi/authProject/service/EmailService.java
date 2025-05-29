@@ -34,7 +34,7 @@ public class EmailService {
         } catch (MailException e) {
             System.err.println("Error sending email to " + to + ": " + e.getMessage());
             // In a production app, you'd want to log this error more robustly
-            // throw new RuntimeException("Failed to send email", e);
+            // throw new RuntimeException("Failed to send email", e); // Re-throwing might be better for upstream error handling
         }
     }
 
@@ -46,7 +46,7 @@ public class EmailService {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(senderEmail);
-            message.setTo(senderEmail);
+            message.setTo(senderEmail); // Sending to the admin (sender's email)
             message.setSubject("New Interview Slot Booking: " + company);
 
             String emailContent = "A new interview slot has been booked!\n\n" +

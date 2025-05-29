@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException; // Import DisabledException
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -35,7 +36,7 @@ public class SecurityConfig {
     private UserDetailsService userDetailsService;
 
     @Autowired
-    private JwtFilter jwtFilter;
+    private JwtFilter jwtFilter; // Assuming you have a JwtFilter class
 
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
@@ -45,8 +46,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(AbstractHttpConfigurer::disable) // Disable CSRF for stateless REST APIs
+            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS
             .authorizeHttpRequests(auth -> auth
                 // Permit ALL requests to your public API endpoints
                 .requestMatchers(HttpMethod.POST,
@@ -58,20 +59,12 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers(HttpMethod.GET,
                     "/api/auth/forgot-password", // If you have a GET endpoint for forgot password, permit it.
-                    "/api/auth/reset-password" ,  // If you have a GET endpoint for reset password, permit it.
+                    "/api/auth/reset-password",  // If you have a GET endpoint for reset password, permit it.
                                                  // Note: Your frontend will send a POST to /api/auth/reset-password,
                                                  // but a GET might be needed for initial token validation or similar.
                     "/api/papers" // Your public papers API
                     // Add any other truly public GET API endpoints here
                 ).permitAll()
-
-                // Remove ALL frontend specific paths from here, as they are served by the Static Site.
-                // For example, remove: "/", "/home", "/index", "/login.html", "/register.html",
-                // "/verify-account.html", "/css/**", "/js/**", "/images/**", "/jobs",
-                // "/error.html", "/papers.html", "/papers.css", "/papers.js",
-                // "/forgot-password.html", "/reset-password.html",
-                // "/forgot-password.css", "/forgot-password.js",
-                // "/reset-password.css", "/reset-password.js"
 
                 // Secure your admin and user specific API endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -83,27 +76,34 @@ public class SecurityConfig {
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((req, res, e) -> {
-                    if (e instanceof BadCredentialsException && e.getMessage().contains("Please verify your email address")) {
-                        res.setStatus(HttpStatus.FORBIDDEN.value());
+                    // Handle DisabledException for unverified accounts
+                    if (e instanceof DisabledException) {
+                        res.setStatus(HttpStatus.FORBIDDEN.value()); // Or HttpStatus.UNAUTHORIZED
                         res.getWriter().write(e.getMessage());
-                    } else if (e instanceof BadCredentialsException) {
+                    }
+                    // Handle BadCredentialsException for invalid username/password
+                    else if (e instanceof BadCredentialsException) {
                         res.setStatus(HttpStatus.UNAUTHORIZED.value());
                         res.getWriter().write("Invalid username or password");
-                    } else {
+                    }
+                    // Handle other unauthorized access attempts
+                    else {
                         res.setStatus(HttpStatus.UNAUTHORIZED.value());
-                        res.getWriter().write("Unauthorized: Please login first"); //
+                        res.getWriter().write("Unauthorized: Please login first");
                     }
                 })
                 .accessDeniedHandler((req, res, e) -> {
+                    // Handle forbidden access (authenticated but insufficient role)
                     res.setStatus(HttpStatus.FORBIDDEN.value());
                     res.getWriter().write("Forbidden: You don't have permission");
                 })
             )
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Use stateless sessions for JWT
             )
-            .authenticationProvider(authenticationProvider());
+            .authenticationProvider(authenticationProvider()); // Set custom authentication provider
 
+        // Add the JWT filter before Spring Security's default username/password authentication filter
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -112,32 +112,33 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // IMPORTANT: Ensure your frontend's deployed Render URL is included here.
+        // IMPORTANT: Add your actual deployed frontend URL(s) here.
+        // If your frontend is deployed on Render at e.g., "https://hack-2-hired.onrender.com", add it.
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5500", // For local development
-            "http://127.0.0.1:5500", // For local development
-            "https://placement-portal-backend-nwaj.onrender.com" // Your deployed frontend URL
-            // Add any other specific frontend origins if they access this backend
+            "http://localhost:5500",    // For local frontend development
+            "http://127.0.0.1:5500",    // For local frontend development
+            // "https://placement-portal-backend-nwaj.onrender.com", // REMOVE this if it's not your frontend!
+            "https://YOUR-ACTUAL-FRONTEND-URL.onrender.com" // <--- REPLACE THIS WITH YOUR DEPLOYED FRONTEND URL
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true);
+        configuration.setAllowedHeaders(Arrays.asList("*")); // Allow all headers
+        configuration.setAllowCredentials(true); // Allow sending of cookies/authorization headers
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", configuration); // Apply this CORS config to all paths
         return source;
     }
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setPasswordEncoder(bCryptPasswordEncoder());
-        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(bCryptPasswordEncoder()); // Set the password encoder
+        provider.setUserDetailsService(userDetailsService); // Set your custom UserDetailsService
         return provider;
     }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+        return config.getAuthenticationManager(); // Expose AuthenticationManager
     }
 }
