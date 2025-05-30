@@ -85,7 +85,7 @@ public class EmailService {
                                     "Your requested slot for the " + position + " position on " + preferredDate + " has been noted.\n\n" +
                                     "Further details regarding your interview (exact time, virtual link, etc.) will be shared shortly.\n\n" +
                                     "Best regards,\n" +
-                                    "College Placement Portal";
+                                    " Placement Cell";
 
             message.setText(emailContent);
             mailSender.send(message);
