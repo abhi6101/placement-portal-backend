@@ -35,8 +35,8 @@ Contributions are welcome! Please fork the repository and create a pull request 
 
 ## Acknowledgements
 
-- [HTML](https://html.org/)
-- [CSS](https://css.dev/)
-- [Javascript](https://javascript.com/)
+- [HTML](https://html.com/)
+- [CSS](https://www.w3.org/Style/CSS/Overview.en.html)
+- [Javascript](https://www.javascript.com/)
 - [Spring Boot](https://spring.io/projects/spring-boot)
 - [JWT](https://jwt.io/)
