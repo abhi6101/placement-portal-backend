@@ -14,7 +14,7 @@ The Placement Portal is a web application designed to help students and administ
 
 ## Technologies Used
 
-- Frontend: React, Vite, Tailwind CSS
+- Frontend: HTML ,CSS ,Javascript 
 - Backend: Spring Boot, Spring Security, JWT
 - Database: PostgreSQL
 - Build Tool: Maven
