@@ -21,7 +21,7 @@ The Placement Portal is a web application designed to help students and administ
 
 ## Live Link
 
-Check out the live version of the Placement Portal [here](https://my-placement-portal.vercel.app/?vercelToolbarCode=ZDiGTKy34gmQljd).
+Check out the live version of the Placement Portal [here](https://hack-2-hired.onrender.com/).
 
 ## Usage
 
