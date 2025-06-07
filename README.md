@@ -35,8 +35,8 @@ Contributions are welcome! Please fork the repository and create a pull request 
 
 ## Acknowledgements
 
-- [React](https://reactjs.org/)
-- [Vite](https://vitejs.dev/)
-- [Tailwind CSS](https://tailwindcss.com/)
+- [HTML](https://html.org/)
+- [CSS](https://css.dev/)
+- [Javascript](https://javascript.com/)
 - [Spring Boot](https://spring.io/projects/spring-boot)
 - [JWT](https://jwt.io/)
