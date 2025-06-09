@@ -1,34 +1,42 @@
-# 🎓 College Placement Portal
+# Placement Portal
 
-A web-based application built using Django to streamline college placement activities for students, companies, and placement coordinators. The portal facilitates job postings, student registrations, application tracking, interview scheduling, and result announcements.
+## Overview
 
----
+The Placement Portal is a web application designed to help students and administrators manage job postings and applications. The portal allows students to view and apply for job opportunities, while administrators can post and manage job listings.
 
-## 🚀 Features
+## Features
 
-- 🔐 **Authentication & Authorization**  
-  Role-based login for Students, Companies, and Admin/Placement Officers.
+- User Authentication with JWT
+- Role-based Access Control (Admin and User roles)
+- Job Posting and Management (Admin)
+- Job Viewing and Application (User)
+- Responsive Design
 
-- 📝 **Student Module**  
-  - Profile management  
-  - Resume upload  
-  - View and apply to jobs  
-  - Track application status
+## Technologies Used
 
-- 🏢 **Company Module**  
-  - Register and manage job postings  
-  - Filter and shortlist candidates  
+- Frontend: HTML ,CSS ,Javascript 
+- Backend: Spring Boot, Spring Security, JWT
+- Database: PostgreSQL
+- Build Tool: Maven
 
-- 📋 **Admin/Placement Officer Module**  
-  - Verify users  
-  - Manage all job postings  
-  - Monitor student applications  
-  - Generate placement reports
+## Live Link
 
----
+Check out the live version of the Placement Portal [here](https://hack-2-hired.onrender.com/).
 
-## 🛠️ Tech Stack
+## Usage
 
-- **Backend:** Springboot
-- **Frontend:** HTML, CSS
-- **Database:**  MySQL
+- **Admin**: Log in with admin credentials to post and manage job listings.
+- **User**: Log in with user credentials to view and apply for job opportunities.
+
+## Contributing
+
+Contributions are welcome! Please fork the repository and create a pull request with your changes.
+
+
+## Acknowledgements
+
+- [HTML](https://html.com/)
+- [CSS](https://www.w3.org/Style/CSS/Overview.en.html)
+- [Javascript](https://www.javascript.com/)
+- [Spring Boot](https://spring.io/projects/spring-boot)
+- [JWT](https://jwt.io/)
