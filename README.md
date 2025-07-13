@@ -87,5 +87,3 @@ Contributions are greatly appreciated. Please fork the repo and create a pull re
 5.  Open a Pull Request
 
 ## 📄 License
-
-Distributed under the MIT License.
