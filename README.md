@@ -1,50 +1,50 @@
-# Placement Portal | Spring Boot & JavaScript
+# Placement Portal - Backend (Spring Boot)
 
 [![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.java.com)
 [![Spring](https://img.shields.io/badge/Spring-6DB33F?style=for-the-badge&logo=spring&logoColor=white)](https://spring.io/)
-[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://www.javascript.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Maven](https://img.shields.io/badge/Maven-C71A36?style=for-the-badge&logo=apache-maven&logoColor=white)](https://maven.apache.org/)
 
-A full-stack web application built to modernize and simplify the job placement process within an educational institution. This platform provides a centralized hub for administrators to post job opportunities and for students to browse and apply for them seamlessly.
+This repository contains the backend server for the **Placement Portal**, a full-stack web application built to modernize and simplify the job placement process. The server is built with Spring Boot and exposes a secure RESTful API to be consumed by the frontend client.
+
+**➡️ Frontend Repository: [placement-portal-frontend](https://github.com/abhi6101/placement-portal-frontend)**
+
+---
 
 ## ✨ Live Demo
 
-You can view the deployed application here:
+The complete, deployed application can be viewed here:
 **[https://hack-2-hired.onrender.com/](https://hack-2-hired.onrender.com/)**
 
 ## 🚀 Key Features
 
--   🔐 **Secure JWT Authentication:** Stateless authentication using JSON Web Tokens ensures secure communication between the client and server.
--   👤 **Role-Based Access Control (RBAC):** A robust system with two distinct user roles:
-    -   **Admin:** Full CRUD (Create, Read, Update, Delete) capabilities for managing job postings.
-    -   **Student:** Can view all available job listings and submit applications directly through the portal.
--   ⚙️ **RESTful API Architecture:** A well-structured backend API built with Spring Boot enables a clean separation of concerns and scalable development.
--   📱 **Responsive Frontend:** The user interface is crafted with HTML, CSS, and vanilla JavaScript to be fully responsive, offering an optimal user experience on any device.
+-   🔐 **Secure JWT Authentication:** Stateless authentication using JSON Web Tokens ensures secure communication.
+-   👤 **Role-Based Access Control (RBAC):** A robust system with two distinct user roles (Admin and Student).
+-   ⚙️ **RESTful API Architecture:** A well-structured API enables a clean separation of concerns and scalable development.
+-   🗄️ **Data Persistence:** Uses PostgreSQL to manage all application data, including users, jobs, and applications.
 
 ## 🛠️ Tech Stack & Tools
 
 | Category         | Technology / Tool                                  |
 | ---------------- | -------------------------------------------------- |
-| **Backend**      | Spring Boot, Spring Security                       |
-| **Frontend**     | Vanilla JavaScript, HTML5, CSS3                    |
+| **Framework**    | Spring Boot, Spring Security                       |
 | **Database**     | PostgreSQL                                         |
 | **Authentication**| JSON Web Tokens (JWT)                              |
 | **Build Tool**   | Apache Maven                                       |
 | **Deployment**   | Render                                             |
 
-## ⚙️ System Architecture
+## ⚙️ API Endpoints
 
-The application follows a classic client-server architecture:
+*(Optional but recommended: Briefly list your main API endpoints here. For example:)*
+-   `POST /auth/login` - Authenticate a user and receive a JWT.
+-   `GET /api/jobs` - Fetch all job listings.
+-   `POST /api/admin/jobs` - (Admin) Create a new job posting.
+-   `POST /api/jobs/{jobId}/apply` - (Student) Apply for a job.
+...and so on.
 
-1.  **Frontend (Client):** A responsive interface built with HTML, CSS, and JavaScript that handles user interaction and sends HTTP requests to the backend.
-2.  **Backend (Server):** A Spring Boot application that exposes a RESTful API. It manages business logic, security with Spring Security & JWT, and data persistence.
-3.  **Database:** A PostgreSQL database stores all application data, including user credentials, job postings, and student applications.
+## Local Setup
 
-
-## (Local Setup)
-
-To get a local copy up and running, follow these simple steps.
+To get the backend server running locally, follow these steps. **Note:** You will also need to set up the [frontend client](https://github.com/abhi6101/placement-portal-frontend) to use the application fully.
 
 ### Prerequisites
 
@@ -56,39 +56,29 @@ To get a local copy up and running, follow these simple steps.
 
 1.  **Clone the repository:**
     ```sh
-    git clone https://github.com/your-username/your-repo-name.git
-    cd your-repo-name
+    git clone https://github.com/abhi6101/placement-portal-backend.git
+    cd placement-portal-backend
     ```
 
 2.  **Configure the database:**
-    -   Start your PostgreSQL server.
-    -   Create a new database for the project.
-    -   Navigate to `src/main/resources/application.properties` and update the following properties with your PostgreSQL credentials:
+    -   Start your PostgreSQL server and create a new database.
+    -   Navigate to `src/main/resources/application.properties` and update the datasource properties with your PostgreSQL credentials:
         ```properties
         spring.datasource.url=jdbc:postgresql://localhost:5432/your_db_name
         spring.datasource.username=your_db_username
         spring.datasource.password=your_db_password
         ```
 
-3.  **Install dependencies and run the backend:**
+3.  **Install dependencies and run the server:**
     ```sh
     mvn install
     mvn spring-boot:run
     ```
-
-4.  **Access the application:**
-    -   The backend server will start on `http://localhost:8080`.
-    -   Open the `index.html` file in your browser to use the application.
-
-### Credentials for Testing
-
--   **Admin:** `username: admin_user` / `password: admin_pass`
--   **User:** `username: student_user` / `password: student_pass`
-    *(Note: Replace with your actual seed data credentials)*
+    The server will start on `http://localhost:8080`.
 
 ## 🤝 Contributing
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+Contributions are greatly appreciated. Please fork the repo and create a pull request.
 
 1.  Fork the Project
 2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
@@ -98,10 +88,4 @@ Contributions are what make the open-source community such an amazing place to l
 
 ## 📄 License
 
-Distributed under the MIT License. See `LICENSE` for more information.
-
-## 🙏 Acknowledgements
-
--   [Spring Boot](https://spring.io/projects/spring-boot)
--   [JSON Web Tokens](https://jwt.io/)
--   [Render](https://render.com/) for the deployment.
+Distributed under the MIT License.
