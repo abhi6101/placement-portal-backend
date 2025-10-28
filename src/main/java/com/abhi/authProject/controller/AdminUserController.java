@@ -1,5 +1,6 @@
 package com.abhi.authProject.controller;
 
+import com.abhi.authProject.model.UserDto; // Import the new DTO
 import com.abhi.authProject.model.Users;
 import com.abhi.authProject.repo.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors; // Import collectors
 
 @RestController
 @RequestMapping("/admin")
@@ -18,7 +20,20 @@ public class AdminUserController {
     private UserRepo userRepo;
 
     @GetMapping("/users")
-    public ResponseEntity<List<Users>> getAllUsers() {
-        return ResponseEntity.ok(userRepo.findAll());
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        List<Users> users = userRepo.findAll();
+
+        // CORRECTED: Map the Users entity to the UserDto to exclude sensitive data
+        List<UserDto> userDtos = users.stream()
+            .map(user -> new UserDto(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getRole(),
+                user.isVerified()
+            ))
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(userDtos);
     }
 }

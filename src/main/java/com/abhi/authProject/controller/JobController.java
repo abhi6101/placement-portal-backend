@@ -14,13 +14,13 @@ public class JobController {
     @Autowired
     private JobService jobService;
 
-//    @PreAuthorize("hasRole('USER')")
     @GetMapping("/jobs")
     public List<JobDetails> getJobs(){
         return jobService.getAllJobs();
     }
 
-//    @PreAuthorize("hasRole('ADMIN')")
+    // CORRECTED: Security annotation is now enabled.
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/jobs")
     public JobDetails addJob(@RequestBody JobDetails jobDetails){
         return jobService.addJob(jobDetails);

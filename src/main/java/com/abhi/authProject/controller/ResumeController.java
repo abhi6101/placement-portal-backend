@@ -14,7 +14,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/resume")
-// Removed @CrossOrigin annotation from here, as it's now handled globally in SecurityConfig
 public class ResumeController {
 
     private final ResumePdfService resumePdfService;
@@ -27,9 +26,8 @@ public class ResumeController {
     public ResponseEntity<?> generatePdf(@Valid @RequestBody ResumeData resumeData) {
         try {
             String uniqueFileName = resumePdfService.generateResumePdf(resumeData);
-            // Updated downloadUrl to use the deployed Render backend URL
-            String downloadUrl = "https://placement-portal-backend-nwaj.onrender.com/api/resume/download/" + uniqueFileName;
-            return ResponseEntity.ok(Map.of("downloadUrl", downloadUrl));
+            // CORRECTED: Return only the filename. The frontend will build the full URL.
+            return ResponseEntity.ok(Map.of("filename", uniqueFileName));
         } catch (Exception e) {
             return ResponseEntity.status(500)
                     .body(Map.of("error", "Error generating resume: " + e.getMessage()));
