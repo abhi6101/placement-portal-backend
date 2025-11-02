@@ -27,7 +27,7 @@ public class InterviewService {
     private final JobApplicationRepository jobApplicationRepository;
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.username}")
+    @Value("${SENDER_FROM_EMAIL}")
     private String senderEmail;
 
     public InterviewService(InterviewRepository interviewRepository,
