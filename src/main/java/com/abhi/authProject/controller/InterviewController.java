@@ -5,6 +5,8 @@ import com.abhi.authProject.model.InterviewBookingRequest;
 import com.abhi.authProject.model.InterviewScheduleRequest;
 import com.abhi.authProject.service.InterviewService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger; // <--- ADD THIS IMPORT
+import org.slf4j.LoggerFactory; // <--- ADD THIS IMPORT
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,13 +15,16 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.IOException; // Import IOException
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
 public class InterviewController {
+
+    // ADD THIS LINE TO CREATE THE LOGGER
+    private static final Logger logger = LoggerFactory.getLogger(InterviewController.class);
 
     private final InterviewService interviewService;
 
@@ -35,7 +40,7 @@ public class InterviewController {
             return new ResponseEntity<>(interview, HttpStatus.CREATED);
         } catch (IllegalArgumentException | IllegalStateException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (Exception e) { // Catching a general Exception is simpler now
+        } catch (Exception e) {
             logger.error("Error scheduling interview or sending email: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to schedule interview and send email.");
         }
@@ -65,7 +70,7 @@ public class InterviewController {
             return ResponseEntity.ok(bookedInterview);
         } catch (IllegalArgumentException | IllegalStateException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (Exception e) { // Catching a general Exception is simpler now
+        } catch (Exception e) {
             logger.error("Error booking interview or sending email: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to book interview and send email.");
         }
