@@ -34,7 +34,7 @@ public class JobApplicationService {
     @Value("${placement.portal.application.recipient-email}")
     private String recipientEmail;
 
-    @Value("${spring.mail.username}")
+    @Value("${SENDER_FROM_EMAIL}")
     private String senderEmail;
 
     @Value("${pdf.storage.directory:/tmp/resumes}")
