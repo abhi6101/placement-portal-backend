@@ -1,9 +1,10 @@
 package com.abhi.authProject.controller;
 
+import com.abhi.authProject.model.Interview;
 import com.abhi.authProject.model.InterviewBookingRequest;
 import com.abhi.authProject.model.InterviewScheduleRequest;
-import com.abhi.authProject.model.Interview;
 import com.abhi.authProject.service.InterviewService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -12,15 +13,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import jakarta.mail.MessagingException;
-import jakarta.validation.Valid;
+import java.io.IOException; // Import IOException
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
-// Remove @CrossOrigin here if you manage CORS globally in SecurityConfig
-// @CrossOrigin(origins = {"http://localhost:5500", "http://127.0.0.1:5500"}, allowCredentials = "true")
 public class InterviewController {
 
     private final InterviewService interviewService;
@@ -29,7 +27,6 @@ public class InterviewController {
         this.interviewService = interviewService;
     }
 
-    // Endpoint for HR/Admin to schedule an interview
     @PostMapping("/admin/interviews")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Interview> scheduleInterview(@Valid @RequestBody InterviewScheduleRequest request) {
@@ -38,25 +35,20 @@ public class InterviewController {
             return new ResponseEntity<>(interview, HttpStatus.CREATED);
         } catch (IllegalArgumentException | IllegalStateException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (MessagingException e) {
-            System.err.println("Error scheduling interview or sending email: " + e.getMessage());
-            e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to schedule interview and send email: " + e.getMessage());
+        } catch (Exception e) { // Catching a general Exception is simpler now
+            logger.error("Error scheduling interview or sending email: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to schedule interview and send email.");
         }
     }
 
-    // Endpoint for Student to view their interviews
     @GetMapping("/user/interviews")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<List<Interview>> getMyInterviews(@AuthenticationPrincipal UserDetails userDetails) {
-        // Assuming userDetails.getUsername() corresponds to the applicant's email
-        // You might need to retrieve the applicant's email from your User entity based on userId from JWT
-        String applicantEmail = userDetails.getUsername(); // Or retrieve from a custom User entity/service
+        String applicantEmail = userDetails.getUsername();
         List<Interview> interviews = interviewService.getInterviewsForApplicant(applicantEmail);
         return ResponseEntity.ok(interviews);
     }
 
-    // Endpoint for Student to book an interview slot
     @PutMapping("/user/interviews/{interviewId}/book-slot")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Interview> bookInterviewSlot(
@@ -73,19 +65,17 @@ public class InterviewController {
             return ResponseEntity.ok(bookedInterview);
         } catch (IllegalArgumentException | IllegalStateException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (MessagingException e) {
-            System.err.println("Error booking interview or sending email: " + e.getMessage());
-            e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to book interview and send email: " + e.getMessage());
+        } catch (Exception e) { // Catching a general Exception is simpler now
+            logger.error("Error booking interview or sending email: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to book interview and send email.");
         }
     }
 
-    // HR/Admin can also view specific interviews if needed
     @GetMapping("/admin/interviews/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Interview> getInterviewById(@PathVariable Long id) {
-        Optional<Interview> interview = interviewService.getInterviewById(id);
-        return interview.map(ResponseEntity::ok)
-                          .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Interview not found"));
+        return interviewService.getInterviewById(id)
+                .map(ResponseEntity::ok)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Interview not found"));
     }
 }

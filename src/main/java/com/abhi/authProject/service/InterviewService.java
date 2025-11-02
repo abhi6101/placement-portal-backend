@@ -1,21 +1,15 @@
 package com.abhi.authProject.service;
 
-import com.abhi.authProject.model.InterviewBookingRequest;
-import com.abhi.authProject.model.InterviewScheduleRequest;
-import com.abhi.authProject.model.ApplicationStatus;
-import com.abhi.authProject.model.Interview;
-import com.abhi.authProject.model.InterviewStatus;
-import com.abhi.authProject.model.JobApplication;
+import com.abhi.authProject.model.*;
 import com.abhi.authProject.repo.InterviewRepository;
 import com.abhi.authProject.repo.JobApplicationRepository;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -23,23 +17,30 @@ import java.util.Optional;
 @Service
 public class InterviewService {
 
+    private static final Logger logger = LoggerFactory.getLogger(InterviewService.class);
+
     private final InterviewRepository interviewRepository;
     private final JobApplicationRepository jobApplicationRepository;
-    private final JavaMailSender mailSender;
+    
+    // REMOVED: The old JavaMailSender is gone.
+    // private final JavaMailSender mailSender;
 
-    @Value("${SENDER_FROM_EMAIL}")
-    private String senderEmail;
+    // ADDED: The new SendGridEmailService.
+    private final SendGridEmailService emailService;
 
+    // The senderEmail property is no longer needed here because it's configured inside SendGridEmailService.
+    
+    @Autowired
     public InterviewService(InterviewRepository interviewRepository,
                             JobApplicationRepository jobApplicationRepository,
-                            JavaMailSender mailSender) {
+                            SendGridEmailService emailService) { // UPDATED constructor
         this.interviewRepository = interviewRepository;
         this.jobApplicationRepository = jobApplicationRepository;
-        this.mailSender = mailSender;
+        this.emailService = emailService; // UPDATED constructor
     }
 
     @Transactional
-    public Interview scheduleInterview(InterviewScheduleRequest request) throws MessagingException {
+    public Interview scheduleInterview(InterviewScheduleRequest request) {
         JobApplication jobApplication = jobApplicationRepository.findById(request.getJobApplicationId())
                 .orElseThrow(() -> new IllegalArgumentException("Job Application not found with ID: " + request.getJobApplicationId()));
 
@@ -59,18 +60,20 @@ public class InterviewService {
 
         Interview savedInterview = interviewRepository.save(interview);
 
-        // Update JobApplication status to INTERVIEW_SCHEDULED
         jobApplication.setStatus(ApplicationStatus.INTERVIEW_SCHEDULED);
         jobApplicationRepository.save(jobApplication);
 
-        // Send email to student about scheduled interview
-        sendInterviewScheduledEmailToApplicant(savedInterview);
+        try {
+            sendInterviewScheduledEmailToApplicant(savedInterview);
+        } catch (IOException e) {
+            logger.error("Interview {} was scheduled, but failed to send notification email.", savedInterview.getId(), e);
+        }
 
         return savedInterview;
     }
 
     @Transactional
-    public Interview bookInterviewSlot(Long interviewId, InterviewBookingRequest request) throws MessagingException {
+    public Interview bookInterviewSlot(Long interviewId, InterviewBookingRequest request) {
         Interview interview = interviewRepository.findById(interviewId)
                 .orElseThrow(() -> new IllegalArgumentException("Interview not found with ID: " + interviewId));
 
@@ -82,35 +85,22 @@ public class InterviewService {
         interview.setStatus(InterviewStatus.BOOKED);
         Interview updatedInterview = interviewRepository.save(interview);
 
-        // Update JobApplication status to INTERVIEW_BOOKED
         JobApplication jobApplication = updatedInterview.getJobApplication();
         jobApplication.setStatus(ApplicationStatus.INTERVIEW_BOOKED);
         jobApplicationRepository.save(jobApplication);
 
-        // Send confirmation to student and notification to HR
-        sendInterviewBookedConfirmationToApplicant(updatedInterview);
-        sendInterviewBookedNotificationToHR(updatedInterview);
+        try {
+            sendInterviewBookedConfirmationToApplicant(updatedInterview);
+            sendInterviewBookedNotificationToHR(updatedInterview);
+        } catch (IOException e) {
+            logger.error("Interview {} was booked, but failed to send one or more confirmation emails.", updatedInterview.getId(), e);
+        }
 
         return updatedInterview;
     }
 
-    public List<Interview> getInterviewsForApplicant(String applicantEmail) {
-        return interviewRepository.findByJobApplication_ApplicantEmail(applicantEmail);
-    }
-
-    public Optional<Interview> getInterviewById(Long id) {
-        return interviewRepository.findById(id);
-    }
-
-    // Helper method to send email to applicant about scheduled interview
-    private void sendInterviewScheduledEmailToApplicant(Interview interview) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message);
-
-        helper.setFrom(senderEmail);
-        helper.setTo(interview.getJobApplication().getApplicantEmail());
-        helper.setSubject("Interview Scheduled for " + interview.getJobApplication().getJobTitle());
-
+    private void sendInterviewScheduledEmailToApplicant(Interview interview) throws IOException {
+        String subject = "Interview Scheduled for " + interview.getJobApplication().getJobTitle();
         String interviewDetails = "Company: " + interview.getJobApplication().getCompanyName() + "<br>" +
                                   "Position: " + interview.getJobApplication().getJobTitle() + "<br>" +
                                   "Scheduled Date/Time: " + interview.getScheduledDateTime().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")) + "<br>";
@@ -120,28 +110,20 @@ public class InterviewService {
         if (interview.getInterviewLocation() != null && !interview.getInterviewLocation().isEmpty()) {
             interviewDetails += "Location: " + interview.getInterviewLocation() + "<br>";
         }
-        interviewDetails += "HR Contact: " + interview.getHrName() + " (" + interview.getHrEmail() + ")<br><br>" +
-                            "Please confirm your slot by visiting your portal or clicking a link (you'll need to build this link on frontend).";
+        interviewDetails += "HR Contact: " + interview.getHrName() + " (" + interview.getHrEmail() + ")";
 
         String emailBody = "Dear " + interview.getJobApplication().getApplicantName() + ",<br><br>" +
                            "Your interview for the <strong>" + interview.getJobApplication().getJobTitle() + "</strong> position at <strong>" + interview.getJobApplication().getCompanyName() + "</strong> has been scheduled.<br><br>" +
-                           "Here are the details:<br>" + interviewDetails + "<br>" +
+                           "Here are the details:<br>" + interviewDetails + "<br><br>" +
                            "Please log in to your placement portal to view and book your interview slot.<br><br>" +
                            "Best regards,<br>The Placement Team";
-        helper.setText(emailBody, true);
-        mailSender.send(message);
-        System.out.println("Interview scheduled email sent to: " + interview.getJobApplication().getApplicantEmail());
+                           
+        emailService.sendEmailWithAttachment(interview.getJobApplication().getApplicantEmail(), subject, emailBody, null); // No attachment
+        logger.info("Interview scheduled email sent to: {}", interview.getJobApplication().getApplicantEmail());
     }
 
-    // Helper method to send confirmation to applicant about booked slot
-    private void sendInterviewBookedConfirmationToApplicant(Interview interview) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message);
-
-        helper.setFrom(senderEmail);
-        helper.setTo(interview.getJobApplication().getApplicantEmail());
-        helper.setSubject("Interview Slot Confirmed: " + interview.getJobApplication().getJobTitle());
-
+    private void sendInterviewBookedConfirmationToApplicant(Interview interview) throws IOException {
+        String subject = "Interview Slot Confirmed: " + interview.getJobApplication().getJobTitle();
         String emailBody = "Dear " + interview.getJobApplication().getApplicantName() + ",<br><br>" +
                            "Your interview slot for the <strong>" + interview.getJobApplication().getJobTitle() + "</strong> position at <strong>" + interview.getJobApplication().getCompanyName() + "</strong> has been successfully booked.<br><br>" +
                            "<strong>Your Confirmed Interview Details:</strong><br>" +
@@ -154,20 +136,13 @@ public class InterviewService {
         }
         emailBody += "<br>Please ensure you are prepared for the interview.<br><br>" +
                      "Best regards,<br>The Placement Team";
-        helper.setText(emailBody, true);
-        mailSender.send(message);
-        System.out.println("Interview booked confirmation email sent to: " + interview.getJobApplication().getApplicantEmail());
+
+        emailService.sendEmailWithAttachment(interview.getJobApplication().getApplicantEmail(), subject, emailBody, null); // No attachment
+        logger.info("Interview booked confirmation email sent to: {}", interview.getJobApplication().getApplicantEmail());
     }
 
-    // Helper method to send notification to HR about booked slot
-    private void sendInterviewBookedNotificationToHR(Interview interview) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message);
-
-        helper.setFrom(senderEmail);
-        helper.setTo(interview.getHrEmail()); // Send to the specific HR who scheduled it
-        helper.setSubject("Interview Booked by Student: " + interview.getJobApplication().getApplicantName());
-
+    private void sendInterviewBookedNotificationToHR(Interview interview) throws IOException {
+        String subject = "Interview Booked by Student: " + interview.getJobApplication().getApplicantName();
         String emailBody = "Hello " + interview.getHrName() + ",<br><br>" +
                            "The student, <strong>" + interview.getJobApplication().getApplicantName() + "</strong> (Roll No: " + interview.getJobApplication().getApplicantRollNo() + "), has booked their interview slot.<br><br>" +
                            "<strong>Interview Details:</strong><br>" +
@@ -183,8 +158,17 @@ public class InterviewService {
         }
         emailBody += "<br>Please prepare accordingly.<br><br>" +
                      "Regards,<br>Placement Portal System";
-        helper.setText(emailBody, true);
-        mailSender.send(message);
-        System.out.println("HR notification email sent for booked interview to: " + interview.getHrEmail());
+
+        emailService.sendEmailWithAttachment(interview.getHrEmail(), subject, emailBody, null); // No attachment
+        logger.info("HR notification email sent for booked interview to: {}", interview.getHrEmail());
+    }
+
+    // --- NO CHANGES to the methods below ---
+    public List<Interview> getInterviewsForApplicant(String applicantEmail) {
+        return interviewRepository.findByJobApplication_ApplicantEmail(applicantEmail);
+    }
+
+    public Optional<Interview> getInterviewById(Long id) {
+        return interviewRepository.findById(id);
     }
 }
