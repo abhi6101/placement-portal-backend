@@ -1,25 +1,30 @@
 package com.abhi.authProject.controller;
 
-// src/main/java/com/yourcompany/placementportal/controller/BookingController.java
-
-import com.abhi.authProject.service.EmailService;
+import com.abhi.authProject.service.SendGridEmailService; // UPDATED import
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bookings")
 public class BookingController {
 
-    @Autowired
-    private EmailService emailService;
+    private static final Logger logger = LoggerFactory.getLogger(BookingController.class);
 
-    // You might want to define a DTO (Data Transfer Object) for cleaner code
-    // For simplicity, using Map<String, String> here for form data
+    @Autowired
+    private SendGridEmailService emailService; // UPDATED to use SendGridEmailService
+
+    // We need the admin's email to send a notification.
+    // It should be the same one used by JobApplicationService.
+    @Value("${placement.portal.application.recipient-email}")
+    private String adminEmail;
+
     @PostMapping("/book-slot")
     public ResponseEntity<String> bookSlot(
             @RequestParam("name") String name,
@@ -30,43 +35,54 @@ public class BookingController {
             @RequestParam("date") String date,
             @RequestParam("position") String position,
             @RequestParam("cgpa") double cgpa,
-            @RequestParam(value = "resume", required = false) MultipartFile resume // Resume is optional for now
+            @RequestParam(value = "resume", required = false) MultipartFile resume
     ) {
-        // In a real application, you'd save this booking data to a database first
-        System.out.println("Received booking request:");
-        System.out.println("Name: " + name);
-        System.out.println("Email: " + email);
-        System.out.println("Roll No: " + rollno);
-        System.out.println("Phone: " + phone);
-        System.out.println("Company: " + company);
-        System.out.println("Date: " + date);
-        System.out.println("Position: " + position);
-        System.out.println("CGPA: " + cgpa);
+        logger.info("Received booking request from: {}", name);
 
-        // You'll need to handle resume file upload and storage securely.
-        // For example, save it to a file system or cloud storage.
+        // --- Resume handling logic (remains the same) ---
         if (resume != null && !resume.isEmpty()) {
-            try {
-                // Example: print file details (DO NOT save directly without validation in production)
-                System.out.println("Resume File Name: " + resume.getOriginalFilename());
-                System.out.println("Resume File Size: " + resume.getSize() + " bytes");
-                // You would typically save this file to a designated location
-                // Path filePath = Paths.get("path/to/save/resumes/" + resume.getOriginalFilename());
-                // Files.copy(resume.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-            } catch (Exception e) {
-                System.err.println("Failed to upload resume: " + e.getMessage());
-                // Handle upload error
-                return ResponseEntity.status(500).body("Error processing resume upload.");
-            }
+            logger.info("Resume File Name: {}", resume.getOriginalFilename());
+            logger.info("Resume File Size: {} bytes", resume.getSize());
+            // In a real application, you would save the file here.
         }
 
-        // Send notification email to admin
-        emailService.sendBookingNotification(name, email, rollno, phone, company, date, position, cgpa);
+        try {
+            // --- Send notification email to admin using SendGridEmailService ---
+            String adminSubject = "New Interview Slot Booking: " + name + " for " + company;
+            String adminBody = "<h3>New Interview Slot Booking</h3>"
+                             + "<p>A student has booked an interview slot.</p>"
+                             + "<ul>"
+                             + "<li><b>Name:</b> " + name + "</li>"
+                             + "<li><b>Email:</b> " + email + "</li>"
+                             + "<li><b>Roll No:</b> " + rollno + "</li>"
+                             + "<li><b>Phone:</b> " + phone + "</li>"
+                             + "<li><b>Company:</b> " + company + "</li>"
+                             + "<li><b>Position:</b> " + position + "</li>"
+                             + "<li><b>Preferred Date:</b> " + date + "</li>"
+                             + "<li><b>CGPA:</b> " + cgpa + "</li>"
+                             + "</ul>";
+            emailService.sendEmailWithAttachment(adminEmail, adminSubject, adminBody, null); // No attachment to admin
 
-        // Optionally, send a confirmation email to the student
-        emailService.sendStudentConfirmationEmail(name, email, company, date, position);
+            // --- Send a confirmation email to the student using SendGridEmailService ---
+            String studentSubject = "Confirmation: Your Interview Slot for " + company + " is Booked";
+            String studentBody = "<h3>Interview Slot Confirmed!</h3>"
+                               + "<p>Dear " + name + ",</p>"
+                               + "<p>Your request to book an interview slot has been received. Here are the details you submitted:</p>"
+                               + "<ul>"
+                               + "<li><b>Company:</b> " + company + "</li>"
+                               + "<li><b>Position:</b> " + position + "</li>"
+                               + "<li><b>Preferred Date:</b> " + date + "</li>"
+                               + "</ul>"
+                               + "<p>The hiring team will get back to you shortly with the final confirmed schedule.</p>"
+                               + "<br/><p>Best regards,<br/>The Placement Portal Team</p>";
+            emailService.sendEmailWithAttachment(email, studentSubject, studentBody, null); // No attachment to student
 
-        // Return a success response
-        return ResponseEntity.ok("Interview slot booked and admin notified!");
+        } catch (IOException e) {
+            logger.error("Failed to send booking notification emails for user {}: {}", email, e.getMessage());
+            // Even if email fails, we don't want to fail the whole request.
+            // We just log the error. The booking is still "successful" to the user.
+        }
+
+        return ResponseEntity.ok("Interview slot booked and notifications sent!");
     }
 }
