@@ -15,7 +15,7 @@ public class EmailService {
     @Value("${sendgrid.api.key}")
     private String sendGridApiKey;
 
-    @Value("${sendgrid.from.email:noreply@placementportal.com}")
+    @Value("${sendgrid.from.email:hack2hired.official@gmail.com}")
     private String fromEmail;
 
     public void sendPasswordResetEmail(String toEmail, String resetToken) throws IOException {
