@@ -24,7 +24,6 @@ import com.abhi.authProject.service.EmailService;
 import jakarta.transaction.Transactional;
 
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
