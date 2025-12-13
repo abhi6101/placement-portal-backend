@@ -4,6 +4,7 @@ import com.abhi.authProject.model.InterviewDrive;
 import com.abhi.authProject.repo.InterviewDriveRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -25,11 +26,13 @@ public class InterviewDriveController {
     }
 
     @PostMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
     public InterviewDrive createDrive(@RequestBody InterviewDrive drive) {
         return interviewDriveRepo.save(drive);
     }
 
     @DeleteMapping("/admin/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteDrive(@PathVariable Long id) {
         interviewDriveRepo.deleteById(id);
         return ResponseEntity.ok().build();
