@@ -27,7 +27,7 @@ public class ProfileController {
             Authentication authentication) {
         try {
             String username = authentication.getName();
-            Users user = userRepo.findByUsername(username);
+            Users user = userRepo.findByUsername(username).orElse(null);
 
             if (user == null) {
                 return ResponseEntity.badRequest().body(Map.of("message", "User not found"));
@@ -59,7 +59,7 @@ public class ProfileController {
     public ResponseEntity<?> deleteProfilePicture(Authentication authentication) {
         try {
             String username = authentication.getName();
-            Users user = userRepo.findByUsername(username);
+            Users user = userRepo.findByUsername(username).orElse(null);
 
             if (user == null) {
                 return ResponseEntity.badRequest().body(Map.of("message", "User not found"));
