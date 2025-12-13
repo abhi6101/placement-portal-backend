@@ -11,8 +11,8 @@ public class PasswordResetToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String token;
+    @Column(nullable = false)
+    private String token; // 6-digit OTP
 
     @OneToOne(targetEntity = Users.class, fetch = FetchType.EAGER)
     @JoinColumn(nullable = false, name = "user_id")
@@ -27,10 +27,10 @@ public class PasswordResetToken {
     public PasswordResetToken() {
     }
 
-    public PasswordResetToken(String token, Users user) {
-        this.token = token;
+    public PasswordResetToken(String otp, Users user) {
+        this.token = otp;
         this.user = user;
-        this.expiryDate = LocalDateTime.now().plusHours(1); // 1 hour expiry
+        this.expiryDate = LocalDateTime.now().plusMinutes(15); // 15 minutes expiry for OTP
     }
 
     public boolean isExpired() {

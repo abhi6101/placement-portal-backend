@@ -138,60 +138,71 @@ public class AuthController {
             Users user = userService.findByEmail(email);
             if (user == null) {
                 // Don't reveal if email exists (security)
-                return ResponseEntity.ok(Map.of("message", "If the email exists, a reset link has been sent."));
+                return ResponseEntity.ok(Map.of("message", "If the email exists, an OTP has been sent."));
             }
 
             // Delete any existing tokens for this user
             passwordResetTokenRepo.findByUser(user).ifPresent(passwordResetTokenRepo::delete);
 
-            // Generate new token
-            String token = UUID.randomUUID().toString();
-            PasswordResetToken resetToken = new PasswordResetToken(token, user);
+            // Generate 6-digit OTP
+            String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
+            PasswordResetToken resetToken = new PasswordResetToken(otp, user);
             passwordResetTokenRepo.save(resetToken);
 
             // Send email
             try {
-                emailService.sendPasswordResetEmail(user.getEmail(), token);
+                emailService.sendPasswordResetEmail(user.getEmail(), otp);
             } catch (Exception e) {
                 // Log error but don't reveal to user
                 System.err.println("Failed to send reset email: " + e.getMessage());
             }
 
-            return ResponseEntity.ok(Map.of("message", "If the email exists, a reset link has been sent."));
+            return ResponseEntity.ok(Map.of("message", "If the email exists, an OTP has been sent."));
         } catch (Exception e) {
-            return ResponseEntity.ok(Map.of("message", "If the email exists, a reset link has been sent."));
+            return ResponseEntity.ok(Map.of("message", "If the email exists, an OTP has been sent."));
         }
     }
 
-    // Validate reset token
-    @PostMapping("/validate-token")
-    public ResponseEntity<?> validateToken(@RequestBody Map<String, String> request) {
-        String token = request.get("token");
+    // Verify OTP
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String otp = request.get("otp");
 
-        PasswordResetToken resetToken = passwordResetTokenRepo.findByToken(token).orElse(null);
+        Users user = userService.findByEmail(email);
+        if (user == null) {
+            return ResponseEntity.badRequest().body(Map.of("valid", false, "message", "Invalid email or OTP"));
+        }
 
-        if (resetToken == null || resetToken.isExpired()) {
-            return ResponseEntity.badRequest().body(Map.of("valid", false, "message", "Invalid or expired token"));
+        PasswordResetToken resetToken = passwordResetTokenRepo.findByUser(user).orElse(null);
+
+        if (resetToken == null || !resetToken.getToken().equals(otp) || resetToken.isExpired()) {
+            return ResponseEntity.badRequest().body(Map.of("valid", false, "message", "Invalid or expired OTP"));
         }
 
         return ResponseEntity.ok(Map.of("valid", true));
     }
 
-    // Reset password with token
+    // Reset password with OTP
     @PostMapping("/reset-password")
     @Transactional
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
-        String token = request.get("token");
+        String email = request.get("email");
+        String otp = request.get("otp");
         String newPassword = request.get("newPassword");
 
-        PasswordResetToken resetToken = passwordResetTokenRepo.findByToken(token).orElse(null);
+        Users user = userService.findByEmail(email);
+        if (user == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid email or OTP"));
+        }
 
-        if (resetToken == null || resetToken.isExpired()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid or expired token"));
+        PasswordResetToken resetToken = passwordResetTokenRepo.findByUser(user).orElse(null);
+
+        if (resetToken == null || !resetToken.getToken().equals(otp) || resetToken.isExpired()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid or expired OTP"));
         }
 
         // Update password
-        Users user = resetToken.getUser();
         userService.updatePassword(user, newPassword);
 
         // Delete the token (one-time use)
