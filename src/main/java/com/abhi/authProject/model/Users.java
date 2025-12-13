@@ -31,21 +31,27 @@ public class Users {
     @Column(name = "is_verified", nullable = false, columnDefinition = "boolean default false")
     private boolean isVerified = false; // Initialize to false directly. This is the default value for new users.
 
-    // Also consider adding a constructor to ensure it's false when creating new instances programmatically
-    // If you're using Lombok's @Builder, ensure the builder also sets isVerified to false by default.
+    // Also consider adding a constructor to ensure it's false when creating new
+    // instances programmatically
+    // If you're using Lombok's @Builder, ensure the builder also sets isVerified to
+    // false by default.
     /*
-    public Users(String username, String password, String email, String role, String verificationToken, LocalDateTime verificationTokenExpires) {
-        this.username = username;
-        this.password = password;
-        this.email = email;
-        this.role = role;
-        this.verificationToken = verificationToken;
-        this.verificationTokenExpires = verificationTokenExpires;
-        this.isVerified = false; // Explicitly set to false for new users
-    }
-    */
+     * public Users(String username, String password, String email, String role,
+     * String verificationToken, LocalDateTime verificationTokenExpires) {
+     * this.username = username;
+     * this.password = password;
+     * this.email = email;
+     * this.role = role;
+     * this.verificationToken = verificationToken;
+     * this.verificationTokenExpires = verificationTokenExpires;
+     * this.isVerified = false; // Explicitly set to false for new users
+     * }
+     */
     // --- END: CRITICAL CHANGES FOR isVerified FIELD ---
 
     private String verificationToken; // This will now store the OTP code
     private LocalDateTime verificationTokenExpires;
+
+    @Column(name = "profile_picture_url", length = 500)
+    private String profilePictureUrl;
 }
