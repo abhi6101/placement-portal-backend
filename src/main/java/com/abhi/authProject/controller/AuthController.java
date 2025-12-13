@@ -151,7 +151,12 @@ public class AuthController {
             passwordResetTokenRepo.save(resetToken);
 
             // Send email
-            emailService.sendPasswordResetEmail(user.getEmail(), token);
+            try {
+                emailService.sendPasswordResetEmail(user.getEmail(), token);
+            } catch (Exception e) {
+                // Log error but don't reveal to user
+                System.err.println("Failed to send reset email: " + e.getMessage());
+            }
 
             return ResponseEntity.ok(Map.of("message", "If the email exists, a reset link has been sent."));
         } catch (Exception e) {
@@ -194,7 +199,12 @@ public class AuthController {
         passwordResetTokenRepo.delete(resetToken);
 
         // Send confirmation email
-        emailService.sendPasswordResetConfirmation(user.getEmail());
+        try {
+            emailService.sendPasswordResetConfirmation(user.getEmail());
+        } catch (Exception e) {
+            // Log error but don't fail the password reset
+            System.err.println("Failed to send confirmation email: " + e.getMessage());
+        }
 
         return ResponseEntity.ok(Map.of("message", "Password reset successful"));
     }
