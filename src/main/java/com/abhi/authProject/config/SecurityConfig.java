@@ -46,49 +46,48 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .authorizeHttpRequests(auth -> auth
-                // THIS IS THE ONLY NEW LINE. It permits the browser's preflight checks.
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() 
-                
-                .requestMatchers(HttpMethod.GET,
-                    "/", "/home", "/index", "/login.html", "/register.html", "/verify-account.html",
-                    "/css/**", "/js/**", "/images/**", "/jobs", "/api/resume/download/**",
-                    "/error.html", "/papers.html", "/papers.css", "/papers.js"
-                ).permitAll()
-                .requestMatchers(HttpMethod.POST,
-                    "/api/auth/register", "/api/auth/login", "/api/auth/verify-code",
-                    "/api/auth/logout", "/api/resume/generate-pdf"
-                ).permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/papers").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/user/**").hasRole("USER")
-                .requestMatchers(HttpMethod.POST, "/api/apply-job").hasRole("USER")
-                .anyRequest().authenticated()
-            )
-            .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((req, res, e) -> {
-                    if (e instanceof BadCredentialsException && e.getMessage().contains("Please verify your email address")) {
-                        res.setStatus(HttpStatus.FORBIDDEN.value());
-                        res.getWriter().write(e.getMessage());
-                    } else if (e instanceof BadCredentialsException) {
-                        res.setStatus(HttpStatus.UNAUTHORIZED.value());
-                        res.getWriter().write("Invalid username or password");
-                    } else {
-                        res.setStatus(HttpStatus.UNAUTHORIZED.value());
-                        res.getWriter().write("Unauthorized: Please login first");
-                    }
-                })
-                .accessDeniedHandler((req, res, e) -> {
-                    res.setStatus(HttpStatus.FORBIDDEN.value());
-                    res.getWriter().write("Forbidden: You don't have permission");
-                })
-            )
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .authenticationProvider(authenticationProvider());
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .authorizeHttpRequests(auth -> auth
+                        // THIS IS THE ONLY NEW LINE. It permits the browser's preflight checks.
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        .requestMatchers(HttpMethod.GET,
+                                "/", "/home", "/index", "/login.html", "/register.html", "/verify-account.html",
+                                "/css/**", "/js/**", "/images/**", "/jobs", "/api/resume/download/**",
+                                "/error.html", "/papers.html", "/papers.css", "/papers.js",
+                                "/api/interview-drives")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/auth/register", "/api/auth/login", "/api/auth/verify-code",
+                                "/api/auth/logout", "/api/resume/generate-pdf")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/papers").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/user/**").hasRole("USER")
+                        .requestMatchers(HttpMethod.POST, "/api/apply-job").hasRole("USER")
+                        .anyRequest().authenticated())
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, e) -> {
+                            if (e instanceof BadCredentialsException
+                                    && e.getMessage().contains("Please verify your email address")) {
+                                res.setStatus(HttpStatus.FORBIDDEN.value());
+                                res.getWriter().write(e.getMessage());
+                            } else if (e instanceof BadCredentialsException) {
+                                res.setStatus(HttpStatus.UNAUTHORIZED.value());
+                                res.getWriter().write("Invalid username or password");
+                            } else {
+                                res.setStatus(HttpStatus.UNAUTHORIZED.value());
+                                res.getWriter().write("Unauthorized: Please login first");
+                            }
+                        })
+                        .accessDeniedHandler((req, res, e) -> {
+                            res.setStatus(HttpStatus.FORBIDDEN.value());
+                            res.getWriter().write("Forbidden: You don't have permission");
+                        }))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authenticationProvider(authenticationProvider());
 
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -99,9 +98,9 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
-            "http://localhost:5500",
-            "http://127.0.0.1:5500",
-            "https://hack-2-hired.onrender.com" // Your deployed frontend URL
+                "http://localhost:5500",
+                "http://127.0.0.1:5500",
+                "https://hack-2-hired.onrender.com" // Your deployed frontend URL
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
