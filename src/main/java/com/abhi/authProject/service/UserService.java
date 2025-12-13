@@ -69,12 +69,12 @@ public class UserService {
         String emailSubject = "Placement Portal Account Verification Code (OTP)";
         // Using HTML for better formatting
         String emailBody = "<h3>Welcome to the Placement Portal!</h3>"
-                         + "<p>Dear " + user.getUsername() + ",</p>"
-                         + "<p>Thank you for registering. Your verification code is:</p>"
-                         + "<h2 style='color: #333;'>" + otp + "</h2>"
-                         + "<p>This code will expire in 15 minutes. Please enter it on the verification page to activate your account.</p>"
-                         + "<p>If you did not register for this account, please ignore this email.</p>"
-                         + "<br/><p>Best regards,<br/>The Placement Portal Team</p>";
+                + "<p>Dear " + user.getUsername() + ",</p>"
+                + "<p>Thank you for registering. Your verification code is:</p>"
+                + "<h2 style='color: #333;'>" + otp + "</h2>"
+                + "<p>This code will expire in 15 minutes. Please enter it on the verification page to activate your account.</p>"
+                + "<p>If you did not register for this account, please ignore this email.</p>"
+                + "<br/><p>Best regards,<br/>The Placement Portal Team</p>";
 
         try {
             // Use the new service. The 'null' means there is no attachment.
@@ -91,8 +91,7 @@ public class UserService {
 
     public String verifyAndLogin(String username, String password) {
         Authentication authentication = authManager.authenticate(
-            new UsernamePasswordAuthenticationToken(username, password)
-        );
+                new UsernamePasswordAuthenticationToken(username, password));
 
         Optional<Users> userOptional = repo.findByUsername(username);
 
@@ -131,7 +130,8 @@ public class UserService {
         }
 
         if (user.getVerificationToken() != null && user.getVerificationToken().equals(otpCode) &&
-            user.getVerificationTokenExpires() != null && user.getVerificationTokenExpires().isAfter(LocalDateTime.now())) {
+                user.getVerificationTokenExpires() != null
+                && user.getVerificationTokenExpires().isAfter(LocalDateTime.now())) {
 
             user.setVerified(true);
             user.setVerificationToken(null);
@@ -141,5 +141,16 @@ public class UserService {
         }
 
         return false;
+    }
+
+    // Find user by email
+    public Users findByEmail(String email) {
+        return repo.findByEmail(email).orElse(null);
+    }
+
+    // Update user password
+    public void updatePassword(Users user, String newPassword) {
+        user.setPassword(encoder.encode(newPassword));
+        repo.save(user);
     }
 }
