@@ -20,10 +20,15 @@ public class CloudinaryConfig {
 
     @Bean
     public Cloudinary cloudinary() {
+        // Trim whitespace from credentials to avoid URL formatting issues
+        String trimmedCloudName = cloudName != null ? cloudName.trim() : "";
+        String trimmedApiKey = apiKey != null ? apiKey.trim() : "";
+        String trimmedApiSecret = apiSecret != null ? apiSecret.trim() : "";
+
         return new Cloudinary(ObjectUtils.asMap(
-                "cloud_name", cloudName,
-                "api_key", apiKey,
-                "api_secret", apiSecret,
+                "cloud_name", trimmedCloudName,
+                "api_key", trimmedApiKey,
+                "api_secret", trimmedApiSecret,
                 "secure", true));
     }
 }
