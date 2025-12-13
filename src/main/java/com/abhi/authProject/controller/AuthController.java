@@ -23,7 +23,6 @@ import com.abhi.authProject.repo.PasswordResetTokenRepo;
 import com.abhi.authProject.service.EmailService;
 import jakarta.transaction.Transactional;
 
-import java.net.URI;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
