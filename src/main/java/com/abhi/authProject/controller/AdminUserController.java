@@ -60,7 +60,7 @@ public class AdminUserController {
     }
 
     @PutMapping("/users/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody Users updatedUser) {
+    public ResponseEntity<?> updateUser(@PathVariable Integer id, @RequestBody Users updatedUser) {
         return userRepo.findById(id)
                 .map(user -> {
                     user.setUsername(updatedUser.getUsername());

@@ -23,7 +23,7 @@ public class StudentProfileController {
     @GetMapping
     public ResponseEntity<?> getMyProfile(Authentication auth) {
         String username = auth.getName();
-        Users user = userRepo.findByUsername(username);
+        Users user = userRepo.findByUsername(username).orElse(null);
 
         if (user == null) {
             return ResponseEntity.notFound().build();
@@ -37,7 +37,7 @@ public class StudentProfileController {
     @PostMapping
     public ResponseEntity<?> createOrUpdateProfile(@RequestBody StudentProfile profile, Authentication auth) {
         String username = auth.getName();
-        Users user = userRepo.findByUsername(username);
+        Users user = userRepo.findByUsername(username).orElse(null);
 
         if (user == null) {
             return ResponseEntity.badRequest().body("User not found");
