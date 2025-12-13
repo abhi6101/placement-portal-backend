@@ -83,7 +83,7 @@ public class ApplicationController {
         Users student = userRepo.findByUsername(username).orElse(null);
 
         Application app = applicationRepo.findById(id).orElse(null);
-        if (app == null || !app.getStudent().getId().equals(student.getId())) {
+        if (app == null || app.getStudent().getId() != student.getId()) {
             return ResponseEntity.notFound().build();
         }
 
