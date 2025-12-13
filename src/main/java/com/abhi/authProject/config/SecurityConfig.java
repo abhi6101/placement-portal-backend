@@ -60,7 +60,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/register", "/api/auth/login", "/api/auth/verify-code",
-                                "/api/auth/logout", "/api/resume/generate-pdf")
+                                "/api/auth/logout", "/api/resume/generate-pdf",
+                                "/api/auth/forgot-password", "/api/auth/validate-token", "/api/auth/reset-password")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/papers").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
