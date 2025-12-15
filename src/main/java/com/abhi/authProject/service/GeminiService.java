@@ -31,62 +31,76 @@ public class GeminiService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private static final String GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+    // List of models to try in order
+    private static final String[] MODELS = {
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-latest",
+            "gemini-1.5-flash-001",
+            "gemini-pro"
+    };
+
+    private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
 
     public ResumeAnalysisResponse analyzeResume(String resumeText) {
-        try {
-            if (apiKey == null || apiKey.isEmpty() || apiKey.equals("YOUR_API_KEY_HERE")) {
-                logger.warn("Gemini API Key is missing. Using Mock Analysis.");
-                return getMockAnalysis("Resume parsing successful, but Gemini API Key is missing. Simulation Mode.");
-            }
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            // Construct Gemini Request Body
-            // { "contents": [{ "parts": [{ "text": "..." }] }] }
-            Map<String, Object> body = new HashMap<>();
-
-            String prompt = "You are an expert HR AI. Analyze the following resume text strictly and output a JSON object with keys: "
-                    +
-                    "'score' (0-100), 'summary' (2 sentences), 'strengths' (list), 'weaknesses' (list), " +
-                    "'missingKeywords' (list of missing tech skills for SDE), 'recommendedRole' (string). " +
-                    "Do NOT output markdown. JSON ONLY. Resume Text: " + resumeText;
-
-            List<Map<String, Object>> contents = new ArrayList<>();
-            Map<String, Object> contentPart = new HashMap<>();
-            contentPart.put("parts", List.of(Map.of("text", prompt)));
-            contents.add(contentPart);
-
-            body.put("contents", contents);
-
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-
-            // Append Key to URL
-            String url = GEMINI_URL + "?key=" + apiKey;
-
-            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-
-            // Parse Gemini Response
-            JsonNode root = objectMapper.readTree(response.getBody());
-            String text = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
-
-            // Clean Markdown ```json ... ```
-            if (text.contains("```json")) {
-                text = text.replace("```json", "").replace("```", "").trim();
-            } else if (text.contains("```")) {
-                text = text.replace("```", "").trim();
-            }
-
-            return objectMapper.readValue(text, ResumeAnalysisResponse.class);
-
-        } catch (HttpClientErrorException e) {
-            logger.warn("Gemini API Error: {} - {}. Simulation Mode.", e.getStatusCode(), e.getMessage());
-            return getMockAnalysis("Gemini API Error (" + e.getStatusCode() + "). Using Simulation Result.");
-        } catch (Exception e) {
-            logger.error("Unexpected error in AI Analysis", e);
-            return getMockAnalysis("System Error during Analysis. Using Simulation Result.");
+        if (apiKey == null || apiKey.isEmpty() || apiKey.equals("YOUR_API_KEY_HERE")) {
+            logger.warn("Gemini API Key is missing. Using Mock Analysis.");
+            return getMockAnalysis("Resume parsing successful, but Gemini API Key is missing. Simulation Mode.");
         }
+
+        for (String model : MODELS) {
+            try {
+                return callGeminiModel(model, resumeText);
+            } catch (HttpClientErrorException.NotFound e) {
+                logger.warn("Model {} not found (404). Trying next model...", model);
+                // Continue to next model
+            } catch (Exception e) {
+                logger.error("Error calling model {}: {}", model, e.getMessage());
+                // For other errors (400, 401, 500), strictly fail or fallback to simulation
+                if (e instanceof HttpClientErrorException.TooManyRequests) {
+                    return getMockAnalysis("Gemini API Rate Limit Exceeded. Using Simulation Result.");
+                }
+                // Break loop for non-404 errors to avoid spamming
+                break;
+            }
+        }
+
+        // If all models fail
+        return getMockAnalysis("Gemini API Error: Could not connect to any available model. Using Simulation Result.");
+    }
+
+    private ResumeAnalysisResponse callGeminiModel(String modelName, String resumeText) throws Exception {
+        String url = BASE_URL + modelName + ":generateContent?key=" + apiKey;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, Object> body = new HashMap<>();
+        String prompt = "You are an expert HR AI. Analyze the following resume text strictly and output a JSON object with keys: "
+                +
+                "'score' (0-100), 'summary' (2 sentences), 'strengths' (list), 'weaknesses' (list), " +
+                "'missingKeywords' (list of missing tech skills for SDE), 'recommendedRole' (string). " +
+                "Do NOT output markdown. JSON ONLY. Resume Text: " + resumeText;
+
+        List<Map<String, Object>> contents = new ArrayList<>();
+        Map<String, Object> contentPart = new HashMap<>();
+        contentPart.put("parts", List.of(Map.of("text", prompt)));
+        contents.add(contentPart);
+        body.put("contents", contents);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+
+        JsonNode root = objectMapper.readTree(response.getBody());
+        String text = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
+
+        if (text.contains("```json")) {
+            text = text.replace("```json", "").replace("```", "").trim();
+        } else if (text.contains("```")) {
+            text = text.replace("```", "").trim();
+        }
+
+        return objectMapper.readValue(text, ResumeAnalysisResponse.class);
     }
 
     private ResumeAnalysisResponse getMockAnalysis(String message) {
