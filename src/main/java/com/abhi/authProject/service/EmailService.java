@@ -66,6 +66,24 @@ public class EmailService {
         }
     }
 
+    public void sendEmail(String toEmail, String subject, String body) throws IOException {
+        Email from = new Email(fromEmail);
+        Email to = new Email(toEmail);
+        Content content = new Content("text/plain", body);
+        Mail mail = new Mail(from, subject, to, content);
+
+        SendGrid sg = new SendGrid(sendGridApiKey);
+        Request request = new Request();
+        request.setMethod(Method.POST);
+        request.setEndpoint("mail/send");
+        request.setBody(mail.build());
+
+        Response response = sg.api(request);
+        if (response.getStatusCode() >= 400) {
+            throw new IOException("Failed to send email: " + response.getBody());
+        }
+    }
+
     public void sendPasswordResetConfirmation(String toEmail) throws IOException {
         Email from = new Email(fromEmail);
         Email to = new Email(toEmail);

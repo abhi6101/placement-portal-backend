@@ -8,5 +8,6 @@ public enum ApplicationStatus {
     INTERVIEW_SCHEDULED, // An interview has been scheduled by HR
     INTERVIEW_BOOKED, // Student has confirmed/booked the interview slot
     INTERVIEW_COMPLETED, // Interview has taken place
+    SELECTED, // Candidate selected after interview
     HIRING_DECISION_MADE // Final decision made
 }
