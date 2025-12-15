@@ -2,7 +2,7 @@ package com.abhi.authProject.controller;
 
 import com.abhi.authProject.model.ResumeData;
 import com.abhi.authProject.dto.ResumeAnalysisResponse;
-import com.abhi.authProject.service.DeepSeekService;
+import com.abhi.authProject.service.GeminiService;
 import com.abhi.authProject.service.PdfExtractionService;
 import com.abhi.authProject.service.ResumePdfService;
 import jakarta.validation.Valid;
@@ -26,7 +26,7 @@ public class ResumeController {
     private PdfExtractionService pdfExtractionService;
 
     @Autowired
-    private DeepSeekService deepSeekService;
+    private GeminiService geminiService;
 
     public ResumeController(ResumePdfService resumePdfService) {
         this.resumePdfService = resumePdfService;
@@ -39,7 +39,7 @@ public class ResumeController {
             String resumeText = pdfExtractionService.extractText(file);
 
             // 2. Analyze with AI
-            ResumeAnalysisResponse analysis = deepSeekService.analyzeResume(resumeText);
+            ResumeAnalysisResponse analysis = geminiService.analyzeResume(resumeText);
 
             return ResponseEntity.ok(analysis);
 
