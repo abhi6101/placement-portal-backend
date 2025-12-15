@@ -14,7 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -70,7 +72,16 @@ public class GeminiService {
 
     private ResumeAnalysisResponse callGeminiModel(String modelName, String resumeText, String jobDescription)
             throws Exception {
-        String url = BASE_URL + modelName + ":generateContent?key=" + apiKey;
+        // Use UriComponentsBuilder to prevent double encoding issues
+        String baseUrl = BASE_URL + modelName + ":generateContent";
+
+        URI uri = UriComponentsBuilder.fromHttpUrl(baseUrl)
+                .queryParam("key", apiKey)
+                .build()
+                .toUri();
+
+        // Debug Log: Print URL with Masked Key
+        logger.info("Calling Gemini API: {}", uri.toString().replaceAll("key=[^&]+", "key=MASKED"));
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -102,7 +113,8 @@ public class GeminiService {
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
-        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+        // Pass URI object instead of String
+        ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.POST, entity, String.class);
 
         JsonNode root = objectMapper.readTree(response.getBody());
         String text = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
