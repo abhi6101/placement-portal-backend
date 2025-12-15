@@ -49,4 +49,8 @@ public class JobDetails {
     @Min(value = 0, message = "Salary must be non-negative")
     @Column(name = "salary", nullable = false)
     private int salary;
+
+    @Lob
+    @Column(name = "interview_details", columnDefinition = "TEXT")
+    private String interview_details;
 }

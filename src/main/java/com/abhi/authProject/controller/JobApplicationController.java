@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException; // Keep this import
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,7 +29,7 @@ public class JobApplicationController {
         this.jobApplicationService = jobApplicationService;
     }
 
-    @PostMapping(value = "/apply-job", consumes = {"multipart/form-data"})
+    @PostMapping(value = "/apply-job", consumes = { "multipart/form-data" })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> applyForJob(
             @RequestParam("jobId") String jobId,
@@ -39,23 +40,22 @@ public class JobApplicationController {
             @RequestParam("applicantPhone") String applicantPhone,
             @RequestParam(value = "applicantRollNo", required = false) String applicantRollNo,
             @RequestParam(value = "coverLetter", required = false) String coverLetter,
-            @RequestParam("resume") MultipartFile resume
-    ) {
+            @RequestParam("resume") MultipartFile resume) {
         if (resume.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Resume file is required.");
         }
 
         JobApplicationRequest1 applicationRequest = new JobApplicationRequest1(
                 jobId, jobTitle, companyName, applicantName, applicantEmail, applicantPhone,
-                applicantRollNo, coverLetter, resume
-        );
+                applicantRollNo, coverLetter, resume);
 
         try {
             jobApplicationService.processJobApplication(applicationRequest);
             return ResponseEntity.ok("Job application submitted successfully. Confirmation email sent.");
         } catch (IOException e) {
             logger.error("Error processing job application (saving file or sending email): {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to process resume or send confirmation email.");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to process resume or send confirmation email.");
         } catch (Exception e) {
             logger.error("An unexpected error occurred during application processing: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.");
@@ -81,8 +81,7 @@ public class JobApplicationController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<JobApplication> updateJobApplicationStatus(
             @PathVariable Long id,
-            @RequestParam ApplicationStatus status
-    ) {
+            @RequestParam ApplicationStatus status) {
         try {
             JobApplication updatedApplication = jobApplicationService.updateApplicationStatus(id, status);
             return ResponseEntity.ok(updatedApplication);
@@ -90,7 +89,16 @@ public class JobApplicationController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         } catch (Exception e) { // Catching a general Exception is simpler and safer
             logger.error("Error updating application status or sending email: {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update status and send notification email.");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to update status and send notification email.");
         }
+    }
+
+    @GetMapping("/job-applications/my")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<List<JobApplication>> getMyJobApplications(Principal principal) {
+        String email = principal.getName(); // Assuming username is email
+        List<JobApplication> myApplications = jobApplicationRepository.findByApplicantEmail(email);
+        return ResponseEntity.ok(myApplications);
     }
 }

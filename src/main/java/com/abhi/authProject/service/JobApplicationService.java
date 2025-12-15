@@ -26,7 +26,8 @@ public class JobApplicationService {
     private static final Logger logger = LoggerFactory.getLogger(JobApplicationService.class);
 
     // --- DEPENDENCIES ARE NOW UPDATED ---
-    private final SendGridEmailService emailService;
+    private final SendGridEmailService sendGridEmailService;
+    private final EmailService emailService;
     private final JobApplicationRepository jobApplicationRepository;
 
     @Value("${placement.portal.application.recipient-email}")
@@ -36,14 +37,18 @@ public class JobApplicationService {
     private String resumeStorageDirectory;
 
     @Autowired
-    public JobApplicationService(SendGridEmailService emailService, JobApplicationRepository jobApplicationRepository) {
+    public JobApplicationService(SendGridEmailService sendGridEmailService,
+            EmailService emailService,
+            JobApplicationRepository jobApplicationRepository) {
+        this.sendGridEmailService = sendGridEmailService;
         this.emailService = emailService;
         this.jobApplicationRepository = jobApplicationRepository;
     }
 
     @Transactional
     public JobApplication processJobApplication(JobApplicationRequest1 applicationRequest) throws IOException {
-        String resumeFileName = generateUniqueResumeFileName(applicationRequest.getResume(), applicationRequest.getApplicantName());
+        String resumeFileName = generateUniqueResumeFileName(applicationRequest.getResume(),
+                applicationRequest.getApplicantName());
         Path resumeFilePath = saveResumeLocally(applicationRequest.getResume(), resumeFileName);
 
         JobApplication jobApplication = new JobApplication(
@@ -55,16 +60,17 @@ public class JobApplicationService {
                 applicationRequest.getApplicantPhone(),
                 applicationRequest.getApplicantRollNo(),
                 applicationRequest.getCoverLetter(),
-                resumeFilePath.toString()
-        );
+                resumeFilePath.toString());
         jobApplication = jobApplicationRepository.save(jobApplication);
 
-        // We wrap email sending in a try-catch so that if email fails, the application is still saved.
+        // We wrap email sending in a try-catch so that if email fails, the application
+        // is still saved.
         try {
             sendApplicantConfirmationEmail(jobApplication);
             sendHROrAdminNotificationEmail(jobApplication);
         } catch (Exception e) {
-            logger.error("Application {} was saved successfully, but sending notification emails failed.", jobApplication.getId(), e);
+            logger.error("Application {} was saved successfully, but sending notification emails failed.",
+                    jobApplication.getId(), e);
         }
 
         logger.info("Job application processed and saved: {}", jobApplication);
@@ -80,13 +86,30 @@ public class JobApplicationService {
         JobApplication updatedApplication = jobApplicationRepository.save(application);
 
         try {
-            if (newStatus == ApplicationStatus.ACCEPTED) {
-                sendAcceptedApplicationEmailToApplicant(updatedApplication);
+            if (newStatus == ApplicationStatus.SHORTLISTED) {
+                // Send acceptance email with interview details
+                emailService.sendAcceptanceEmail(
+                        updatedApplication.getApplicantEmail(),
+                        updatedApplication.getApplicantName(),
+                        updatedApplication.getJobTitle(),
+                        updatedApplication.getCompanyName(),
+                        "" // Interview details - would need to fetch from job if available
+                );
+                logger.info("Acceptance email sent to: {}", updatedApplication.getApplicantEmail());
             } else if (newStatus == ApplicationStatus.REJECTED) {
-                sendRejectedApplicationEmailToApplicant(updatedApplication);
+                // Send rejection email
+                emailService.sendRejectionEmail(
+                        updatedApplication.getApplicantEmail(),
+                        updatedApplication.getApplicantName(),
+                        updatedApplication.getJobTitle(),
+                        updatedApplication.getCompanyName());
+                logger.info("Rejection email sent to: {}", updatedApplication.getApplicantEmail());
+            } else if (newStatus == ApplicationStatus.ACCEPTED) {
+                sendAcceptedApplicationEmailToApplicant(updatedApplication);
             }
         } catch (Exception e) {
-            logger.error("Status for application {} was updated, but the notification email failed to send.", applicationId, e);
+            logger.error("Status for application {} was updated, but the notification email failed to send.",
+                    applicationId, e);
         }
 
         logger.info("Application ID {} status updated to: {}", applicationId, newStatus);
@@ -98,19 +121,24 @@ public class JobApplicationService {
     private void sendApplicantConfirmationEmail(JobApplication application) throws IOException {
         String subject = "Application Received: " + application.getJobTitle() + " at " + application.getCompanyName();
         String emailBody = "Dear " + application.getApplicantName() + ",<br><br>" +
-                "Thank you for applying for the <strong>" + application.getJobTitle() + "</strong> position at <strong>" + application.getCompanyName() + "</strong>.<br><br>" +
-                "Your application has been received and is currently under review. We will notify you of the next steps.<br><br>" +
+                "Thank you for applying for the <strong>" + application.getJobTitle() + "</strong> position at <strong>"
+                + application.getCompanyName() + "</strong>.<br><br>" +
+                "Your application has been received and is currently under review. We will notify you of the next steps.<br><br>"
+                +
                 "Application ID: " + application.getId() + "<br>" +
-                "Applied On: " + application.getAppliedAt().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")) + "<br><br>" +
+                "Applied On: " + application.getAppliedAt().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"))
+                + "<br><br>" +
                 "Best regards,<br>The Placement Team";
-        
-        // Use the new service, sending the resume path as the attachment
-        emailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody, application.getResumePath());
+
+        // Use the SendGrid service for application confirmation
+        sendGridEmailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody,
+                application.getResumePath());
         logger.info("Applicant confirmation email sent to: {}", application.getApplicantEmail());
     }
 
     private void sendHROrAdminNotificationEmail(JobApplication application) throws IOException {
-        String subject = "New Job Application: " + application.getJobTitle() + " from " + application.getApplicantName();
+        String subject = "New Job Application: " + application.getJobTitle() + " from "
+                + application.getApplicantName();
         StringBuilder emailBody = new StringBuilder()
                 .append("<h3>New Job Application Received</h3>")
                 .append("<p><strong>Application ID:</strong> ").append(application.getId()).append("</p>")
@@ -120,31 +148,49 @@ public class JobApplicationService {
                 .append("<p><strong>Applicant Email:</strong> ").append(application.getApplicantEmail()).append("</p>")
                 .append("<p><strong>Applicant Phone:</strong> ").append(application.getApplicantPhone()).append("</p>");
         if (application.getApplicantRollNo() != null && !application.getApplicantRollNo().trim().isEmpty()) {
-            emailBody.append("<p><strong>Applicant Roll No:</strong> ").append(application.getApplicantRollNo()).append("</p>");
+            emailBody.append("<p><strong>Applicant Roll No:</strong> ").append(application.getApplicantRollNo())
+                    .append("</p>");
         }
         if (application.getCoverLetter() != null && !application.getCoverLetter().trim().isEmpty()) {
-            emailBody.append("<p><strong>Cover Letter:</strong></p><p style='white-space: pre-wrap; border: 1px solid #eee; padding: 10px; background-color: #f9f9f9;'>").append(application.getCoverLetter()).append("</p>");
+            emailBody.append(
+                    "<p><strong>Cover Letter:</strong></p><p style='white-space: pre-wrap; border: 1px solid #eee; padding: 10px; background-color: #f9f9f9;'>")
+                    .append(application.getCoverLetter()).append("</p>");
         }
-        emailBody.append("<p>Application submitted on: ").append(application.getAppliedAt().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"))).append("</p>");
+        emailBody.append("<p>Application submitted on: ")
+                .append(application.getAppliedAt().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")))
+                .append("</p>");
 
-        // Use the new service, sending the resume path as the attachment
-        emailService.sendEmailWithAttachment(recipientEmail, subject, emailBody.toString(), application.getResumePath());
+        // Use the SendGrid service for HR notification
+        sendGridEmailService.sendEmailWithAttachment(recipientEmail, subject, emailBody.toString(),
+                application.getResumePath());
         logger.info("HR/Admin notification email sent to: {}", recipientEmail);
     }
-    
+
     // --- NO CHANGES to the methods below ---
-    
-    public List<JobApplication> getAllJobApplications() { return jobApplicationRepository.findAll(); }
-    public List<JobApplication> getJobApplicationsByStatus(ApplicationStatus status) { return jobApplicationRepository.findByStatus(status); }
-    public Optional<JobApplication> getJobApplicationById(Long id) { return jobApplicationRepository.findById(id); }
+
+    public List<JobApplication> getAllJobApplications() {
+        return jobApplicationRepository.findAll();
+    }
+
+    public List<JobApplication> getJobApplicationsByStatus(ApplicationStatus status) {
+        return jobApplicationRepository.findByStatus(status);
+    }
+
+    public Optional<JobApplication> getJobApplicationById(Long id) {
+        return jobApplicationRepository.findById(id);
+    }
+
     private Path saveResumeLocally(MultipartFile resumeFile, String fileName) throws IOException {
         Path uploadPath = Paths.get(resumeStorageDirectory);
-        if (!Files.exists(uploadPath)) { Files.createDirectories(uploadPath); }
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
         Path filePath = uploadPath.resolve(fileName);
         Files.copy(resumeFile.getInputStream(), filePath);
         System.out.println("Resume saved to: " + filePath.toAbsolutePath());
         return filePath;
     }
+
     private String generateUniqueResumeFileName(MultipartFile resumeFile, String applicantName) {
         String originalFilename = resumeFile.getOriginalFilename();
         String fileExtension = "";
@@ -154,24 +200,34 @@ public class JobApplicationService {
         String sanitizedApplicantName = applicantName.replaceAll("[^a-zA-Z0-9.-]", "_");
         return sanitizedApplicantName + "_" + System.currentTimeMillis() + fileExtension;
     }
+
     private void sendAcceptedApplicationEmailToApplicant(JobApplication application) throws IOException {
         String subject = "Good News! Your Application for " + application.getJobTitle() + " has been Accepted!";
         String emailBody = "Dear " + application.getApplicantName() + ",<br><br>" +
-                "We are pleased to inform you that your application for the <strong>" + application.getJobTitle() + "</strong> position at <strong>" + application.getCompanyName() + "</strong> has been accepted!<br><br>" +
+                "We are pleased to inform you that your application for the <strong>" + application.getJobTitle()
+                + "</strong> position at <strong>" + application.getCompanyName()
+                + "</strong> has been accepted!<br><br>" +
                 "The HR team will be in touch shortly to discuss the next steps and schedule your interview.<br><br>" +
                 "Congratulations!<br><br>" +
                 "Best regards,<br>The Placement Team";
-        emailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody, null); // No attachment needed
+        emailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody, null); // No
+                                                                                                         // attachment
+                                                                                                         // needed
         logger.info("Accepted application email sent to: {}", application.getApplicantEmail());
     }
+
     private void sendRejectedApplicationEmailToApplicant(JobApplication application) throws IOException {
         String subject = "Update on your application for " + application.getJobTitle();
         String emailBody = "Dear " + application.getApplicantName() + ",<br><br>" +
-                "Thank you for your interest in the <strong>" + application.getJobTitle() + "</strong> position at <strong>" + application.getCompanyName() + "</strong>.<br><br>" +
-                "After careful consideration, we regret to inform you that we will not be moving forward with your application at this time.<br><br>" +
+                "Thank you for your interest in the <strong>" + application.getJobTitle()
+                + "</strong> position at <strong>" + application.getCompanyName() + "</strong>.<br><br>" +
+                "After careful consideration, we regret to inform you that we will not be moving forward with your application at this time.<br><br>"
+                +
                 "We wish you the best in your job search.<br><br>" +
                 "Sincerely,<br>The Placement Team";
-        emailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody, null); // No attachment needed
+        emailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody, null); // No
+                                                                                                         // attachment
+                                                                                                         // needed
         logger.info("Rejected application email sent to: {}", application.getApplicantEmail());
     }
 }
