@@ -104,7 +104,7 @@ public class JobApplicationService {
                         updatedApplication.getJobTitle(),
                         updatedApplication.getCompanyName());
                 logger.info("Rejection email sent to: {}", updatedApplication.getApplicantEmail());
-            } else if (newStatus == ApplicationStatus.ACCEPTED) {
+            } else if (newStatus == ApplicationStatus.ACCEPTED || newStatus == ApplicationStatus.SELECTED) {
                 sendAcceptedApplicationEmailToApplicant(updatedApplication);
             }
         } catch (Exception e) {
