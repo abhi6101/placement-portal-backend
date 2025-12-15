@@ -3,6 +3,7 @@ package com.abhi.authProject.controller;
 import com.abhi.authProject.model.ApplicationStatus;
 import com.abhi.authProject.model.JobApplication;
 import com.abhi.authProject.model.JobApplicationRequest1;
+import com.abhi.authProject.repo.JobApplicationRepository;
 import com.abhi.authProject.service.JobApplicationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,9 +25,12 @@ public class JobApplicationController {
 
     private static final Logger logger = LoggerFactory.getLogger(JobApplicationController.class);
     private final JobApplicationService jobApplicationService;
+    private final JobApplicationRepository jobApplicationRepository;
 
-    public JobApplicationController(JobApplicationService jobApplicationService) {
+    public JobApplicationController(JobApplicationService jobApplicationService,
+            JobApplicationRepository jobApplicationRepository) {
         this.jobApplicationService = jobApplicationService;
+        this.jobApplicationRepository = jobApplicationRepository;
     }
 
     @PostMapping(value = "/apply-job", consumes = { "multipart/form-data" })

@@ -210,9 +210,7 @@ public class JobApplicationService {
                 "The HR team will be in touch shortly to discuss the next steps and schedule your interview.<br><br>" +
                 "Congratulations!<br><br>" +
                 "Best regards,<br>The Placement Team";
-        emailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody, null); // No
-                                                                                                         // attachment
-                                                                                                         // needed
+        sendGridEmailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody, null);
         logger.info("Accepted application email sent to: {}", application.getApplicantEmail());
     }
 
@@ -225,9 +223,7 @@ public class JobApplicationService {
                 +
                 "We wish you the best in your job search.<br><br>" +
                 "Sincerely,<br>The Placement Team";
-        emailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody, null); // No
-                                                                                                         // attachment
-                                                                                                         // needed
+        sendGridEmailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody, null);
         logger.info("Rejected application email sent to: {}", application.getApplicantEmail());
     }
 }
