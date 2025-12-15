@@ -40,17 +40,21 @@ public class JobApplicationController {
             @RequestParam("jobTitle") String jobTitle,
             @RequestParam("companyName") String companyName,
             @RequestParam("applicantName") String applicantName,
-            @RequestParam("applicantEmail") String applicantEmail,
+            @RequestParam("applicantEmail") String applicantEmail, // Kept to match frontend request
             @RequestParam("applicantPhone") String applicantPhone,
             @RequestParam(value = "applicantRollNo", required = false) String applicantRollNo,
             @RequestParam(value = "coverLetter", required = false) String coverLetter,
-            @RequestParam("resume") MultipartFile resume) {
+            @RequestParam("resume") MultipartFile resume,
+            Principal principal) { // Added Principal
         if (resume.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Resume file is required.");
         }
 
+        // Use the authenticated user's email to ensure it links to their account
+        String authenticatedEmail = principal.getName();
+
         JobApplicationRequest1 applicationRequest = new JobApplicationRequest1(
-                jobId, jobTitle, companyName, applicantName, applicantEmail, applicantPhone,
+                jobId, jobTitle, companyName, applicantName, authenticatedEmail, applicantPhone,
                 applicantRollNo, coverLetter, resume);
 
         try {
