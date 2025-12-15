@@ -33,13 +33,15 @@ public class ResumeController {
     }
 
     @PostMapping("/analyze")
-    public ResponseEntity<ResumeAnalysisResponse> analyzeResume(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<ResumeAnalysisResponse> analyzeResume(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "jobDescription", required = false) String jobDescription) {
         try {
             // 1. Extract Text
             String resumeText = pdfExtractionService.extractText(file);
 
             // 2. Analyze with AI
-            ResumeAnalysisResponse analysis = geminiService.analyzeResume(resumeText);
+            ResumeAnalysisResponse analysis = geminiService.analyzeResume(resumeText, jobDescription);
 
             return ResponseEntity.ok(analysis);
 

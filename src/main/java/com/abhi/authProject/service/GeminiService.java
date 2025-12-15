@@ -41,7 +41,7 @@ public class GeminiService {
 
     private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
 
-    public ResumeAnalysisResponse analyzeResume(String resumeText) {
+    public ResumeAnalysisResponse analyzeResume(String resumeText, String jobDescription) {
         if (apiKey == null || apiKey.isEmpty() || apiKey.equals("YOUR_API_KEY_HERE")) {
             logger.warn("Gemini API Key is missing. Using Mock Analysis.");
             return getMockAnalysis("Resume parsing successful, but Gemini API Key is missing. Simulation Mode.");
@@ -49,7 +49,7 @@ public class GeminiService {
 
         for (String model : MODELS) {
             try {
-                return callGeminiModel(model, resumeText);
+                return callGeminiModel(model, resumeText, jobDescription);
             } catch (HttpClientErrorException.NotFound e) {
                 logger.warn("Model {} not found (404). Trying next model...", model);
                 // Continue to next model
@@ -68,18 +68,31 @@ public class GeminiService {
         return getMockAnalysis("Gemini API Error: Could not connect to any available model. Using Simulation Result.");
     }
 
-    private ResumeAnalysisResponse callGeminiModel(String modelName, String resumeText) throws Exception {
+    private ResumeAnalysisResponse callGeminiModel(String modelName, String resumeText, String jobDescription)
+            throws Exception {
         String url = BASE_URL + modelName + ":generateContent?key=" + apiKey;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         Map<String, Object> body = new HashMap<>();
-        String prompt = "You are an expert HR AI. Analyze the following resume text strictly and output a JSON object with keys: "
-                +
-                "'score' (0-100), 'summary' (2 sentences), 'strengths' (list), 'weaknesses' (list), " +
-                "'missingKeywords' (list of missing tech skills for SDE), 'recommendedRole' (string). " +
-                "Do NOT output markdown. JSON ONLY. Resume Text: " + resumeText;
+        String prompt;
+
+        if (jobDescription != null && !jobDescription.trim().isEmpty()) {
+            prompt = "You are an expert Technical Recruiter. Compare the following Resume against the provided Job Description. "
+                    +
+                    "Output a JSON object with keys: " +
+                    "'score' (0-100, based on match), 'summary' (brief comparison summary), " +
+                    "'strengths' (matching skills), 'weaknesses' (missing requirements), " +
+                    "'missingKeywords' (keywords from JD missing in Resume), 'recommendedRole' (Role title from JD). " +
+                    "JSON ONLY. No Markdown. \n\nJOB DESCRIPTION:\n" + jobDescription + "\n\nRESUME:\n" + resumeText;
+        } else {
+            prompt = "You are an expert HR AI. Analyze the following resume strictly and output a JSON object with keys: "
+                    +
+                    "'score' (0-100), 'summary' (2 sentences), 'strengths' (list), 'weaknesses' (list), " +
+                    "'missingKeywords' (list of missing tech skills for SDE), 'recommendedRole' (string). " +
+                    "Do NOT output markdown. JSON ONLY. Resume Text: " + resumeText;
+        }
 
         List<Map<String, Object>> contents = new ArrayList<>();
         Map<String, Object> contentPart = new HashMap<>();
