@@ -128,4 +128,11 @@ public class InterviewApplicationController {
 
         return ResponseEntity.ok(application);
     }
+
+    @GetMapping("/interview-applications/my")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<List<InterviewApplication>> getMyInterviewApplications(java.security.Principal principal) {
+        String email = principal.getName();
+        return ResponseEntity.ok(interviewApplicationRepo.findByApplicantEmail(email));
+    }
 }
