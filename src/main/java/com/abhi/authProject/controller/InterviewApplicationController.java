@@ -119,7 +119,12 @@ public class InterviewApplicationController {
                         "Best Regards,\nPlacement Team";
         }
 
-        emailService.sendEmail(application.getApplicantEmail(), subject, body);
+        try {
+            emailService.sendEmail(application.getApplicantEmail(), subject, body);
+        } catch (IOException e) {
+            // Log error but don't fail the request since status is already updated
+            e.printStackTrace();
+        }
 
         return ResponseEntity.ok(application);
     }

@@ -98,6 +98,16 @@ public class JobApplicationController {
         }
     }
 
+    @DeleteMapping("/admin/job-applications/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteJobApplication(@PathVariable Long id) {
+        if (!jobApplicationRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Job Application not found");
+        }
+        jobApplicationRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/job-applications/my")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<List<JobApplication>> getMyJobApplications(Principal principal) {
