@@ -3,12 +3,15 @@ package com.abhi.authProject.service;
 import com.abhi.authProject.dto.ResumeAnalysisResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
@@ -18,6 +21,8 @@ import java.util.Map;
 
 @Service
 public class DeepSeekService {
+
+    private static final Logger logger = LoggerFactory.getLogger(DeepSeekService.class);
 
     @Value("${deepseek.api.key}")
     private String apiKey;
@@ -30,7 +35,9 @@ public class DeepSeekService {
     public ResumeAnalysisResponse analyzeResume(String resumeText) {
         try {
             if (apiKey == null || apiKey.isEmpty() || apiKey.equals("YOUR_API_KEY_HERE")) {
-                return getMockAnalysis(); // Fallback if no key
+                logger.warn("DeepSeek API Key is missing. Using Mock Analysis.");
+                return getMockAnalysis(
+                        "Resume parsing successful, but AI API Key is missing. This is a simulation result.");
             }
 
             HttpHeaders headers = new HttpHeaders();
@@ -70,17 +77,22 @@ public class DeepSeekService {
 
             return objectMapper.readValue(content, ResumeAnalysisResponse.class);
 
+        } catch (HttpClientErrorException e) {
+            logger.warn("DeepSeek API Error: {} - {}. Switching to Simulation Mode.", e.getStatusCode(),
+                    e.getMessage());
+            return getMockAnalysis("DeepSeek API Error (" + e.getStatusCode()
+                    + "): Insufficient Balance or Invalid Key. Using Simulation Result.");
         } catch (Exception e) {
-            e.printStackTrace();
-            return getMockAnalysis(); // Fallback on error
+            logger.error("Unexpected error in AI Analysis", e);
+            return getMockAnalysis("System Error during Analysis. Using Simulation Result.");
         }
     }
 
-    private ResumeAnalysisResponse getMockAnalysis() {
+    private ResumeAnalysisResponse getMockAnalysis(String message) {
         // Fallback or Rule-based logic could go here
         return new ResumeAnalysisResponse(
                 75,
-                "Resume parsing successful, but AI API Key is missing. This is a simulation result.",
+                message,
                 List.of("Java", "Spring Boot", "Project Experience"),
                 List.of("Missing Cloud Skills", "Formatting inconsistency"),
                 List.of("Docker", "Kubernetes", "AWS"),
