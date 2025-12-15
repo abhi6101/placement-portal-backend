@@ -4,6 +4,9 @@ import com.sendgrid.*;
 import com.sendgrid.helpers.mail.Mail;
 import com.sendgrid.helpers.mail.objects.Content;
 import com.sendgrid.helpers.mail.objects.Email;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +14,8 @@ import java.io.IOException;
 
 @Service
 public class EmailService {
+
+    private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
     @Value("${sendgrid.api.key}")
     private String sendGridApiKey;
@@ -87,5 +92,197 @@ public class EmailService {
         if (response.getStatusCode() >= 400) {
             throw new IOException("Failed to send email: " + response.getBody());
         }
+    }
+
+    /**
+     * Send acceptance email to student when application is shortlisted
+     */
+    public void sendAcceptanceEmail(String toEmail, String studentName, String jobTitle,
+            String companyName, String interviewDetails) throws IOException {
+        Email from = new Email(fromEmail);
+        Email to = new Email(toEmail);
+        String subject = "Congratulations! You've been shortlisted for " + jobTitle;
+
+        String htmlContent = buildAcceptanceEmailHtml(studentName, jobTitle, companyName, interviewDetails);
+        Content content = new Content("text/html", htmlContent);
+
+        Mail mail = new Mail(from, subject, to, content);
+        SendGrid sg = new SendGrid(sendGridApiKey);
+        Request request = new Request();
+
+        request.setMethod(Method.POST);
+        request.setEndpoint("mail/send");
+        request.setBody(mail.build());
+
+        Response response = sg.api(request);
+
+        if (response.getStatusCode() >= 400) {
+            logger.error("Failed to send acceptance email. Status: {}", response.getStatusCode());
+            throw new IOException("Failed to send acceptance email: " + response.getBody());
+        }
+        logger.info("Acceptance email sent successfully to: {}", toEmail);
+    }
+
+    /**
+     * Send rejection email to student when application is rejected
+     */
+    public void sendRejectionEmail(String toEmail, String studentName, String jobTitle, String companyName)
+            throws IOException {
+        Email from = new Email(fromEmail);
+        Email to = new Email(toEmail);
+        String subject = "Application Status - " + jobTitle;
+
+        String htmlContent = buildRejectionEmailHtml(studentName, jobTitle, companyName);
+        Content content = new Content("text/html", htmlContent);
+
+        Mail mail = new Mail(from, subject, to, content);
+        SendGrid sg = new SendGrid(sendGridApiKey);
+        Request request = new Request();
+
+        request.setMethod(Method.POST);
+        request.setEndpoint("mail/send");
+        request.setBody(mail.build());
+
+        Response response = sg.api(request);
+
+        if (response.getStatusCode() >= 400) {
+            logger.error("Failed to send rejection email. Status: {}", response.getStatusCode());
+            throw new IOException("Failed to send rejection email: " + response.getBody());
+        }
+        logger.info("Rejection email sent successfully to: {}", toEmail);
+    }
+
+    private String buildAcceptanceEmailHtml(String studentName, String jobTitle,
+            String companyName, String interviewDetails) {
+        StringBuilder html = new StringBuilder();
+        html.append("<!DOCTYPE html>");
+        html.append("<html><head><style>");
+        html.append("body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }");
+        html.append(".container { max-width: 600px; margin: 0 auto; padding: 20px; }");
+        html.append(
+                ".header { background: linear-gradient(135deg, #4361ee, #00d9ff); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }");
+        html.append(".content { padding: 30px; background: #f8f9fa; }");
+        html.append(
+                ".interview-round { margin: 15px 0; padding: 15px; background: white; border-left: 4px solid #4361ee; border-radius: 5px; }");
+        html.append("</style></head><body>");
+        html.append("<div class='container'>");
+        html.append("<div class='header'><h1>🎉 Congratulations!</h1></div>");
+        html.append("<div class='content'>");
+        html.append("<p>Dear ").append(studentName).append(",</p>");
+        html.append(
+                "<p>We are pleased to inform you that you have been <strong>shortlisted</strong> for the position of <strong>")
+                .append(jobTitle).append("</strong> at <strong>").append(companyName).append("</strong>.</p>");
+
+        if (interviewDetails != null && !interviewDetails.isEmpty()) {
+            html.append(formatInterviewDetailsHtml(interviewDetails));
+        }
+
+        html.append("<p>Please check your Interview section in the portal for complete details.</p>");
+        html.append("<p>Best regards,<br>Placement Cell</p>");
+        html.append("</div></div></body></html>");
+
+        return html.toString();
+    }
+
+    private String buildRejectionEmailHtml(String studentName, String jobTitle, String companyName) {
+        StringBuilder html = new StringBuilder();
+        html.append("<!DOCTYPE html>");
+        html.append("<html><head><style>");
+        html.append("body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }");
+        html.append(".container { max-width: 600px; margin: 0 auto; padding: 20px; }");
+        html.append(
+                ".header { background: #6c757d; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }");
+        html.append(".content { padding: 30px; background: #f8f9fa; }");
+        html.append("</style></head><body>");
+        html.append("<div class='container'>");
+        html.append("<div class='header'><h1>Application Status Update</h1></div>");
+        html.append("<div class='content'>");
+        html.append("<p>Dear ").append(studentName).append(",</p>");
+        html.append("<p>Thank you for applying for the position of <strong>")
+                .append(jobTitle).append("</strong> at <strong>").append(companyName).append("</strong>.</p>");
+        html.append(
+                "<p>After careful consideration, we regret to inform you that we are unable to proceed with your application at this time.</p>");
+        html.append("<p>We encourage you to apply for other opportunities available on our portal.</p>");
+        html.append("<p>Best regards,<br>Placement Cell</p>");
+        html.append("</div></div></body></html>");
+
+        return html.toString();
+    }
+
+    private String formatInterviewDetailsHtml(String interviewDetailsJson) {
+        StringBuilder html = new StringBuilder();
+        try {
+            JSONObject details = new JSONObject(interviewDetailsJson);
+            html.append("<div style='margin: 20px 0;'>");
+            html.append("<h3 style='color: #4361ee;'>Interview Schedule:</h3>");
+
+            if (details.has("codingRound")) {
+                JSONObject coding = details.getJSONObject("codingRound");
+                if (coding.optBoolean("enabled", false)) {
+                    html.append("<div class='interview-round'>");
+                    html.append("<h4>📝 Coding Round</h4>");
+                    html.append("<p><strong>Date:</strong> ").append(coding.optString("date", "TBD")).append("</p>");
+                    html.append("<p><strong>Time:</strong> ").append(coding.optString("time", "TBD")).append("</p>");
+                    html.append("<p><strong>Venue:</strong> ").append(coding.optString("venue", "TBD")).append("</p>");
+                    if (coding.has("instructions")) {
+                        html.append("<p><strong>Instructions:</strong> ").append(coding.getString("instructions"))
+                                .append("</p>");
+                    }
+                    html.append("</div>");
+                }
+            }
+
+            if (details.has("technicalInterview")) {
+                JSONObject technical = details.getJSONObject("technicalInterview");
+                if (technical.optBoolean("enabled", false)) {
+                    html.append("<div class='interview-round' style='border-left-color: #06ffa5;'>");
+                    html.append("<h4>💼 Technical Interview</h4>");
+                    html.append("<p><strong>Date:</strong> ").append(technical.optString("date", "TBD")).append("</p>");
+                    html.append("<p><strong>Time:</strong> ").append(technical.optString("time", "TBD")).append("</p>");
+                    html.append("<p><strong>Venue:</strong> ").append(technical.optString("venue", "TBD"))
+                            .append("</p>");
+                    if (technical.has("topics")) {
+                        html.append("<p><strong>Topics:</strong> ").append(technical.getString("topics"))
+                                .append("</p>");
+                    }
+                    html.append("</div>");
+                }
+            }
+
+            if (details.has("hrRound")) {
+                JSONObject hr = details.getJSONObject("hrRound");
+                if (hr.optBoolean("enabled", false)) {
+                    html.append("<div class='interview-round' style='border-left-color: #f72585;'>");
+                    html.append("<h4>👥 HR Round</h4>");
+                    html.append("<p><strong>Date:</strong> ").append(hr.optString("date", "TBD")).append("</p>");
+                    html.append("<p><strong>Time:</strong> ").append(hr.optString("time", "TBD")).append("</p>");
+                    html.append("<p><strong>Venue:</strong> ").append(hr.optString("venue", "TBD")).append("</p>");
+                    html.append("</div>");
+                }
+            }
+
+            if (details.has("projectTask")) {
+                JSONObject project = details.getJSONObject("projectTask");
+                if (project.optBoolean("enabled", false)) {
+                    html.append(
+                            "<div class='interview-round' style='background: #fff3cd; border-left-color: #ffc107;'>");
+                    html.append("<h4>🎯 Optional Project Task</h4>");
+                    html.append("<p><strong>Description:</strong> ").append(project.optString("description", "TBD"))
+                            .append("</p>");
+                    html.append("<p><strong>Deadline:</strong> ").append(project.optString("deadline", "24"))
+                            .append(" hours</p>");
+                    if (project.has("requirements")) {
+                        html.append("<p><strong>Requirements:</strong> ").append(project.getString("requirements"))
+                                .append("</p>");
+                    }
+                    html.append("</div>");
+                }
+            }
+            html.append("</div>");
+        } catch (Exception e) {
+            logger.error("Error formatting interview details: {}", e.getMessage());
+            html.append("<p>Interview details will be available in your portal.</p>");
+        }
+        return html.toString();
     }
 }
