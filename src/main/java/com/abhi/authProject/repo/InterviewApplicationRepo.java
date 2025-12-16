@@ -11,4 +11,6 @@ public interface InterviewApplicationRepo extends JpaRepository<InterviewApplica
     List<InterviewApplication> findByApplicantEmail(String applicantEmail);
 
     List<InterviewApplication> findByInterviewDriveId(Long interviewDriveId);
+
+    List<InterviewApplication> findByCompanyName(String companyName);
 }

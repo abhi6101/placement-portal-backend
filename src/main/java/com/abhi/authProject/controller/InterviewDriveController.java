@@ -29,13 +29,20 @@ public class InterviewDriveController {
     }
 
     @PostMapping("/admin")
-    @PreAuthorize("hasRole('ADMIN')")
-    public InterviewDrive createDrive(@RequestBody InterviewDrive drive) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')")
+    public InterviewDrive createDrive(@RequestBody InterviewDrive drive, java.security.Principal principal) {
+        String username = principal.getName();
+        com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if ("COMPANY_ADMIN".equals(user.getRole())) {
+            drive.setCompany(user.getCompanyName());
+        }
         return interviewDriveRepo.save(drive);
     }
 
     @PutMapping("/admin/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')")
     public ResponseEntity<?> updateDrive(@PathVariable Long id, @RequestBody InterviewDrive updatedDrive,
             java.security.Principal principal) {
         String username = principal.getName();
@@ -64,7 +71,7 @@ public class InterviewDriveController {
     }
 
     @DeleteMapping("/admin/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')")
     public ResponseEntity<?> deleteDrive(@PathVariable Long id, java.security.Principal principal) {
         String username = principal.getName();
         com.abhi.authProject.model.Users user = userRepo.findByUsername(username)

@@ -29,6 +29,9 @@ public class InterviewApplicationController {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private com.abhi.authProject.repo.UserRepo userRepo;
+
     @PostMapping(value = "/interview-applications/apply", consumes = { "multipart/form-data" })
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> applyForInterview(
@@ -70,60 +73,58 @@ public class InterviewApplicationController {
     }
 
     @GetMapping("/admin/interview-applications")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<InterviewApplication>> getAllInterviewApplications() {
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')")
+    public ResponseEntity<List<InterviewApplication>> getAllInterviewApplications(java.security.Principal principal) {
+        String username = principal.getName();
+        com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if ("COMPANY_ADMIN".equals(user.getRole())) {
+            return ResponseEntity.ok(interviewApplicationRepo.findByCompanyName(user.getCompanyName()));
+        }
+
         return ResponseEntity.ok(interviewApplicationRepo.findAll());
     }
 
     @PutMapping("/admin/interview-applications/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')")
     public ResponseEntity<InterviewApplication> updateStatus(
             @PathVariable Long id,
-            @RequestParam ApplicationStatus status) {
+            @RequestBody java.util.Map<String, String> payload,
+            java.security.Principal principal) {
 
         InterviewApplication application = interviewApplicationRepo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
 
-        application.setStatus(status);
-        interviewApplicationRepo.save(application);
+        if (payload == null || !payload.containsKey("status")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status is required");
+        }
 
-        // Send notification email
-        String subject = "Update on your Interview Application - " + application.getCompanyName();
-        String body = "";
+        String username = principal.getName();
+        com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        switch (status) {
-            case SHORTLISTED:
-                body = "Dear " + application.getApplicantName() + ",\n\n" +
-                        "Congratulations! You have been SHORTLISTED for the interview drive at "
-                        + application.getCompanyName() + ".\n" +
-                        "Please report to the venue on time.\n\n" +
-                        "Best Regards,\nPlacement Team";
-                break;
-            case REJECTED:
-                body = "Dear " + application.getApplicantName() + ",\n\n" +
-                        "We regret to inform you that your application for " + application.getCompanyName()
-                        + " was not selected.\n" +
-                        "We wish you the best for future opportunities.\n\n" +
-                        "Best Regards,\nPlacement Team";
-                break;
-            case SELECTED:
-                body = "Dear " + application.getApplicantName() + ",\n\n" +
-                        "Congratulations! You have been SELECTED by " + application.getCompanyName() + ".\n" +
-                        "Further details will be shared shortly.\n\n" +
-                        "Best Regards,\nPlacement Team";
-                break;
-            default:
-                body = "Dear " + application.getApplicantName() + ",\n\n" +
-                        "Your application status for " + application.getCompanyName() + " has been updated to: "
-                        + status + ".\n\n" +
-                        "Best Regards,\nPlacement Team";
+        if ("COMPANY_ADMIN".equals(user.getRole()) && !application.getCompanyName().equals(user.getCompanyName())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access Denied");
         }
 
         try {
-            emailService.sendEmail(application.getApplicantEmail(), subject, body);
-        } catch (IOException e) {
-            // Log error but don't fail the request since status is already updated
-            e.printStackTrace();
+            ApplicationStatus status = ApplicationStatus.valueOf(payload.get("status"));
+            application.setStatus(status);
+            interviewApplicationRepo.save(application);
+
+            // Use the standardized email service
+            // Note: 'Interview Title' isn't directly available in InterviewApplication,
+            // usually we'd fetch the Drive.
+            // But for now we pass "Interview at " + companyName
+            emailService.sendStatusUpdateEmail(
+                    application.getApplicantEmail(),
+                    application.getApplicantName(),
+                    "Interview at " + application.getCompanyName(),
+                    application.getCompanyName(),
+                    status.name());
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid status");
         }
 
         return ResponseEntity.ok(application);

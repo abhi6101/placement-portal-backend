@@ -117,7 +117,7 @@ public class JobApplicationController {
     @PutMapping("/admin/job-applications/{id}/status")
     public ResponseEntity<JobApplication> updateJobApplicationStatus(
             @PathVariable Long id,
-            @RequestParam ApplicationStatus status,
+            @RequestBody java.util.Map<String, String> payload,
             Principal principal) {
 
         // Security Check First
@@ -126,19 +126,19 @@ public class JobApplicationController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         JobApplication app = jobApplicationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("App not found")); // Service handles not found usually but we
-                                                                           // need it for check
+                .orElseThrow(() -> new RuntimeException("App not found"));
 
         if ("COMPANY_ADMIN".equals(user.getRole()) && !app.getCompanyName().equals(user.getCompanyName())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access Denied");
         }
 
         try {
+            ApplicationStatus status = ApplicationStatus.valueOf(payload.get("status"));
             JobApplication updatedApplication = jobApplicationService.updateApplicationStatus(id, status);
             return ResponseEntity.ok(updatedApplication);
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-        } catch (Exception e) { // Catching a general Exception is simpler and safer
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid status or ID: " + e.getMessage());
+        } catch (Exception e) {
             logger.error("Error updating application status or sending email: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to update status and send notification email.");
