@@ -13,7 +13,7 @@ import java.util.stream.Collectors; // Import collectors
 
 @RestController
 @RequestMapping("/api/admin")
-@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')") // Restrict user management to Super Admins
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')") // Allow View for Company Admin
 public class AdminUserController {
 
     @Autowired
@@ -43,6 +43,7 @@ public class AdminUserController {
     }
 
     @PostMapping("/users")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> createUser(@RequestBody Users user) {
         try {
             // Basic validation
@@ -90,6 +91,7 @@ public class AdminUserController {
     }
 
     @PutMapping("/users/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> updateUser(@PathVariable Integer id, @RequestBody Users updatedUser) {
         return userRepo.findById(id)
                 .map(user -> {
@@ -126,6 +128,7 @@ public class AdminUserController {
     }
 
     @DeleteMapping("/users/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> deleteUser(@PathVariable Integer id) {
         if (userRepo.existsById(id)) {
             userRepo.deleteById(id);
