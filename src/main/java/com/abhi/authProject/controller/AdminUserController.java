@@ -55,6 +55,12 @@ public class AdminUserController {
                 user.setPassword(passwordEncoder.encode(user.getPassword()));
             }
 
+            // AUTO-VERIFY if creating an admin
+            if ("ADMIN".equals(user.getRole()) || "SUPER_ADMIN".equals(user.getRole())
+                    || "COMPANY_ADMIN".equals(user.getRole())) {
+                user.setVerified(true);
+            }
+
             Users savedUser = userRepo.save(user);
             return ResponseEntity.ok(new UserDto(
                     savedUser.getId(),
