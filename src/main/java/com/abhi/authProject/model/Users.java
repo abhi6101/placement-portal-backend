@@ -54,4 +54,8 @@ public class Users {
 
     @Column(name = "profile_picture_url", length = 500)
     private String profilePictureUrl;
+
+    @jakarta.persistence.OneToMany(mappedBy = "student", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    @lombok.ToString.Exclude
+    private java.util.List<Application> applications;
 }
