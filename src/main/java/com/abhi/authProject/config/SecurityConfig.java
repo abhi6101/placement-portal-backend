@@ -64,7 +64,7 @@ public class SecurityConfig {
                                 "/api/auth/forgot-password", "/api/auth/verify-otp", "/api/auth/reset-password")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/papers").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "COMPANY_ADMIN")
                         .requestMatchers("/api/user/**").hasRole("USER")
                         .requestMatchers(HttpMethod.POST, "/api/apply-job").hasRole("USER")
                         .anyRequest().authenticated())

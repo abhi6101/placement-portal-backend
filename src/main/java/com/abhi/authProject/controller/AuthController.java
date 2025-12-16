@@ -46,6 +46,9 @@ public class AuthController {
     @Autowired
     private PasswordResetTokenRepo passwordResetTokenRepo;
 
+    @Autowired
+    private com.abhi.authProject.repo.UserRepo userRepo;
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
@@ -59,9 +62,13 @@ public class AuthController {
                             loginRequest.getPassword()));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
+            Users user = userRepo.findByUsername(loginRequest.getUsername()).orElse(null);
+            String companyName = (user != null) ? user.getCompanyName() : null;
+
             return ResponseEntity.ok(Map.of(
                     "token", token,
                     "username", authentication.getName(),
+                    "companyName", companyName != null ? companyName : "",
                     "roles", authentication.getAuthorities().stream()
                             .map(GrantedAuthority::getAuthority)
                             .collect(Collectors.toList())));

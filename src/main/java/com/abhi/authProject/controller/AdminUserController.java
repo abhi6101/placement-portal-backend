@@ -13,24 +13,27 @@ import java.util.stream.Collectors; // Import collectors
 
 @RestController
 @RequestMapping("/admin")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')") // Restrict user management to Super Admins
 public class AdminUserController {
 
     @Autowired
     private UserRepo userRepo;
 
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     @GetMapping("/users")
     public ResponseEntity<List<UserDto>> getAllUsers() {
         List<Users> users = userRepo.findAll();
 
-        // CORRECTED: Map the Users entity to the UserDto to exclude sensitive data
         List<UserDto> userDtos = users.stream()
                 .map(user -> new UserDto(
                         user.getId(),
                         user.getUsername(),
                         user.getEmail(),
                         user.getRole(),
-                        user.isVerified()))
+                        user.isVerified(),
+                        user.getCompanyName())) // Added companyName
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(userDtos);
@@ -40,11 +43,16 @@ public class AdminUserController {
     public ResponseEntity<?> createUser(@RequestBody Users user) {
         try {
             // Basic validation
-            if (userRepo.findByUsername(user.getUsername()) != null) {
+            if (userRepo.findByUsername(user.getUsername()).isPresent()) {
                 return ResponseEntity.badRequest().body("Username already exists");
             }
-            if (userRepo.findByEmail(user.getEmail()) != null) {
+            if (userRepo.findByEmail(user.getEmail()).isPresent()) {
                 return ResponseEntity.badRequest().body("Email already exists");
+            }
+
+            // Encrypt password if provided (simplistic, better to force it)
+            if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+                user.setPassword(passwordEncoder.encode(user.getPassword()));
             }
 
             Users savedUser = userRepo.save(user);
@@ -53,7 +61,8 @@ public class AdminUserController {
                     savedUser.getUsername(),
                     savedUser.getEmail(),
                     savedUser.getRole(),
-                    savedUser.isVerified()));
+                    savedUser.isVerified(),
+                    savedUser.getCompanyName()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Failed to create user: " + e.getMessage());
         }
@@ -67,13 +76,21 @@ public class AdminUserController {
                     user.setEmail(updatedUser.getEmail());
                     user.setRole(updatedUser.getRole());
                     user.setVerified(updatedUser.isVerified());
+                    user.setCompanyName(updatedUser.getCompanyName()); // Update company
+
+                    // Only update password if new one is provided
+                    if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
+                        user.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
+                    }
+
                     Users saved = userRepo.save(user);
                     return ResponseEntity.ok(new UserDto(
                             saved.getId(),
                             saved.getUsername(),
                             saved.getEmail(),
                             saved.getRole(),
-                            saved.isVerified()));
+                            saved.isVerified(),
+                            saved.getCompanyName()));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

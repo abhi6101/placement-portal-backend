@@ -27,6 +27,9 @@ public class JobApplicationController {
     private final JobApplicationService jobApplicationService;
     private final JobApplicationRepository jobApplicationRepository;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.abhi.authProject.repo.UserRepo userRepo;
+
     public JobApplicationController(JobApplicationService jobApplicationService,
             JobApplicationRepository jobApplicationRepository) {
         this.jobApplicationService = jobApplicationService;
@@ -79,25 +82,57 @@ public class JobApplicationController {
     }
 
     @GetMapping("/admin/job-applications")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<JobApplication>> getAllJobApplications() {
+    // Allow any admin role (handled by security config usually, but permissive
+    // here)
+    public ResponseEntity<List<JobApplication>> getAllJobApplications(Principal principal) {
+        String username = principal.getName();
+        com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if ("COMPANY_ADMIN".equals(user.getRole())) {
+            return ResponseEntity.ok(jobApplicationRepository.findByCompanyName(user.getCompanyName()));
+        }
+
         List<JobApplication> applications = jobApplicationService.getAllJobApplications();
         return ResponseEntity.ok(applications);
     }
 
     @GetMapping("/admin/job-applications/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<JobApplication> getJobApplicationById(@PathVariable Long id) {
-        return jobApplicationService.getJobApplicationById(id)
-                .map(ResponseEntity::ok)
+    public ResponseEntity<JobApplication> getJobApplicationById(@PathVariable Long id, Principal principal) {
+        JobApplication app = jobApplicationRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job Application not found"));
+
+        // Security Check
+        String username = principal.getName();
+        com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if ("COMPANY_ADMIN".equals(user.getRole()) && !app.getCompanyName().equals(user.getCompanyName())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access Denied");
+        }
+
+        return ResponseEntity.ok(app);
     }
 
     @PutMapping("/admin/job-applications/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<JobApplication> updateJobApplicationStatus(
             @PathVariable Long id,
-            @RequestParam ApplicationStatus status) {
+            @RequestParam ApplicationStatus status,
+            Principal principal) {
+
+        // Security Check First
+        String username = principal.getName();
+        com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        JobApplication app = jobApplicationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("App not found")); // Service handles not found usually but we
+                                                                           // need it for check
+
+        if ("COMPANY_ADMIN".equals(user.getRole()) && !app.getCompanyName().equals(user.getCompanyName())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access Denied");
+        }
+
         try {
             JobApplication updatedApplication = jobApplicationService.updateApplicationStatus(id, status);
             return ResponseEntity.ok(updatedApplication);
@@ -111,11 +146,19 @@ public class JobApplicationController {
     }
 
     @DeleteMapping("/admin/job-applications/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteJobApplication(@PathVariable Long id) {
-        if (!jobApplicationRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Job Application not found");
+    public ResponseEntity<Void> deleteJobApplication(@PathVariable Long id, Principal principal) {
+        JobApplication app = jobApplicationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job Application not found"));
+
+        // Security Check
+        String username = principal.getName();
+        com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if ("COMPANY_ADMIN".equals(user.getRole()) && !app.getCompanyName().equals(user.getCompanyName())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access Denied");
         }
+
         jobApplicationRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
