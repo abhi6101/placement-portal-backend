@@ -28,14 +28,8 @@ public class AdminJobController {
 
     @GetMapping
     public ResponseEntity<List<JobDetails>> getAllJobs(java.security.Principal principal) {
-        String username = principal.getName();
-        com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        if ("COMPANY_ADMIN".equals(user.getRole())) {
-            return ResponseEntity.ok(jobRepository.findByCompany_name(user.getCompanyName()));
-        }
-        // SUPER_ADMIN or ADMIN sees all
+        // Allow all admins to see all jobs.
+        // Editing/Deleting is restricted by other endpoints.
         return ResponseEntity.ok(jobRepository.findAll());
     }
 

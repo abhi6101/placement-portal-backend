@@ -405,6 +405,48 @@ public class EmailService {
         }
     }
 
+    public void sendAccountCreatedEmail(String toEmail, String username, String role, String password) {
+        try {
+            Email from = new Email(fromEmail);
+            Email to = new Email(toEmail);
+            String subject = "Welcome to Placement Portal - Account Created";
+
+            String htmlContent = "<!DOCTYPE html><html><body style='font-family: Arial, sans-serif; color: #333;'>" +
+                    "<div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;'>"
+                    +
+                    "<h2 style='color: #4f46e5;'>Welcome to the Team!</h2>" +
+                    "<p>Your account has been successfully created on the Placement Portal.</p>" +
+                    "<div style='background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;'>" +
+                    "<p><strong>Username:</strong> " + username + "</p>" +
+                    "<p><strong>Role:</strong> " + role + "</p>" +
+                    "<p><strong>Password:</strong> " + password + "</p>" +
+                    "</div>" +
+                    "<p>Please login and change your password immediately.</p>" +
+                    "<br/>" +
+                    "<p>Best regards,<br/>Placement Portal Team</p>" +
+                    "</div></body></html>";
+
+            Content content = new Content("text/html", htmlContent);
+            Mail mail = new Mail(from, subject, to, content);
+
+            SendGrid sg = new SendGrid(sendGridApiKey);
+            Request request = new Request();
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+
+            Response response = sg.api(request);
+
+            if (response.getStatusCode() >= 400) {
+                logger.error("Failed to send welcome email to {}. Status: {}", toEmail, response.getStatusCode());
+            } else {
+                logger.info("Welcome email sent to {}", toEmail);
+            }
+        } catch (IOException e) {
+            logger.error("Error sending welcome email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
     private String buildNewJobEmailHtml(String studentName, String jobTitle, String companyName, String salary,
             String applyLink) {
         StringBuilder html = new StringBuilder();

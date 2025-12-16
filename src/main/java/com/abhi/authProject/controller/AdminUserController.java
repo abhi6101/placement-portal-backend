@@ -17,7 +17,10 @@ import java.util.stream.Collectors; // Import collectors
 public class AdminUserController {
 
     @Autowired
-    private UserRepo userRepo;
+    private com.abhi.authProject.repo.UserRepo userRepo;
+
+    @Autowired
+    private com.abhi.authProject.service.EmailService emailService;
 
     @Autowired
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
@@ -50,6 +53,8 @@ public class AdminUserController {
                 return ResponseEntity.badRequest().body("Email already exists");
             }
 
+            String rawPassword = user.getPassword(); // Capture raw password for email
+
             // Encrypt password if provided (simplistic, better to force it)
             if (user.getPassword() != null && !user.getPassword().isEmpty()) {
                 user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -59,6 +64,13 @@ public class AdminUserController {
             user.setVerified(true);
 
             Users savedUser = userRepo.save(user);
+
+            // Send Welcome Email
+            if (rawPassword != null && !rawPassword.isEmpty()) {
+                emailService.sendAccountCreatedEmail(savedUser.getEmail(), savedUser.getUsername(), savedUser.getRole(),
+                        rawPassword);
+            }
+
             return ResponseEntity.ok(new UserDto(
                     savedUser.getId(),
                     savedUser.getUsername(),
