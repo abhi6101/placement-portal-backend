@@ -1,9 +1,7 @@
 package com.abhi.authProject.controller;
 
 import com.abhi.authProject.model.ResumeData;
-import com.abhi.authProject.dto.ResumeAnalysisResponse;
-import com.abhi.authProject.service.GeminiService;
-import com.abhi.authProject.service.PdfExtractionService;
+
 import com.abhi.authProject.service.ResumePdfService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,32 +20,8 @@ public class ResumeController {
 
     private final ResumePdfService resumePdfService;
 
-    @Autowired
-    private PdfExtractionService pdfExtractionService;
-
-    @Autowired
-    private GeminiService geminiService;
-
     public ResumeController(ResumePdfService resumePdfService) {
         this.resumePdfService = resumePdfService;
-    }
-
-    @PostMapping("/analyze")
-    public ResponseEntity<ResumeAnalysisResponse> analyzeResume(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "jobDescription", required = false) String jobDescription) {
-        try {
-            // 1. Extract Text
-            String resumeText = pdfExtractionService.extractText(file);
-
-            // 2. Analyze with AI
-            ResumeAnalysisResponse analysis = geminiService.analyzeResume(resumeText, jobDescription);
-
-            return ResponseEntity.ok(analysis);
-
-        } catch (IOException e) {
-            return ResponseEntity.internalServerError().build();
-        }
     }
 
     @PostMapping("/generate-pdf")
