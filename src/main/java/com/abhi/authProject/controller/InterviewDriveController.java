@@ -36,6 +36,10 @@ public class InterviewDriveController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if ("COMPANY_ADMIN".equals(user.getRole())) {
+            // Check if company is enabled
+            if (!user.isEnabled()) {
+                throw new RuntimeException("Your company account has been disabled. Please contact the administrator.");
+            }
             drive.setCompany(user.getCompanyName());
         }
         return interviewDriveRepo.save(drive);

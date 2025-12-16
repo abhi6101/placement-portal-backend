@@ -47,6 +47,11 @@ public class AdminJobController {
             if (user.getCompanyName() == null || user.getCompanyName().isEmpty()) {
                 return ResponseEntity.badRequest().body("Company Admin does not have an assigned company.");
             }
+            // Check if company is enabled
+            if (!user.isEnabled()) {
+                return ResponseEntity.status(403)
+                        .body("Your company account has been disabled. Please contact the administrator.");
+            }
             job.setCompany_name(user.getCompanyName());
         }
 

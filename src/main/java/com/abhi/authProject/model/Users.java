@@ -65,4 +65,8 @@ public class Users {
 
     // Field to link Company Admin to a specific company
     private String companyName;
+
+    // Field to enable/disable Company Admin (Super Admin control)
+    @Column(name = "enabled", nullable = false, columnDefinition = "boolean default true")
+    private boolean enabled = true; // Default: enabled
 }

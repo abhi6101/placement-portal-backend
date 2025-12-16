@@ -136,4 +136,28 @@ public class AdminUserController {
         }
         return ResponseEntity.notFound().build();
     }
+
+    // Toggle company enabled/disabled status (Super Admin only)
+    @PutMapping("/users/{id}/toggle-status")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> toggleCompanyStatus(@PathVariable Integer id) {
+        return userRepo.findById(id)
+                .map(user -> {
+                    // Toggle the enabled status
+                    user.setEnabled(!user.isEnabled());
+                    Users saved = userRepo.save(user);
+
+                    return ResponseEntity.ok(new java.util.HashMap<String, Object>() {
+                        {
+                            put("id", saved.getId());
+                            put("username", saved.getUsername());
+                            put("companyName", saved.getCompanyName());
+                            put("enabled", saved.isEnabled());
+                            put("message", saved.isEnabled() ? "Company enabled successfully"
+                                    : "Company disabled successfully");
+                        }
+                    });
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 }
