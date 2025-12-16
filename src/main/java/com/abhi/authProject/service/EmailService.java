@@ -348,6 +348,63 @@ public class EmailService {
         }
     }
 
+    public void sendStatusUpdateEmail(String toEmail, String studentName, String jobTitle, String companyName,
+            String status) {
+        try {
+            Email from = new Email(fromEmail);
+            Email to = new Email(toEmail);
+            String subject = "Update on your application: " + jobTitle + " at " + companyName;
+
+            String color = "#4361ee"; // Default Blue
+            String statusText = status;
+
+            if ("SHORTLISTED".equalsIgnoreCase(status)) {
+                color = "#22c55e"; // Green
+                statusText = "SHORTLISTED";
+            } else if ("SELECTED".equalsIgnoreCase(status)) {
+                color = "#4cccff"; // Cyan/Blue
+                statusText = "SELECTED";
+            } else if ("REJECTED".equalsIgnoreCase(status)) {
+                color = "#ef4444"; // Red
+                statusText = "NOT SELECTED";
+            }
+
+            // Simple HTML Template
+            String htmlContent = "<!DOCTYPE html><html><body style='font-family: Arial, sans-serif; color: #333;'>" +
+                    "<div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;'>"
+                    +
+                    "<h2 style='color: " + color + ";'>Application Status Update</h2>" +
+                    "<p>Dear " + studentName + ",</p>" +
+                    "<p>Your application for <strong>" + jobTitle + "</strong> at <strong>" + companyName
+                    + "</strong> has been updated to:</p>" +
+                    "<h1 style='color: " + color
+                    + "; text-align: center; background: #f9f9f9; padding: 15px; border-radius: 8px;'>" + statusText
+                    + "</h1>" +
+                    "<p>Please login to the portal for more details.</p>" +
+                    "<br/><p>Best regards,<br/>Placement Portal Team</p>" +
+                    "</div></body></html>";
+
+            Content content = new Content("text/html", htmlContent);
+            Mail mail = new Mail(from, subject, to, content);
+            SendGrid sg = new SendGrid(sendGridApiKey);
+            Request request = new Request();
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+
+            SendGrid sg2 = new SendGrid(sendGridApiKey);
+            Response response = sg2.api(request);
+
+            if (response.getStatusCode() >= 400) {
+                logger.error("Failed to send status email to {}. Status: {}", toEmail, response.getStatusCode());
+            } else {
+                logger.info("Status email sent to {}", toEmail);
+            }
+        } catch (IOException e) {
+            logger.error("Error sending status email: {}", e.getMessage());
+        }
+    }
+
     private String buildNewJobEmailHtml(String studentName, String jobTitle, String companyName, String salary,
             String applyLink) {
         StringBuilder html = new StringBuilder();

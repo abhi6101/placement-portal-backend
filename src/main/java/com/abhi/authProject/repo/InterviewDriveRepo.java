@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface InterviewDriveRepo extends JpaRepository<InterviewDrive, Long> {
     List<InterviewDrive> findByDateAfterOrderByDateAsc(LocalDate date);
+
+    long countByCompany(String company);
 }

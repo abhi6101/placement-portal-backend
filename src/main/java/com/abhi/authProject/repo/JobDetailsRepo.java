@@ -11,4 +11,7 @@ public interface JobDetailsRepo extends JpaRepository<JobDetails, Integer> {
     @org.springframework.data.jpa.repository.Query("SELECT j FROM JobDetails j WHERE j.company_name = :companyName")
     java.util.List<JobDetails> findByCompany_name(
             @org.springframework.web.bind.annotation.RequestParam("companyName") String companyName);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(j) FROM JobDetails j WHERE j.company_name = :companyName")
+    long countByCompany_name(@org.springframework.web.bind.annotation.RequestParam("companyName") String companyName);
 }

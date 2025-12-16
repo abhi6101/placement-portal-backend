@@ -86,27 +86,16 @@ public class JobApplicationService {
         JobApplication updatedApplication = jobApplicationRepository.save(application);
 
         try {
-            if (newStatus == ApplicationStatus.SHORTLISTED) {
-                // Send acceptance email with interview details
-                emailService.sendAcceptanceEmail(
-                        updatedApplication.getApplicantEmail(),
-                        updatedApplication.getApplicantName(),
-                        updatedApplication.getJobTitle(),
-                        updatedApplication.getCompanyName(),
-                        "" // Interview details - would need to fetch from job if available
-                );
-                logger.info("Acceptance email sent to: {}", updatedApplication.getApplicantEmail());
-            } else if (newStatus == ApplicationStatus.REJECTED) {
-                // Send rejection email
-                emailService.sendRejectionEmail(
-                        updatedApplication.getApplicantEmail(),
-                        updatedApplication.getApplicantName(),
-                        updatedApplication.getJobTitle(),
-                        updatedApplication.getCompanyName());
-                logger.info("Rejection email sent to: {}", updatedApplication.getApplicantEmail());
-            } else if (newStatus == ApplicationStatus.ACCEPTED || newStatus == ApplicationStatus.SELECTED) {
-                sendAcceptedApplicationEmailToApplicant(updatedApplication);
-            }
+            // New Unified Email Notification
+            emailService.sendStatusUpdateEmail(
+                    updatedApplication.getApplicantEmail(),
+                    updatedApplication.getApplicantName(),
+                    updatedApplication.getJobTitle(),
+                    updatedApplication.getCompanyName(),
+                    newStatus.name() // Pass the status string (SHORTLISTED, SELECTED, REJECTED)
+            );
+            logger.info("Application status update email sent to: {}", updatedApplication.getApplicantEmail());
+
         } catch (Exception e) {
             logger.error("Status for application {} was updated, but the notification email failed to send.",
                     applicationId, e);
