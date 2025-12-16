@@ -6,6 +6,7 @@ import com.abhi.authProject.model.Users;
 import com.abhi.authProject.repo.ApplicationRepo;
 import com.abhi.authProject.repo.InterviewDriveRepo;
 import com.abhi.authProject.repo.UserRepo;
+import com.abhi.authProject.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,6 +28,9 @@ public class ApplicationController {
 
     @Autowired
     private UserRepo userRepo;
+
+    @Autowired
+    private EmailService emailService;
 
     // Student: Submit application
     @PostMapping
@@ -99,18 +103,62 @@ public class ApplicationController {
 
     // Admin: Update application status
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')")
     public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> payload) {
         Application app = applicationRepo.findById(id).orElse(null);
         if (app == null) {
             return ResponseEntity.notFound().build();
         }
 
+        String oldStatus = app.getStatus().toString();
         String statusStr = payload.get("status");
         Application.ApplicationStatus status = Application.ApplicationStatus.valueOf(statusStr);
         app.setStatus(status);
+        Application saved = applicationRepo.save(app);
 
-        return ResponseEntity.ok(applicationRepo.save(app));
+        // Send email based on new status (only if status changed)
+        if (!oldStatus.equals(statusStr)) {
+            try {
+                String studentEmail = app.getStudent().getEmail();
+                String studentName = app.getStudent().getUsername();
+                InterviewDrive drive = app.getInterviewDrive();
+                String company = drive.getCompany();
+                String interviewDate = drive.getDate() != null ? drive.getDate().toString() : "TBA";
+                String interviewLocation = drive.getLocation() != null ? drive.getLocation() : "TBA";
+
+                switch (statusStr) {
+                    case "SHORTLISTED":
+                        emailService.sendShortlistedEmail(
+                                studentEmail,
+                                studentName,
+                                "Interview at " + company,
+                                company,
+                                interviewDate,
+                                interviewLocation);
+                        break;
+                    case "SELECTED":
+                        emailService.sendSelectedEmail(
+                                studentEmail,
+                                studentName,
+                                "Position at " + company,
+                                company);
+                        break;
+                    case "REJECTED":
+                        emailService.sendRejectedEmail(
+                                studentEmail,
+                                studentName,
+                                "Position at " + company,
+                                company);
+                        break;
+                    // PENDING - no email sent
+                }
+            } catch (Exception e) {
+                // Log error but don't fail the request
+                System.err.println("Failed to send status email: " + e.getMessage());
+            }
+        }
+
+        return ResponseEntity.ok(saved);
     }
 
     // Admin: Get all applications

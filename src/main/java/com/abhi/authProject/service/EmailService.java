@@ -506,4 +506,144 @@ public class EmailService {
         html.append("</body></html>");
         return html.toString();
     }
+
+    // SHORTLISTED - Send interview details
+    public void sendShortlistedEmail(String toEmail, String studentName, String jobTitle, String companyName,
+            String interviewDate, String interviewLocation) throws IOException {
+        Email from = new Email(fromEmail);
+        Email to = new Email(toEmail);
+        String subject = "🎉 You've Been Shortlisted for " + jobTitle + " at " + companyName + "!";
+
+        String htmlContent = "<!DOCTYPE html>" +
+                "<html>" +
+                "<head><meta charset='UTF-8'></head>" +
+                "<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>" +
+                "<div style='max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;'>"
+                +
+                "<div style='background: white; padding: 30px; border-radius: 8px;'>" +
+                "<h2 style='color: #667eea; text-align: center;'>🎉 Congratulations!</h2>" +
+                "<p>Dear " + studentName + ",</p>" +
+                "<p><strong>Great news!</strong> You have been <span style='color: #22c55e; font-weight: bold;'>SHORTLISTED</span> for the position of <strong>"
+                + jobTitle + "</strong> at <strong>" + companyName + "</strong>.</p>" +
+                "<div style='background-color: #f0f9ff; padding: 20px; border-left: 4px solid #667eea; margin: 20px 0;'>"
+                +
+                "<h3 style='color: #667eea; margin-top: 0;'>📅 Interview Details:</h3>" +
+                "<p style='margin: 10px 0;'><strong>Date:</strong> " + (interviewDate != null ? interviewDate : "TBA")
+                + "</p>" +
+                "<p style='margin: 10px 0;'><strong>Location:</strong> "
+                + (interviewLocation != null ? interviewLocation : "TBA") + "</p>" +
+                "<p style='margin: 10px 0;'><strong>Company:</strong> " + companyName + "</p>" +
+                "</div>" +
+                "<p style='color: #4F46E5; font-weight: bold;'>💡 Please be prepared and arrive on time. Good luck!</p>"
+                +
+                "<hr style='margin: 30px 0; border: none; border-top: 1px solid #ddd;'>" +
+                "<p style='color: #666; font-size: 14px;'>Best regards,<br/>Placement Portal Team</p>" +
+                "</div>" +
+                "</div>" +
+                "</body>" +
+                "</html>";
+
+        Content content = new Content("text/html", htmlContent);
+        Mail mail = new Mail(from, subject, to, content);
+
+        SendGrid sg = new SendGrid(sendGridApiKey);
+        Request request = new Request();
+        request.setMethod(Method.POST);
+        request.setEndpoint("mail/send");
+        request.setBody(mail.build());
+        Response response = sg.api(request);
+
+        logger.info("Shortlisted email sent to: {} - Status: {}", toEmail, response.getStatusCode());
+    }
+
+    // SELECTED - Congratulations only (no interview)
+    public void sendSelectedEmail(String toEmail, String studentName, String jobTitle, String companyName)
+            throws IOException {
+        Email from = new Email(fromEmail);
+        Email to = new Email(toEmail);
+        String subject = "🎊 Congratulations! You've Been Selected for " + jobTitle + "!";
+
+        String htmlContent = "<!DOCTYPE html>" +
+                "<html>" +
+                "<head><meta charset='UTF-8'></head>" +
+                "<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>" +
+                "<div style='max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #06ffa5 0%, #00d9ff 100%); border-radius: 10px;'>"
+                +
+                "<div style='background: white; padding: 30px; border-radius: 8px;'>" +
+                "<h2 style='color: #06ffa5; text-align: center;'>🎊 Congratulations!</h2>" +
+                "<p>Dear " + studentName + ",</p>" +
+                "<p><strong>Excellent news!</strong> You have been <span style='color: #06ffa5; font-weight: bold;'>SELECTED</span> for the position of <strong>"
+                + jobTitle + "</strong> at <strong>" + companyName + "</strong>!</p>" +
+                "<div style='background-color: #f0fdf4; padding: 20px; border-left: 4px solid #06ffa5; margin: 20px 0;'>"
+                +
+                "<p style='margin: 0;'>🌟 This is a significant achievement! Further details regarding onboarding and next steps will be shared with you soon.</p>"
+                +
+                "</div>" +
+                "<p style='color: #059669; font-weight: bold;'>We are proud of your accomplishment and wish you all the best in your new role!</p>"
+                +
+                "<hr style='margin: 30px 0; border: none; border-top: 1px solid #ddd;'>" +
+                "<p style='color: #666; font-size: 14px;'>Best regards,<br/>Placement Portal Team</p>" +
+                "</div>" +
+                "</div>" +
+                "</body>" +
+                "</html>";
+
+        Content content = new Content("text/html", htmlContent);
+        Mail mail = new Mail(from, subject, to, content);
+
+        SendGrid sg = new SendGrid(sendGridApiKey);
+        Request request = new Request();
+        request.setMethod(Method.POST);
+        request.setEndpoint("mail/send");
+        request.setBody(mail.build());
+        Response response = sg.api(request);
+
+        logger.info("Selected email sent to: {} - Status: {}", toEmail, response.getStatusCode());
+    }
+
+    // REJECTED - Polite rejection
+    public void sendRejectedEmail(String toEmail, String studentName, String jobTitle, String companyName)
+            throws IOException {
+        Email from = new Email(fromEmail);
+        Email to = new Email(toEmail);
+        String subject = "Update on Your Application for " + jobTitle;
+
+        String htmlContent = "<!DOCTYPE html>" +
+                "<html>" +
+                "<head><meta charset='UTF-8'></head>" +
+                "<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>" +
+                "<div style='max-width: 600px; margin: 0 auto; padding: 20px;'>" +
+                "<div style='background: white; padding: 30px; border-radius: 8px; border: 1px solid #e5e7eb;'>" +
+                "<h2 style='color: #4F46E5;'>Application Update</h2>" +
+                "<p>Dear " + studentName + ",</p>" +
+                "<p>Thank you for your interest in the <strong>" + jobTitle + "</strong> position at <strong>"
+                + companyName + "</strong>.</p>" +
+                "<p>After careful consideration, we regret to inform you that we will not be moving forward with your application at this time.</p>"
+                +
+                "<div style='background-color: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin: 20px 0;'>"
+                +
+                "<p style='margin: 0;'>💪 We encourage you to continue applying for other opportunities. Your skills and experience are valuable, and we wish you the best in your job search.</p>"
+                +
+                "</div>" +
+                "<p>Thank you for your time and interest in our placement portal.</p>" +
+                "<hr style='margin: 30px 0; border: none; border-top: 1px solid #ddd;'>" +
+                "<p style='color: #666; font-size: 14px;'>Best wishes,<br/>Placement Portal Team</p>" +
+                "</div>" +
+                "</div>" +
+                "</body>" +
+                "</html>";
+
+        Content content = new Content("text/html", htmlContent);
+        Mail mail = new Mail(from, subject, to, content);
+
+        SendGrid sg = new SendGrid(sendGridApiKey);
+        Request request = new Request();
+        request.setMethod(Method.POST);
+        request.setEndpoint("mail/send");
+        request.setBody(mail.build());
+
+        Response response = sg.api(request);
+
+        logger.info("Rejected email sent to: {} - Status: {}", toEmail, response.getStatusCode());
+    }
 }
