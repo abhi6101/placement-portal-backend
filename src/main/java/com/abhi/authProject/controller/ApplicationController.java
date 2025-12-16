@@ -124,7 +124,7 @@ public class ApplicationController {
                 InterviewDrive drive = app.getInterviewDrive();
                 String company = drive.getCompany();
                 String interviewDate = drive.getDate() != null ? drive.getDate().toString() : "TBA";
-                String interviewLocation = drive.getLocation() != null ? drive.getLocation() : "TBA";
+                String interviewLocation = drive.getVenue() != null ? drive.getVenue() : "TBA";
 
                 switch (statusStr) {
                     case "SHORTLISTED":

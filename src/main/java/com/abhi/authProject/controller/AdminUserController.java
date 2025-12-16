@@ -37,7 +37,9 @@ public class AdminUserController {
                         user.getRole(),
                         user.isVerified(),
                         user.getCompanyName(),
-                        user.isEnabled()))
+                        user.isEnabled(),
+                        user.getBranch(),
+                        user.getSemester()))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(userDtos);
@@ -86,7 +88,9 @@ public class AdminUserController {
                     savedUser.getRole(),
                     savedUser.isVerified(),
                     savedUser.getCompanyName(),
-                    savedUser.isEnabled()));
+                    savedUser.isEnabled(),
+                    savedUser.getBranch(),
+                    savedUser.getSemester()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Failed to create user: " + e.getMessage());
         }
@@ -125,7 +129,9 @@ public class AdminUserController {
                             saved.getRole(),
                             saved.isVerified(),
                             saved.getCompanyName(),
-                            saved.isEnabled()));
+                            saved.isEnabled(),
+                            saved.getBranch(),
+                            saved.getSemester()));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
