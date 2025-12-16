@@ -34,7 +34,10 @@ public class AdminJobController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createJob(@RequestBody JobDetails job, java.security.Principal principal) {
+    public ResponseEntity<?> createJob(
+            @RequestBody JobDetails job,
+            @RequestParam(defaultValue = "true") boolean sendEmails,
+            java.security.Principal principal) {
         String username = principal.getName();
         com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -49,28 +52,30 @@ public class AdminJobController {
 
         JobDetails savedJob = jobRepository.save(job);
 
-        // Async: Send notifications to all students
-        java.util.concurrent.CompletableFuture.runAsync(() -> {
-            try {
-                // Fetch only users with role USER ideally, butfindAll is fine for MVP if small
-                // Better to add findByRole in UserRepo later
-                List<com.abhi.authProject.model.Users> students = userRepo.findAll().stream()
-                        .filter(u -> "USER".equals(u.getRole()))
-                        .toList();
+        // Async: Send notifications to all students (only if sendEmails is true)
+        if (sendEmails) {
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    // Fetch only users with role USER ideally, butfindAll is fine for MVP if small
+                    // Better to add findByRole in UserRepo later
+                    List<com.abhi.authProject.model.Users> students = userRepo.findAll().stream()
+                            .filter(u -> "USER".equals(u.getRole()))
+                            .toList();
 
-                for (com.abhi.authProject.model.Users student : students) {
-                    emailService.sendNewJobAlert(
-                            student.getEmail(),
-                            student.getUsername(),
-                            savedJob.getTitle(),
-                            savedJob.getCompany_name(),
-                            String.valueOf(savedJob.getSalary()),
-                            savedJob.getApply_link());
+                    for (com.abhi.authProject.model.Users student : students) {
+                        emailService.sendNewJobAlert(
+                                student.getEmail(),
+                                student.getUsername(),
+                                savedJob.getTitle(),
+                                savedJob.getCompany_name(),
+                                String.valueOf(savedJob.getSalary()),
+                                savedJob.getApply_link());
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error sending bulk job alerts: " + e.getMessage());
                 }
-            } catch (Exception e) {
-                System.err.println("Error sending bulk job alerts: " + e.getMessage());
-            }
-        });
+            });
+        }
 
         return ResponseEntity.ok(savedJob);
     }
