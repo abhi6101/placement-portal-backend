@@ -58,10 +58,10 @@ public class JobDetails {
     @ElementCollection
     @CollectionTable(name = "job_eligible_branches", joinColumns = @JoinColumn(name = "job_id"))
     @Column(name = "branch")
-    private java.util.List<String> eligibleBranches; // ["IMCA", "MCA", "BCA"]
+    private java.util.List<String> eligibleBranches = new java.util.ArrayList<>(); // ["IMCA", "MCA", "BCA"]
 
     @ElementCollection
     @CollectionTable(name = "job_eligible_semesters", joinColumns = @JoinColumn(name = "job_id"))
     @Column(name = "semester")
-    private java.util.List<Integer> eligibleSemesters; // [1, 2, 3, ...]
+    private java.util.List<Integer> eligibleSemesters = new java.util.ArrayList<>(); // [1, 2, 3, ...]
 }
