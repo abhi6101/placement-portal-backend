@@ -93,6 +93,38 @@ public class AuthController {
             newUser.setPassword(registerRequest.getPassword());
             newUser.setRole(registerRequest.getRole());
 
+            // If registering as student (USER), validate and set branch/semester
+            if ("USER".equals(registerRequest.getRole())) {
+                String branch = registerRequest.getBranch();
+                Integer semester = registerRequest.getSemester();
+
+                // Validate branch
+                if (branch == null || !java.util.Arrays.asList("IMCA", "MCA", "BCA").contains(branch)) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("message", "Invalid branch. Must be IMCA, MCA, or BCA"));
+                }
+
+                // Validate semester based on branch
+                if (semester == null) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "Semester is required for students"));
+                }
+                if ("IMCA".equals(branch) && (semester < 1 || semester > 10)) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("message", "IMCA semester must be between 1 and 10"));
+                }
+                if ("MCA".equals(branch) && (semester < 1 || semester > 4)) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "MCA semester must be between 1 and 4"));
+                }
+                if ("BCA".equals(branch) && !java.util.Arrays.asList(2, 4, 6).contains(semester)) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("message", "BCA semester must be 2, 4, or 6 (representing Year 1, 2, or 3)"));
+                }
+
+                newUser.setBranch(branch);
+                newUser.setSemester(semester);
+                newUser.setLastProfileUpdate(java.time.LocalDate.now());
+            }
+
             userService.registerUser(newUser); // This will send the OTP email
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message",
                     "Registration successful! A verification code has been sent to your email. Please check your inbox and enter the code on the verification page."));
@@ -225,6 +257,99 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Password reset successful"));
     }
 
+    // --- STUDENT PROFILE UPDATE ENDPOINTS ---
+
+    /**
+     * Update student's branch and semester (Students only)
+     */
+    @PutMapping("/update-profile")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<?> updateProfile(@RequestBody Map<String, Object> payload,
+            org.springframework.security.core.Authentication auth) {
+        String username = auth.getName();
+        Users student = userRepo.findByUsername(username).orElse(null);
+
+        if (student == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String branch = (String) payload.get("branch");
+        Integer semester = Integer.parseInt(payload.get("semester").toString());
+
+        // Validate branch
+        if (!java.util.Arrays.asList("IMCA", "MCA", "BCA").contains(branch)) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid branch. Must be IMCA, MCA, or BCA"));
+        }
+
+        // Validate semester based on branch
+        if ("IMCA".equals(branch) && (semester < 1 || semester > 10)) {
+            return ResponseEntity.badRequest().body(Map.of("message", "IMCA semester must be between 1 and 10"));
+        }
+        if ("MCA".equals(branch) && (semester < 1 || semester > 4)) {
+            return ResponseEntity.badRequest().body(Map.of("message", "MCA semester must be between 1 and 4"));
+        }
+        if ("BCA".equals(branch) && !java.util.Arrays.asList(2, 4, 6).contains(semester)) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "BCA semester must be 2, 4, or 6 (representing Year 1, 2, or 3)"));
+        }
+
+        // Update student profile
+        student.setBranch(branch);
+        student.setSemester(semester);
+        student.setLastProfileUpdate(java.time.LocalDate.now());
+
+        Users saved = userRepo.save(student);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Profile updated successfully",
+                "branch", saved.getBranch(),
+                "semester", saved.getSemester()));
+    }
+
+    /**
+     * Check if student needs to update profile
+     * Returns true if:
+     * - Branch/semester is null OR
+     * - Date > 2026-01-01 AND lastProfileUpdate < 2026-01-01
+     */
+    @GetMapping("/profile-status")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<?> profileStatus(org.springframework.security.core.Authentication auth) {
+        String username = auth.getName();
+        Users student = userRepo.findByUsername(username).orElse(null);
+
+        if (student == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        boolean needsUpdate = false;
+        String reason = "";
+
+        // Check if branch/semester is null
+        if (student.getBranch() == null || student.getSemester() == null) {
+            needsUpdate = true;
+            reason = "Initial profile setup required";
+        }
+        // Check if date is after 2026-01-01 and last update was before
+        else {
+            java.time.LocalDate today = java.time.LocalDate.now();
+            java.time.LocalDate cutoffDate = java.time.LocalDate.of(2026, 1, 1);
+
+            if (today.isAfter(cutoffDate) || today.isEqual(cutoffDate)) {
+                if (student.getLastProfileUpdate() == null || student.getLastProfileUpdate().isBefore(cutoffDate)) {
+                    needsUpdate = true;
+                    reason = "Semester update required for new academic year";
+                }
+            }
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "needsUpdate", needsUpdate,
+                "reason", reason,
+                "currentBranch", student.getBranch() != null ? student.getBranch() : "",
+                "currentSemester", student.getSemester() != null ? student.getSemester() : 0));
+    }
+
     @Getter
     @Setter
     @NoArgsConstructor
@@ -234,6 +359,8 @@ public class AuthController {
         private String email;
         private String password;
         private String role;
+        private String branch; // For students: IMCA, MCA, BCA
+        private Integer semester; // For students: varies by branch
     }
 
     // NEW DTO for verification code request
