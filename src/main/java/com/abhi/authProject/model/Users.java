@@ -58,4 +58,8 @@ public class Users {
     @jakarta.persistence.OneToMany(mappedBy = "student", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     @lombok.ToString.Exclude
     private java.util.List<Application> applications;
+
+    @jakarta.persistence.OneToOne(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    @lombok.ToString.Exclude
+    private PasswordResetToken passwordResetToken;
 }
