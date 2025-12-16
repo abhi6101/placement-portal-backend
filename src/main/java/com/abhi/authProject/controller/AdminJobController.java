@@ -21,6 +21,9 @@ public class AdminJobController {
     private JobDetailsRepo jobRepository;
 
     @Autowired
+    private com.abhi.authProject.service.EmailService emailService;
+
+    @Autowired
     private com.abhi.authProject.repo.UserRepo userRepo;
 
     @GetMapping
@@ -50,7 +53,32 @@ public class AdminJobController {
             job.setCompany_name(user.getCompanyName());
         }
 
-        return ResponseEntity.ok(jobRepository.save(job));
+        JobDetails savedJob = jobRepository.save(job);
+
+        // Async: Send notifications to all students
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                // Fetch only users with role USER ideally, butfindAll is fine for MVP if small
+                // Better to add findByRole in UserRepo later
+                List<com.abhi.authProject.model.Users> students = userRepo.findAll().stream()
+                        .filter(u -> "USER".equals(u.getRole()))
+                        .toList();
+
+                for (com.abhi.authProject.model.Users student : students) {
+                    emailService.sendNewJobAlert(
+                            student.getEmail(),
+                            student.getUsername(),
+                            savedJob.getTitle(),
+                            savedJob.getCompany_name(),
+                            String.valueOf(savedJob.getSalary()),
+                            savedJob.getApply_link());
+                }
+            } catch (Exception e) {
+                System.err.println("Error sending bulk job alerts: " + e.getMessage());
+            }
+        });
+
+        return ResponseEntity.ok(savedJob);
     }
 
     @PutMapping("/{id}")

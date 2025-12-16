@@ -303,4 +303,93 @@ public class EmailService {
         }
         return html.toString();
     }
+
+    public void sendNewJobAlert(String toEmail, String studentName, String jobTitle, String companyName, String salary,
+            String applyLink) {
+        try {
+            Email from = new Email(fromEmail);
+            Email to = new Email(toEmail);
+            String subject = "🚀 New Job Alert: " + jobTitle + " at " + companyName;
+
+            String htmlContent = buildNewJobEmailHtml(studentName, jobTitle, companyName, salary, applyLink);
+            Content content = new Content("text/html", htmlContent);
+
+            Mail mail = new Mail(from, subject, to, content);
+            SendGrid sg = new SendGrid(sendGridApiKey);
+            Request request = new Request();
+
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+
+            Response response = sg.api(request);
+            if (response.getStatusCode() >= 400) {
+                logger.error("Failed to send Job Alert to {}. Status: {}", toEmail, response.getStatusCode());
+            } else {
+                logger.info("Job Alert sent to {}", toEmail);
+            }
+        } catch (IOException e) {
+            logger.error("Error sending Job Alert to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    private String buildNewJobEmailHtml(String studentName, String jobTitle, String companyName, String salary,
+            String applyLink) {
+        StringBuilder html = new StringBuilder();
+        html.append("<!DOCTYPE html>");
+        html.append("<html><head><style>");
+        html.append(
+                "body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #f4f6f8; margin: 0; padding: 0; }");
+        html.append(
+                ".container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }");
+        html.append(
+                ".header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px; text-align: center; }");
+        html.append(".header h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 1px; }");
+        html.append(".content { padding: 40px 30px; }");
+        html.append(
+                ".job-card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 25px; margin: 20px 0; text-align: center; }");
+        html.append(".job-title { color: #2d3748; font-size: 22px; font-weight: 700; margin-bottom: 5px; }");
+        html.append(".company-name { color: #4a5568; font-size: 18px; font-weight: 500; margin-bottom: 15px; }");
+        html.append(
+                ".salary-tag { display: inline-block; background-color: #e6fffa; color: #047481; padding: 5px 12px; border-radius: 20px; font-size: 14px; font-weight: 600; }");
+        html.append(
+                ".btn-apply { display: inline-block; background-color: #48bb78; color: white; padding: 12px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; margin-top: 25px; transition: background-color 0.3s; }");
+        html.append(
+                ".footer { background-color: #edf2f7; padding: 20px; text-align: center; color: #718096; font-size: 12px; }");
+        html.append("</style></head><body>");
+
+        html.append("<div class='container'>");
+        html.append("<div class='header'>");
+        html.append("<h1>New Opportunity Details!</h1>");
+        html.append("</div>");
+
+        html.append("<div class='content'>");
+        html.append("<p style='font-size: 16px;'>Hello <strong>").append(studentName).append("</strong>,</p>");
+        html.append(
+                "<p style='font-size: 16px; color: #4a5568;'>An exciting new placement opportunity has just arrived on the portal. Check it out!</p>");
+
+        html.append("<div class='job-card'>");
+        html.append("<div class='job-title'>").append(jobTitle).append("</div>");
+        html.append("<div class='company-name'>").append(companyName).append("</div>");
+        if (salary != null && !salary.isEmpty() && !salary.equals("0")) {
+            html.append("<div><span class='salary-tag'>💰 Salary: ₹").append(salary).append("</span></div>");
+        }
+        html.append("<br/>");
+        html.append("<a href='").append(
+                applyLink != null && !applyLink.isEmpty() ? applyLink : "https://hack-2-hired.onrender.com/jobs")
+                .append("' class='btn-apply'>View & Apply</a>");
+        html.append("</div>");
+
+        html.append(
+                "<p style='text-align: center; color: #718096; margin-top: 30px;'>Don't wait! Applications might close soon.</p>");
+        html.append("</div>");
+
+        html.append("<div class='footer'>");
+        html.append("<p>&copy; 2025 Placement Portal. All rights reserved.</p>");
+        html.append("</div>");
+        html.append("</div>");
+
+        html.append("</body></html>");
+        return html.toString();
+    }
 }
