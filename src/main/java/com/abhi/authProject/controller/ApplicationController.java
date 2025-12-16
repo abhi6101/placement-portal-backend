@@ -121,24 +121,11 @@ public class ApplicationController {
             try {
                 String studentEmail = app.getStudent().getEmail();
                 String studentName = app.getStudent().getUsername();
-                String company = "";
-                String jobTitle = "";
-                String interviewDate = "TBA";
-                String interviewLocation = "TBA";
-
-                // Check if it's a job application or interview application
-                if (app.getJob() != null) {
-                    // Job application
-                    company = app.getJob().getCompany_name();
-                    jobTitle = app.getJob().getTitle();
-                } else if (app.getInterviewDrive() != null) {
-                    // Interview application
-                    InterviewDrive drive = app.getInterviewDrive();
-                    company = drive.getCompany();
-                    jobTitle = "Interview at " + company;
-                    interviewDate = drive.getDate() != null ? drive.getDate().toString() : "TBA";
-                    interviewLocation = drive.getVenue() != null ? drive.getVenue() : "TBA";
-                }
+                InterviewDrive drive = app.getInterviewDrive();
+                String company = drive.getCompany();
+                String jobTitle = "Interview at " + company;
+                String interviewDate = drive.getDate() != null ? drive.getDate().toString() : "TBA";
+                String interviewLocation = drive.getVenue() != null ? drive.getVenue() : "TBA";
 
                 switch (statusStr) {
                     case "SHORTLISTED":
