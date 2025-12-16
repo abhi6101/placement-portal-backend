@@ -311,10 +311,25 @@ public class EmailService {
             Email to = new Email(toEmail);
             String subject = "🚀 New Job Alert: " + jobTitle + " at " + companyName;
 
-            String htmlContent = buildNewJobEmailHtml(studentName, jobTitle, companyName, salary, applyLink);
-            Content content = new Content("text/html", htmlContent);
+            // 1. Create Plain Text Content (Best Practice for Anti-Spam)
+            String plainText = "Hello " + studentName + ",\n\n" +
+                    "A new job opportunity is available!\n" +
+                    "Role: " + jobTitle + "\n" +
+                    "Company: " + companyName + "\n" +
+                    (salary != null ? "Salary: " + salary + "\n" : "") +
+                    "\nApply here: " + (applyLink != null ? applyLink : "https://hack-2-hired.onrender.com/jobs")
+                    + "\n\n" +
+                    "Best,\nPlacement Portal Team";
+            Content textContent = new Content("text/plain", plainText);
 
-            Mail mail = new Mail(from, subject, to, content);
+            // 2. Create HTML Content
+            String htmlContent = buildNewJobEmailHtml(studentName, jobTitle, companyName, salary, applyLink);
+            Content htmlContentObj = new Content("text/html", htmlContent);
+
+            // 3. Add Both (Multipart)
+            Mail mail = new Mail(from, subject, to, textContent);
+            mail.addContent(htmlContentObj);
+
             SendGrid sg = new SendGrid(sendGridApiKey);
             Request request = new Request();
 
