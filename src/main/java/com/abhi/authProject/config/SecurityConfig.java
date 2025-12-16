@@ -57,7 +57,7 @@ public class SecurityConfig {
                                 "/css/**", "/js/**", "/images/**", "/jobs", "/api/resume/download/**",
                                 "/error.html", "/papers.html", "/papers.css", "/papers.js",
                                 "/api/interview-drives", "/api/profile/picture/**", "/api/gallery", "/uploads/**",
-                                "/resumes/**")
+                                "/resumes/**", "/api/health", "/api/health/**")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/register", "/api/auth/login", "/api/auth/verify-code",
