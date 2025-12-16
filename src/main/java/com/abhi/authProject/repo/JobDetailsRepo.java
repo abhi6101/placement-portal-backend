@@ -8,5 +8,7 @@ import org.springframework.stereotype.Repository;
 public interface JobDetailsRepo extends JpaRepository<JobDetails, Integer> {
 
     // Custom query to find jobs by company name (snake_case field)
-    java.util.List<JobDetails> findByCompany_name(String company_name);
+    @org.springframework.data.jpa.repository.Query("SELECT j FROM JobDetails j WHERE j.company_name = :companyName")
+    java.util.List<JobDetails> findByCompany_name(
+            @org.springframework.web.bind.annotation.RequestParam("companyName") String companyName);
 }
