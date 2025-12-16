@@ -75,7 +75,16 @@ public class AdminUserController {
                     user.setUsername(updatedUser.getUsername());
                     user.setEmail(updatedUser.getEmail());
                     user.setRole(updatedUser.getRole());
-                    user.setVerified(updatedUser.isVerified());
+
+                    // Fix for accidental lockout: If becoming Admin/SuperAdmin, ensure verified is
+                    // true
+                    if ("ADMIN".equals(updatedUser.getRole()) || "SUPER_ADMIN".equals(updatedUser.getRole())
+                            || "COMPANY_ADMIN".equals(updatedUser.getRole())) {
+                        user.setVerified(true);
+                    } else {
+                        user.setVerified(updatedUser.isVerified());
+                    }
+
                     user.setCompanyName(updatedUser.getCompanyName()); // Update company
 
                     // Only update password if new one is provided
