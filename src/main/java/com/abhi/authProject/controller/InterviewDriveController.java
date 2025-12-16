@@ -16,6 +16,9 @@ import java.util.List;
 public class InterviewDriveController {
 
     @Autowired
+    private com.abhi.authProject.repo.UserRepo userRepo;
+
+    @Autowired
     private InterviewDriveRepo interviewDriveRepo;
 
     @GetMapping
@@ -31,10 +34,51 @@ public class InterviewDriveController {
         return interviewDriveRepo.save(drive);
     }
 
+    @PutMapping("/admin/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<?> updateDrive(@PathVariable Long id, @RequestBody InterviewDrive updatedDrive,
+            java.security.Principal principal) {
+        String username = principal.getName();
+        com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return interviewDriveRepo.findById(id).map(drive -> {
+            // Security Check
+            if ("COMPANY_ADMIN".equals(user.getRole())) {
+                if (!drive.getCompany().equals(user.getCompanyName())) {
+                    return ResponseEntity.status(403).body("You are not authorized to update this interview drive.");
+                }
+                // Ensure they can't change the company name
+                updatedDrive.setCompany(user.getCompanyName());
+            }
+
+            drive.setCompany(updatedDrive.getCompany());
+            drive.setDate(updatedDrive.getDate());
+            drive.setTime(updatedDrive.getTime());
+            drive.setVenue(updatedDrive.getVenue());
+            drive.setPositions(updatedDrive.getPositions());
+            drive.setEligibility(updatedDrive.getEligibility());
+
+            return ResponseEntity.ok(interviewDriveRepo.save(drive));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/admin/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> deleteDrive(@PathVariable Long id) {
-        interviewDriveRepo.deleteById(id);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> deleteDrive(@PathVariable Long id, java.security.Principal principal) {
+        String username = principal.getName();
+        com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return interviewDriveRepo.findById(id).map(drive -> {
+            // Security Check
+            if ("COMPANY_ADMIN".equals(user.getRole())) {
+                if (!drive.getCompany().equals(user.getCompanyName())) {
+                    return ResponseEntity.status(403).body("You are not authorized to delete this interview drive.");
+                }
+            }
+            interviewDriveRepo.delete(drive);
+            return ResponseEntity.ok().build();
+        }).orElse(ResponseEntity.notFound().build());
     }
 }
