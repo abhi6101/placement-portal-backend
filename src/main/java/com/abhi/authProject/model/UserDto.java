@@ -16,4 +16,6 @@ public class UserDto {
     private boolean isVerified;
     private String companyName;
     private boolean enabled; // For company enable/disable feature
+    private String branch; // IMCA, MCA, BCA
+    private Integer semester; // Student's semester/year
 }

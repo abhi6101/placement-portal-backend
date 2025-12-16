@@ -69,4 +69,11 @@ public class Users {
     // Field to enable/disable Company Admin (Super Admin control)
     @Column(name = "enabled", nullable = false, columnDefinition = "boolean default true")
     private boolean enabled = true; // Default: enabled
+
+    // Branch/Semester filtering fields
+    @Column(name = "branch")
+    private String branch; // IMCA, MCA, BCA
+
+    @Column(name = "semester")
+    private Integer semester; // IMCA: 1-10, MCA: 1-4, BCA: 2,4,6 (Year*2)
 }
