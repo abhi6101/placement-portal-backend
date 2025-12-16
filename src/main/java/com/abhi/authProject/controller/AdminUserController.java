@@ -66,9 +66,15 @@ public class AdminUserController {
             Users savedUser = userRepo.save(user);
 
             // Send Welcome Email
-            if (rawPassword != null && !rawPassword.isEmpty()) {
-                emailService.sendAccountCreatedEmail(savedUser.getEmail(), savedUser.getUsername(), savedUser.getRole(),
-                        rawPassword);
+            try {
+                if (rawPassword != null && !rawPassword.isEmpty()) {
+                    emailService.sendAccountCreatedEmail(savedUser.getEmail(), savedUser.getUsername(),
+                            savedUser.getRole(),
+                            rawPassword);
+                }
+            } catch (Exception e) {
+                // Log but don't fail the request
+                System.err.println("Failed to send welcome email: " + e.getMessage());
             }
 
             return ResponseEntity.ok(new UserDto(
