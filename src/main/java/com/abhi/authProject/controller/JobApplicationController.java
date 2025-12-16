@@ -70,6 +70,14 @@ public class JobApplicationController {
         }
     }
 
+    @GetMapping("/job-applications/my")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<List<JobApplication>> getMyJobApplications(Principal principal) {
+        String email = principal.getName();
+        List<JobApplication> applications = jobApplicationRepository.findByApplicantEmail(email);
+        return ResponseEntity.ok(applications);
+    }
+
     @GetMapping("/admin/job-applications")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<JobApplication>> getAllJobApplications() {
