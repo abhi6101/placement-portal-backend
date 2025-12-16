@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/admin/jobs")
+@RequestMapping("/api/admin/jobs")
 // PreAuthorize removed here to allow fine-grained control or handled by
 // SecurityConfig + logic below
 public class AdminJobController {

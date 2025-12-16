@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/admin/stats")
+@RequestMapping("/api/admin/stats")
 @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('ADMIN')")
 public class AdminStatsController {
 

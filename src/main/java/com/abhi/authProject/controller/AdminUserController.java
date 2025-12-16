@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors; // Import collectors
 
 @RestController
-@RequestMapping("/admin")
+@RequestMapping("/api/admin")
 @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')") // Restrict user management to Super Admins
 public class AdminUserController {
 
