@@ -70,6 +70,13 @@ public class Users {
     @Column(name = "enabled", nullable = false, columnDefinition = "boolean default true")
     private boolean enabled = true; // Default: enabled
 
+    // Student profile fields
+    @Column(name = "name")
+    private String name; // Full name
+
+    @Column(name = "phone")
+    private String phone; // Phone number
+
     // Branch/Semester filtering fields
     @Column(name = "branch")
     private String branch; // IMCA, MCA, BCA

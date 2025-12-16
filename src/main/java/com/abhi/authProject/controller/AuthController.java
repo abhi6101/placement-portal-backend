@@ -274,37 +274,52 @@ public class AuthController {
             return ResponseEntity.notFound().build();
         }
 
+        // Update name and phone if provided
+        if (payload.containsKey("name")) {
+            student.setName((String) payload.get("name"));
+        }
+        if (payload.containsKey("phone")) {
+            student.setPhone((String) payload.get("phone"));
+        }
+
         String branch = (String) payload.get("branch");
-        Integer semester = Integer.parseInt(payload.get("semester").toString());
+        Integer semester = payload.get("semester") != null ? Integer.parseInt(payload.get("semester").toString())
+                : null;
 
         // Validate branch
-        if (!java.util.Arrays.asList("IMCA", "MCA", "BCA").contains(branch)) {
+        if (branch != null && !java.util.Arrays.asList("IMCA", "MCA", "BCA").contains(branch)) {
             return ResponseEntity.badRequest().body(Map.of("message", "Invalid branch. Must be IMCA, MCA, or BCA"));
         }
 
         // Validate semester based on branch
-        if ("IMCA".equals(branch) && (semester < 1 || semester > 10)) {
-            return ResponseEntity.badRequest().body(Map.of("message", "IMCA semester must be between 1 and 10"));
-        }
-        if ("MCA".equals(branch) && (semester < 1 || semester > 4)) {
-            return ResponseEntity.badRequest().body(Map.of("message", "MCA semester must be between 1 and 4"));
-        }
-        if ("BCA".equals(branch) && !java.util.Arrays.asList(2, 4, 6).contains(semester)) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("message", "BCA semester must be 2, 4, or 6 (representing Year 1, 2, or 3)"));
+        if (semester != null) {
+            if ("IMCA".equals(branch) && (semester < 1 || semester > 10)) {
+                return ResponseEntity.badRequest().body(Map.of("message", "IMCA semester must be between 1 and 10"));
+            }
+            if ("MCA".equals(branch) && (semester < 1 || semester > 4)) {
+                return ResponseEntity.badRequest().body(Map.of("message", "MCA semester must be between 1 and 4"));
+            }
+            if ("BCA".equals(branch) && !java.util.Arrays.asList(2, 4, 6).contains(semester)) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "BCA semester must be 2, 4, or 6 (representing Year 1, 2, or 3)"));
+            }
         }
 
         // Update student profile
-        student.setBranch(branch);
-        student.setSemester(semester);
+        if (branch != null)
+            student.setBranch(branch);
+        if (semester != null)
+            student.setSemester(semester);
         student.setLastProfileUpdate(java.time.LocalDate.now());
 
         Users saved = userRepo.save(student);
 
         return ResponseEntity.ok(Map.of(
                 "message", "Profile updated successfully",
-                "branch", saved.getBranch(),
-                "semester", saved.getSemester()));
+                "name", saved.getName() != null ? saved.getName() : "",
+                "phone", saved.getPhone() != null ? saved.getPhone() : "",
+                "branch", saved.getBranch() != null ? saved.getBranch() : "",
+                "semester", saved.getSemester() != null ? saved.getSemester() : 0));
     }
 
     /**
@@ -326,10 +341,11 @@ public class AuthController {
         boolean needsUpdate = false;
         String reason = "";
 
-        // Check if branch/semester is null
-        if (student.getBranch() == null || student.getSemester() == null) {
+        // Check if any required field is null
+        if (student.getName() == null || student.getPhone() == null ||
+                student.getBranch() == null || student.getSemester() == null) {
             needsUpdate = true;
-            reason = "Initial profile setup required";
+            reason = "Complete your profile to access all features";
         }
         // Check if date is after 2026-01-01 and last update was before
         else {
@@ -347,6 +363,8 @@ public class AuthController {
         return ResponseEntity.ok(Map.of(
                 "needsUpdate", needsUpdate,
                 "reason", reason,
+                "currentName", student.getName() != null ? student.getName() : "",
+                "currentPhone", student.getPhone() != null ? student.getPhone() : "",
                 "currentBranch", student.getBranch() != null ? student.getBranch() : "",
                 "currentSemester", student.getSemester() != null ? student.getSemester() : 0));
     }
