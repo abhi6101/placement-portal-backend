@@ -36,7 +36,8 @@ public class AdminUserController {
                         user.getEmail(),
                         user.getRole(),
                         user.isVerified(),
-                        user.getCompanyName())) // Added companyName
+                        user.getCompanyName(),
+                        user.isEnabled()))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(userDtos);
@@ -84,7 +85,8 @@ public class AdminUserController {
                     savedUser.getEmail(),
                     savedUser.getRole(),
                     savedUser.isVerified(),
-                    savedUser.getCompanyName()));
+                    savedUser.getCompanyName(),
+                    savedUser.isEnabled()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Failed to create user: " + e.getMessage());
         }
@@ -122,7 +124,8 @@ public class AdminUserController {
                             saved.getEmail(),
                             saved.getRole(),
                             saved.isVerified(),
-                            saved.getCompanyName()));
+                            saved.getCompanyName(),
+                            saved.isEnabled()));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

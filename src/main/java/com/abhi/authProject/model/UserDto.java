@@ -15,4 +15,5 @@ public class UserDto {
     private String role;
     private boolean isVerified;
     private String companyName;
+    private boolean enabled; // For company enable/disable feature
 }
