@@ -120,11 +120,4 @@ public class JobApplicationController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/job-applications/my")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<JobApplication>> getMyJobApplications(Principal principal) {
-        String email = principal.getName(); // Assuming username is email
-        List<JobApplication> myApplications = jobApplicationRepository.findByApplicantEmail(email);
-        return ResponseEntity.ok(myApplications);
-    }
 }
