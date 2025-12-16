@@ -22,4 +22,8 @@ public class JobService {
     public JobDetails addJob(JobDetails jobDetails) {
         return repo.save(jobDetails);
     }
+
+    public List<JobDetails> getEligibleJobs(String branch, Integer semester) {
+        return repo.findEligibleJobs(branch, semester);
+    }
 }
