@@ -30,6 +30,7 @@ public class JobApplicationService {
     private final SendGridEmailService sendGridEmailService;
     private final EmailService emailService;
     private final JobApplicationRepository jobApplicationRepository;
+    private final com.abhi.authProject.repo.UserRepo userRepo;
 
     @Value("${placement.portal.application.recipient-email}")
     private String recipientEmail;
@@ -40,10 +41,12 @@ public class JobApplicationService {
     @Autowired
     public JobApplicationService(SendGridEmailService sendGridEmailService,
             EmailService emailService,
-            JobApplicationRepository jobApplicationRepository) {
+            JobApplicationRepository jobApplicationRepository,
+            com.abhi.authProject.repo.UserRepo userRepo) {
         this.sendGridEmailService = sendGridEmailService;
         this.emailService = emailService;
         this.jobApplicationRepository = jobApplicationRepository;
+        this.userRepo = userRepo;
     }
 
     @Transactional
@@ -87,15 +90,21 @@ public class JobApplicationService {
         JobApplication updatedApplication = jobApplicationRepository.save(application);
 
         try {
+            // Resolve correct email (Backward compatibility for apps saved with username)
+            String rawEmail = updatedApplication.getApplicantEmail();
+            String recipientEmail = userRepo.findByUsername(rawEmail)
+                    .map(com.abhi.authProject.model.Users::getEmail)
+                    .orElse(rawEmail);
+
             // New Unified Email Notification
             emailService.sendStatusUpdateEmail(
-                    updatedApplication.getApplicantEmail(),
+                    recipientEmail,
                     updatedApplication.getApplicantName(),
                     updatedApplication.getJobTitle(),
                     updatedApplication.getCompanyName(),
                     newStatus.name() // Pass the status string (SHORTLISTED, SELECTED, REJECTED)
             );
-            logger.info("Application status update email sent to: {}", updatedApplication.getApplicantEmail());
+            logger.info("Application status update email sent to: {}", recipientEmail);
 
         } catch (Exception e) {
             logger.error("Status for application {} was updated, but the notification email failed to send.",
