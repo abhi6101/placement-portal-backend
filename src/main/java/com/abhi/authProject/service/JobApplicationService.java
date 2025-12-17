@@ -31,6 +31,7 @@ public class JobApplicationService {
     private final EmailService emailService;
     private final JobApplicationRepository jobApplicationRepository;
     private final com.abhi.authProject.repo.UserRepo userRepo;
+    private final com.abhi.authProject.repo.JobDetailsRepo jobDetailsRepo;
 
     @Value("${placement.portal.application.recipient-email}")
     private String recipientEmail;
@@ -42,11 +43,13 @@ public class JobApplicationService {
     public JobApplicationService(SendGridEmailService sendGridEmailService,
             EmailService emailService,
             JobApplicationRepository jobApplicationRepository,
-            com.abhi.authProject.repo.UserRepo userRepo) {
+            com.abhi.authProject.repo.UserRepo userRepo,
+            com.abhi.authProject.repo.JobDetailsRepo jobDetailsRepo) {
         this.sendGridEmailService = sendGridEmailService;
         this.emailService = emailService;
         this.jobApplicationRepository = jobApplicationRepository;
         this.userRepo = userRepo;
+        this.jobDetailsRepo = jobDetailsRepo;
     }
 
     @Transactional
@@ -96,15 +99,50 @@ public class JobApplicationService {
                     .map(com.abhi.authProject.model.Users::getEmail)
                     .orElse(rawEmail);
 
-            // New Unified Email Notification
-            emailService.sendStatusUpdateEmail(
-                    recipientEmail,
-                    updatedApplication.getApplicantName(),
-                    updatedApplication.getJobTitle(),
-                    updatedApplication.getCompanyName(),
-                    newStatus.name() // Pass the status string (SHORTLISTED, SELECTED, REJECTED)
-            );
-            logger.info("Application status update email sent to: {}", recipientEmail);
+            // Fetch Job Details for Interview Info
+            String interviewDetails = "";
+            try {
+                int jobId = Integer.parseInt(updatedApplication.getJobId());
+                Optional<com.abhi.authProject.model.JobDetails> job = jobDetailsRepo.findById(jobId);
+                if (job.isPresent()) {
+                    interviewDetails = job.get().getInterview_details();
+                }
+            } catch (NumberFormatException e) {
+                logger.warn("Could not parse Job ID '{}' to Integer. Interview details will be empty.",
+                        updatedApplication.getJobId());
+            }
+
+            // Send Specific Emails based on Status
+            if (newStatus == ApplicationStatus.SHORTLISTED) {
+                emailService.sendAcceptanceEmail(
+                        recipientEmail,
+                        updatedApplication.getApplicantName(),
+                        updatedApplication.getJobTitle(),
+                        updatedApplication.getCompanyName(),
+                        interviewDetails);
+            } else if (newStatus == ApplicationStatus.SELECTED) {
+                emailService.sendSelectedEmail(
+                        recipientEmail,
+                        updatedApplication.getApplicantName(),
+                        updatedApplication.getJobTitle(),
+                        updatedApplication.getCompanyName());
+            } else if (newStatus == ApplicationStatus.REJECTED) {
+                emailService.sendRejectionEmail(
+                        recipientEmail,
+                        updatedApplication.getApplicantName(),
+                        updatedApplication.getJobTitle(),
+                        updatedApplication.getCompanyName());
+            } else {
+                // Fallback for generic updates
+                emailService.sendStatusUpdateEmail(
+                        recipientEmail,
+                        updatedApplication.getApplicantName(),
+                        updatedApplication.getJobTitle(),
+                        updatedApplication.getCompanyName(),
+                        newStatus.name());
+            }
+
+            logger.info("Application status update email ({}) sent to: {}", newStatus, recipientEmail);
 
         } catch (Exception e) {
             logger.error("Status for application {} was updated, but the notification email failed to send.",
