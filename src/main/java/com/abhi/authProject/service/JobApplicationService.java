@@ -33,7 +33,7 @@ public class JobApplicationService {
     private final com.abhi.authProject.repo.UserRepo userRepo;
     private final com.abhi.authProject.repo.JobDetailsRepo jobDetailsRepo;
 
-    @Value("${placement.portal.application.recipient-email}")
+    @Value("${placement.portal.application.recipient-email:hack2hired.official@gmail.com}")
     private String recipientEmail;
 
     @Value("${pdf.storage.directory:/tmp/resumes}")
