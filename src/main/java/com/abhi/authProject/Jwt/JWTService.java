@@ -24,6 +24,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 public class JWTService {
 
@@ -36,10 +38,9 @@ public class JWTService {
     @Autowired
     private BlacklistedTokenRepository blacklistedTokenRepository;
 
-    
-
     // Scheduled task to clean expired blacklisted tokens every 24 hours
     @Scheduled(fixedRate = 86400000)
+    @Transactional
     public void cleanExpiredBlacklistedTokens() {
         blacklistedTokenRepository.deleteByExpiryDateBefore(new Date());
     }
@@ -47,26 +48,25 @@ public class JWTService {
     public String generateToken(String username) {
         Map<String, Object> claims = new HashMap<>();
         UserDetails userDetails = context.getBean(MyUserDetailsService.class)
-                                         .loadUserByUsername(username);
-                                         claims.put("authorities", userDetails.getAuthorities()
-                                         .stream()
-                                         .map(auth -> "ROLE_" + auth.getAuthority().replace("ROLE_", ""))
-                                         .collect(Collectors.toList()));
-                                     
-    
+                .loadUserByUsername(username);
+        claims.put("authorities", userDetails.getAuthorities()
+                .stream()
+                .map(auth -> "ROLE_" + auth.getAuthority().replace("ROLE_", ""))
+                .collect(Collectors.toList()));
+
         return Jwts.builder()
-                   .claims(claims)
-                   .subject(username)
-                   .issuedAt(new Date(System.currentTimeMillis()))
-                   .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 hours
-                   .signWith(getKey(), Jwts.SIG.HS384)
-                   .compact();
+                .claims(claims)
+                .subject(username)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 hours
+                .signWith(getKey(), Jwts.SIG.HS384)
+                .compact();
     }
 
-   private SecretKey getKey() {
-    byte[] keyBytes = secretkey.getBytes(StandardCharsets.UTF_8); // No Base64 decoding
-    return Keys.hmacShaKeyFor(keyBytes);
-}
+    private SecretKey getKey() {
+        byte[] keyBytes = secretkey.getBytes(StandardCharsets.UTF_8); // No Base64 decoding
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
 
     public String extractUserName(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -79,10 +79,10 @@ public class JWTService {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                   .verifyWith(getKey())
-                   .build()
-                   .parseSignedClaims(token)
-                   .getPayload();
+                .verifyWith(getKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     public boolean validateToken(String token, UserDetails userDetails) {
@@ -120,8 +120,8 @@ public class JWTService {
                 blacklistedToken.setToken(token);
 
                 Date expiry = extractExpirationSafe(token);
-                blacklistedToken.setExpiryDate(expiry != null ? expiry :
-                        new Date(System.currentTimeMillis() + 86400000));
+                blacklistedToken
+                        .setExpiryDate(expiry != null ? expiry : new Date(System.currentTimeMillis() + 86400000));
 
                 blacklistedTokenRepository.save(blacklistedToken);
             }
