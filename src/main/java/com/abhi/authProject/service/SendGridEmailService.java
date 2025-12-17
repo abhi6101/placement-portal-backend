@@ -31,11 +31,19 @@ public class SendGridEmailService {
     @Value("${SENDER_FROM_EMAIL}")
     private String fromEmail;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private GlobalSettingsService globalSettingsService;
+
     /**
      * Sends an email with an optional file attachment.
      * If attachmentPath is null or empty, it sends a simple email.
      */
-    public void sendEmailWithAttachment(String toEmail, String subject, String htmlContent, String attachmentPath) throws IOException {
+    public void sendEmailWithAttachment(String toEmail, String subject, String htmlContent, String attachmentPath)
+            throws IOException {
+        if (!globalSettingsService.isEmailAllowed()) {
+            logger.info("Email sending is DISABLED (Master). Skipping email (with attachment) to: {}", toEmail);
+            return;
+        }
         Email from = new Email(fromEmail);
         Email to = new Email(toEmail);
         Content content = new Content("text/html", htmlContent);
@@ -73,7 +81,8 @@ public class SendGridEmailService {
                 logger.info("Email successfully sent to {}. Status Code: {}", toEmail, response.getStatusCode());
             } else {
                 // Throw an exception to let the calling service know it failed
-                throw new IOException("Failed to send email via SendGrid. Status: " + response.getStatusCode() + " Body: " + response.getBody());
+                throw new IOException("Failed to send email via SendGrid. Status: " + response.getStatusCode()
+                        + " Body: " + response.getBody());
             }
         } catch (IOException ex) {
             logger.error("IO Exception while sending SendGrid email to {}: {}", toEmail, ex.getMessage());

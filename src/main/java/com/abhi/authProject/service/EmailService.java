@@ -23,6 +23,9 @@ public class EmailService {
     @Value("${sendgrid.from.email:hack2hired.official@gmail.com}")
     private String fromEmail;
 
+    @Autowired
+    private GlobalSettingsService globalSettingsService;
+
     public void sendPasswordResetEmail(String toEmail, String otp) throws IOException {
         Email from = new Email(fromEmail);
         Email to = new Email(toEmail);
@@ -67,6 +70,10 @@ public class EmailService {
     }
 
     public void sendEmail(String toEmail, String subject, String body) throws IOException {
+        if (!globalSettingsService.isEmailAllowed()) {
+            logger.info("Email sending is DISABLED (Master). Skipping Email to {}", toEmail);
+            return;
+        }
         Email from = new Email(fromEmail);
         Email to = new Email(toEmail);
         Content content = new Content("text/plain", body);
@@ -85,6 +92,10 @@ public class EmailService {
     }
 
     public void sendPasswordResetConfirmation(String toEmail) throws IOException {
+        if (!globalSettingsService.isAccountEmailAllowed()) {
+            logger.info("Email sending (Account) is DISABLED. Skipping Password Reset Confirmation to {}", toEmail);
+            return;
+        }
         Email from = new Email(fromEmail);
         Email to = new Email(toEmail);
         String subject = "Password Reset Successful - Placement Portal";
@@ -117,6 +128,10 @@ public class EmailService {
      */
     public void sendAcceptanceEmail(String toEmail, String studentName, String jobTitle,
             String companyName, String interviewDetails) throws IOException {
+        if (!globalSettingsService.isStatusUpdateEmailAllowed()) {
+            logger.info("Email sending (Status) is DISABLED. Skipping Acceptance Email to {}", toEmail);
+            return;
+        }
         Email from = new Email(fromEmail);
         Email to = new Email(toEmail);
         String subject = "Congratulations! You've been shortlisted for " + jobTitle;
@@ -146,6 +161,10 @@ public class EmailService {
      */
     public void sendRejectionEmail(String toEmail, String studentName, String jobTitle, String companyName)
             throws IOException {
+        if (!globalSettingsService.isStatusUpdateEmailAllowed()) {
+            logger.info("Email sending (Status) is DISABLED. Skipping Rejection Email to {}", toEmail);
+            return;
+        }
         Email from = new Email(fromEmail);
         Email to = new Email(toEmail);
         String subject = "Application Status - " + jobTitle;
@@ -306,6 +325,10 @@ public class EmailService {
 
     public void sendNewJobAlert(String toEmail, String studentName, String jobTitle, String companyName, String salary,
             String applyLink) {
+        if (!globalSettingsService.isNewJobEmailAllowed()) {
+            logger.info("Email sending (New Job) is DISABLED. Skipping New Job Alert to {}", toEmail);
+            return;
+        }
         try {
             Email from = new Email(fromEmail);
             Email to = new Email(toEmail);
@@ -350,6 +373,10 @@ public class EmailService {
 
     public void sendStatusUpdateEmail(String toEmail, String studentName, String jobTitle, String companyName,
             String status) {
+        if (!globalSettingsService.isStatusUpdateEmailAllowed()) {
+            logger.info("Email sending (Status) is DISABLED. Skipping Status Update Email to {}", toEmail);
+            return;
+        }
         try {
             Email from = new Email(fromEmail);
             Email to = new Email(toEmail);
@@ -406,6 +433,10 @@ public class EmailService {
     }
 
     public void sendAccountCreatedEmail(String toEmail, String username, String role, String password) {
+        if (!globalSettingsService.isAccountEmailAllowed()) {
+            logger.info("Email sending (Account) is DISABLED. Skipping Account Created Email to {}", toEmail);
+            return;
+        }
         try {
             Email from = new Email(fromEmail);
             Email to = new Email(toEmail);
@@ -510,6 +541,10 @@ public class EmailService {
     // SHORTLISTED - Send interview details
     public void sendShortlistedEmail(String toEmail, String studentName, String jobTitle, String companyName,
             String interviewDate, String interviewLocation) throws IOException {
+        if (!globalSettingsService.isStatusUpdateEmailAllowed()) {
+            logger.info("Email sending (Status) is DISABLED. Skipping Shortlisted Email to {}", toEmail);
+            return;
+        }
         Email from = new Email(fromEmail);
         Email to = new Email(toEmail);
         String subject = "🎉 You've Been Shortlisted for " + jobTitle + " at " + companyName + "!";
@@ -559,6 +594,10 @@ public class EmailService {
     // SELECTED - Congratulations only (no interview)
     public void sendSelectedEmail(String toEmail, String studentName, String jobTitle, String companyName)
             throws IOException {
+        if (!globalSettingsService.isStatusUpdateEmailAllowed()) {
+            logger.info("Email sending (Status) is DISABLED. Skipping Selected Email to {}", toEmail);
+            return;
+        }
         Email from = new Email(fromEmail);
         Email to = new Email(toEmail);
         String subject = "🎊 Congratulations! You've Been Selected for " + jobTitle + "!";
@@ -604,6 +643,10 @@ public class EmailService {
     // REJECTED - Polite rejection
     public void sendRejectedEmail(String toEmail, String studentName, String jobTitle, String companyName)
             throws IOException {
+        if (!globalSettingsService.isStatusUpdateEmailAllowed()) {
+            logger.info("Email sending (Status) is DISABLED. Skipping Rejected Email to {}", toEmail);
+            return;
+        }
         Email from = new Email(fromEmail);
         Email to = new Email(toEmail);
         String subject = "Update on Your Application for " + jobTitle;
