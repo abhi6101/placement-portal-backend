@@ -6,6 +6,7 @@ import com.abhi.authProject.repo.InterviewApplicationRepo;
 import com.abhi.authProject.service.EmailService;
 import com.abhi.authProject.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,10 +28,16 @@ public class InterviewApplicationController {
     private FileStorageService fileStorageService;
 
     @Autowired
-    private EmailService emailService;
+    private com.abhi.authProject.service.EmailService emailService;
 
     @Autowired
     private com.abhi.authProject.repo.UserRepo userRepo;
+
+    @Autowired
+    private com.abhi.authProject.service.SendGridEmailService sendGridEmailService;
+
+    @Value("${placement.portal.application.recipient-email:hack2hired.official@gmail.com}")
+    private String recipientEmail;
 
     @PostMapping(value = "/interview-applications/apply", consumes = { "multipart/form-data" })
     @PreAuthorize("hasRole('USER')")
@@ -56,7 +63,7 @@ public class InterviewApplicationController {
 
             interviewApplicationRepo.save(application);
 
-            // Send confirmation email to student
+            // 1. Send confirmation email to student
             String emailBody = "Dear " + applicantName + ",\n\n" +
                     "Your application for the interview drive at " + companyName + " on " + interviewDate
                     + " has been received.\n" +
@@ -64,6 +71,22 @@ public class InterviewApplicationController {
                     "Best Regards,\nPlacement Team";
 
             emailService.sendEmail(applicantEmail, "Interview Application Received - " + companyName, emailBody);
+
+            // 2. Send notification to HR/Admin
+            String adminSubject = "New Interview Application: " + companyName + " - " + applicantName;
+            String adminBody = "<h3>New Interview Application Received</h3>" +
+                    "<p><strong>Company:</strong> " + companyName + "</p>" +
+                    "<p><strong>Interview Date:</strong> " + interviewDate + "</p>" +
+                    "<p><strong>Applicant Name:</strong> " + applicantName + "</p>" +
+                    "<p><strong>Applicant Email:</strong> " + applicantEmail + "</p>" +
+                    "<p><strong>Applicant Phone:</strong> " + applicantPhone + "</p>";
+
+            try {
+                sendGridEmailService.sendEmailWithAttachment(recipientEmail, adminSubject, adminBody, resumePath);
+            } catch (Exception e) {
+                // Log but don't fail the request
+                System.err.println("Failed to send Admin notification: " + e.getMessage());
+            }
 
             return ResponseEntity.ok("Interview application submitted successfully.");
 
@@ -113,10 +136,7 @@ public class InterviewApplicationController {
             application.setStatus(status);
             interviewApplicationRepo.save(application);
 
-            // Use the standardized email service
-            // Note: 'Interview Title' isn't directly available in InterviewApplication,
-            // usually we'd fetch the Drive.
-            // But for now we pass "Interview at " + companyName
+            // Email Notification
             emailService.sendStatusUpdateEmail(
                     application.getApplicantEmail(),
                     application.getApplicantName(),
@@ -133,7 +153,11 @@ public class InterviewApplicationController {
     @GetMapping("/interview-applications/my")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<List<InterviewApplication>> getMyInterviewApplications(java.security.Principal principal) {
-        String email = principal.getName();
-        return ResponseEntity.ok(interviewApplicationRepo.findByApplicantEmail(email));
+        String username = principal.getName();
+        com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+
+        // Query using the USER's EMAIL, not their username
+        return ResponseEntity.ok(interviewApplicationRepo.findByApplicantEmail(user.getEmail()));
     }
 }

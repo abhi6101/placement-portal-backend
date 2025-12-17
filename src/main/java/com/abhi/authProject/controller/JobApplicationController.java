@@ -53,8 +53,11 @@ public class JobApplicationController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Resume file is required.");
         }
 
-        // Use the authenticated user's email to ensure it links to their account
-        String authenticatedEmail = principal.getName();
+        // Use the authenticated user's actual email from the database
+        String username = principal.getName();
+        com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        String authenticatedEmail = user.getEmail();
 
         JobApplicationRequest1 applicationRequest = new JobApplicationRequest1(
                 jobId, jobTitle, companyName, applicantName, authenticatedEmail, applicantPhone,
