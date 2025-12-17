@@ -6,6 +6,7 @@ import com.abhi.authProject.repo.JobDetailsRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,6 +35,7 @@ public class AdminJobController {
     }
 
     @PostMapping
+    @Transactional
     public ResponseEntity<?> createJob(
             @RequestBody JobDetails job,
             @RequestParam(defaultValue = "true") boolean sendEmails,
@@ -86,6 +88,7 @@ public class AdminJobController {
     }
 
     @PutMapping("/{id}")
+    @Transactional
     public ResponseEntity<?> updateJob(@PathVariable int id, @RequestBody JobDetails updatedJob,
             java.security.Principal principal) {
         String username = principal.getName();
@@ -118,6 +121,7 @@ public class AdminJobController {
     }
 
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<?> deleteJob(@PathVariable int id, java.security.Principal principal) {
         String username = principal.getName();
         com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
