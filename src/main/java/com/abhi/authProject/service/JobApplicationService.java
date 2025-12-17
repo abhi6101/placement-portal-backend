@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class JobApplicationService {
 
     private static final Logger logger = LoggerFactory.getLogger(JobApplicationService.class);
