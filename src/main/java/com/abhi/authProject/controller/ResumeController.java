@@ -57,5 +57,24 @@ public class ResumeController {
             return ResponseEntity.status(404)
                     .body("File not found: " + filename);
         }
+
+    @GetMapping("/admin/view/{userId}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> viewUserResume(@PathVariable int userId) {
+        com.abhi.authProject.model.ResumeFile file = resumePdfService.getResumeByUserId(userId);
+
+        if (file == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        // Inline view for admins
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getFileName() + "\"");
+        headers.add(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(new ByteArrayResource(file.getFileData()));
     }
 }

@@ -32,6 +32,9 @@ public class AdminStatsController {
     @Autowired
     private UserRepo userRepo;
 
+    @Autowired
+    private com.abhi.authProject.repo.ResumeFileRepository resumeFileRepository;
+
     @GetMapping("/companies")
     public ResponseEntity<List<CompanyStatsDto>> getCompanyStats() {
         // 1. Gather all unique company names from Users (COMPANY_ADMINs)
@@ -63,5 +66,42 @@ public class AdminStatsController {
         }
 
         return ResponseEntity.ok(statsList);
+    }
+
+    @GetMapping("/students")
+    public ResponseEntity<List<StudentActivityDto>> getStudentActivity() {
+        List<Users> students = userRepo.findAll().stream()
+                .filter(u -> "USER".equals(u.getRole()))
+                .collect(Collectors.toList());
+
+        List<StudentActivityDto> dtoList = new ArrayList<>();
+        for (Users student : students) {
+            boolean isProfileComplete = student.getName() != null && student.getBranch() != null;
+            boolean hasResume = resumeFileRepository.findByUser(student).isPresent();
+
+            dtoList.add(new StudentActivityDto(
+                    student.getId(),
+                    student.getUsername(),
+                    student.getName() != null ? student.getName() : "N/A",
+                    student.getEmail(),
+                    student.getBranch() != null ? student.getBranch() : "-",
+                    isProfileComplete,
+                    hasResume,
+                    student.getLastLoginDate()));
+        }
+        return ResponseEntity.ok(dtoList);
+    }
+
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    static class StudentActivityDto {
+        private int id;
+        private String username;
+        private String name;
+        private String email;
+        private String branch;
+        private boolean isProfileComplete;
+        private boolean hasResume;
+        private java.time.LocalDateTime lastLoginDate;
     }
 }

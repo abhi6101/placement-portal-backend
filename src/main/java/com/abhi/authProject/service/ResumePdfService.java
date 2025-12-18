@@ -164,6 +164,13 @@ public class ResumePdfService {
         throw new IOException("File not found in Database or Storage");
     }
 
+    public ResumeFile getResumeByUserId(int userId) {
+        return resumeFileRepository.findAll().stream()
+                .filter(f -> f.getUser().getId() == userId)
+                .findFirst()
+                .orElse(null);
+    }
+
     private String getCssForTemplate(String template) {
         switch (template) {
             case "classic":

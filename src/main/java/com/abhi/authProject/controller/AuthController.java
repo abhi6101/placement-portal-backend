@@ -82,6 +82,12 @@ public class AuthController {
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             Users user = userRepo.findByUsername(loginRequest.getUsername()).orElse(null);
+
+            if (user != null) {
+                user.setLastLoginDate(java.time.LocalDateTime.now());
+                userRepo.save(user);
+            }
+
             String companyName = (user != null) ? user.getCompanyName() : null;
 
             return ResponseEntity.ok(Map.of(

@@ -86,4 +86,7 @@ public class Users {
 
     @Column(name = "last_profile_update")
     private java.time.LocalDate lastProfileUpdate; // Track when student last updated profile
+
+    @Column(name = "last_login_date")
+    private LocalDateTime lastLoginDate;
 }
