@@ -57,6 +57,7 @@ public class ResumeController {
             return ResponseEntity.status(404)
                     .body("File not found: " + filename);
         }
+    }
 
     @GetMapping("/admin/view/{userId}")
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPER_ADMIN')")
