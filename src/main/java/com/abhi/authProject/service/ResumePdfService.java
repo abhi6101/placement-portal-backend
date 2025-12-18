@@ -176,6 +176,24 @@ public class ResumePdfService {
                         "th { background-color: #f2f2f2; font-weight: bold; }" +
                         "ul { margin: 5px 0 5px 20px; padding: 0; }" +
                         "li { margin-bottom: 3px; }";
+            case "sde":
+                return "body { font-family: 'Times New Roman', serif; margin: 40px; font-size: 11pt; color: #000; line-height: 1.4; }"
+                        +
+                        ".container { width: 100%; margin: 0 auto; }" +
+                        ".header { text-align: center; margin-bottom: 25px; }" +
+                        ".header h1 { font-size: 26pt; margin: 0 0 5px 0; font-weight: bold; color: #000; }" +
+                        ".role-title { font-size: 12pt; margin: 5px 0; font-weight: bold; border-top: 1px solid #000; border-bottom: 1px solid #000; display: inline-block; padding: 3px 10px; }"
+                        +
+                        ".contact { font-size: 10pt; margin: 8px 0; }" +
+                        ".section { margin-bottom: 20px; }" +
+                        ".section h2 { font-size: 14pt; font-weight: bold; margin: 0 0 10px 0; text-transform: capitalize; color: #000; }"
+                        +
+                        ".item-title { font-weight: bold; font-size: 11pt; margin-bottom: 2px; }" +
+                        ".degree-row { display: flex; justify-content: space-between; font-weight: bold; }" +
+                        "ul { margin: 5px 0 10px 20px; padding: 0; }" +
+                        "li { margin-bottom: 2px; }" +
+                        "a { color: #2563eb; text-decoration: none; }" +
+                        ".project-title { color: #2563eb; font-weight: bold; font-size: 11pt; margin-right: 10px; }";
             default:
                 return "";
         }
