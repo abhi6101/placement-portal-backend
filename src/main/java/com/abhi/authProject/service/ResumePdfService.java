@@ -43,7 +43,7 @@ public class ResumePdfService {
 
             Path filePath = Paths.get(pdfStorageDirectory, uniqueFileName);
             Files.write(filePath, os.toByteArray());
-            
+
             return uniqueFileName;
         } catch (DocumentException | IOException e) {
             throw new RuntimeException("Failed to generate resume PDF", e);
@@ -53,18 +53,18 @@ public class ResumePdfService {
     private String buildHtmlContent(ResumeData resumeData) {
         StringBuilder html = new StringBuilder();
         html.append("<!DOCTYPE html>")
-            .append("<html lang=\"en\">")
-            .append("<head>")
-            .append("<meta charset=\"UTF-8\" />")
-            .append("<title>").append(escape(resumeData.getName())).append(" - Resume</title>")
-            .append("<style>").append(getCssForTemplate(resumeData.getTemplate())).append("</style>")
-            .append("</head>")
-            .append("<body>")
-            .append("<div class=\"container\">")
-            .append("<div class=\"header\">")
-            .append("<h1>").append(escape(resumeData.getName())).append("</h1>")
-            .append("<p>Email: ").append(escape(resumeData.getEmail()))
-            .append(" | Phone: ").append(escape(resumeData.getPhone())).append("</p>");
+                .append("<html lang=\"en\">")
+                .append("<head>")
+                .append("<meta charset=\"UTF-8\" />")
+                .append("<title>").append(escape(resumeData.getName())).append(" - Resume</title>")
+                .append("<style>").append(getCssForTemplate(resumeData.getTemplate())).append("</style>")
+                .append("</head>")
+                .append("<body>")
+                .append("<div class=\"container\">")
+                .append("<div class=\"header\">")
+                .append("<h1>").append(escape(resumeData.getName())).append("</h1>")
+                .append("<p>Email: ").append(escape(resumeData.getEmail()))
+                .append(" | Phone: ").append(escape(resumeData.getPhone())).append("</p>");
 
         if (hasValue(resumeData.getAddress())) {
             html.append("<p>Address: ").append(escape(resumeData.getAddress())).append("</p>");
@@ -77,7 +77,7 @@ public class ResumePdfService {
         }
         if (hasValue(resumeData.getLinkedin())) {
             html.append("<p>LinkedIn: <a href=\"").append(escape(resumeData.getLinkedin())).append("\">")
-               .append(escape(resumeData.getLinkedin())).append("</a></p>");
+                    .append(escape(resumeData.getLinkedin())).append("</a></p>");
         }
         html.append("</div>");
 
@@ -97,9 +97,9 @@ public class ResumePdfService {
 
     private void addSection(StringBuilder html, String title, String content) {
         html.append("<div class=\"section\">")
-            .append("<h2>").append(title).append("</h2>")
-            .append("<p>").append(escape(content).replace("\n", "<br/>")).append("</p>")
-            .append("</div>");
+                .append("<h2>").append(title).append("</h2>")
+                .append("<p>").append(escape(content).replace("\n", "<br/>")).append("</p>")
+                .append("</div>");
     }
 
     private void addOptionalSection(StringBuilder html, String title, String content) {
@@ -133,29 +133,49 @@ public class ResumePdfService {
         switch (template) {
             case "classic":
                 return "body { font-family: 'Times New Roman', serif; margin: 20px; font-size: 12pt; }" +
-                       ".container { width: 100%; margin: 0 auto; }" +
-                       ".header { text-align: center; margin-bottom: 20px; }" +
-                       ".header h1 { font-size: 24pt; margin-bottom: 5px; }" +
-                       ".header p { margin: 0; font-size: 10pt; }" +
-                       ".section { margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }" +
-                       ".section h2 { font-size: 16pt; color: #333; margin-top: 0; margin-bottom: 10px; }";
+                        ".container { width: 100%; margin: 0 auto; }" +
+                        ".header { text-align: center; margin-bottom: 20px; }" +
+                        ".header h1 { font-size: 24pt; margin-bottom: 5px; }" +
+                        ".header p { margin: 0; font-size: 10pt; }" +
+                        ".section { margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }" +
+                        ".section h2 { font-size: 16pt; color: #333; margin-top: 0; margin-bottom: 10px; }";
             case "modern":
                 return "body { font-family: Arial, sans-serif; margin: 25px; font-size: 11pt; }" +
-                       ".container { width: 90%; margin: 0 auto; }" +
-                       ".header { background-color: #f0f0f0; padding: 15px; text-align: center; margin-bottom: 20px; border-radius: 5px; }" +
-                       ".header h1 { color: #0056b3; font-size: 22pt; margin-bottom: 5px; }" +
-                       ".header p { margin: 0; font-size: 10pt; color: #555; }" +
-                       ".section { margin-bottom: 20px; }" +
-                       ".section h2 { font-size: 15pt; color: #0056b3; margin-top: 0; margin-bottom: 10px; border-left: 4px solid #0056b3; padding-left: 10px; }";
+                        ".container { width: 90%; margin: 0 auto; }" +
+                        ".header { background-color: #f0f0f0; padding: 15px; text-align: center; margin-bottom: 20px; border-radius: 5px; }"
+                        +
+                        ".header h1 { color: #0056b3; font-size: 22pt; margin-bottom: 5px; }" +
+                        ".header p { margin: 0; font-size: 10pt; color: #555; }" +
+                        ".section { margin-bottom: 20px; }" +
+                        ".section h2 { font-size: 15pt; color: #0056b3; margin-top: 0; margin-bottom: 10px; border-left: 4px solid #0056b3; padding-left: 10px; }";
             case "creative":
-                return "body { font-family: 'Georgia', serif; margin: 30px; font-size: 12pt; background-color: #fffaf0; }" +
-                       ".container { width: 85%; margin: 0 auto; border: 1px solid #ddd; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }" +
-                       ".header { text-align: left; margin-bottom: 25px; background-color: #e0e0e0; padding: 15px; border-radius: 8px; }" +
-                       ".header h1 { font-size: 26pt; color: #333; margin-bottom: 5px; }" +
-                       ".header p { margin: 0; font-size: 11pt; color: #666; }" +
-                       ".section { margin-bottom: 25px; position: relative; padding-left: 20px; }" +
-                       ".section h2 { font-size: 18pt; color: #a0522d; margin-top: 0; margin-bottom: 10px; border-bottom: 1px dashed #a0522d; padding-bottom: 5px; }" +
-                       ".section::before { content: '•'; position: absolute; left: 0; color: #a0522d; font-size: 1.5em; line-height: 1; }";
+                return "body { font-family: 'Georgia', serif; margin: 30px; font-size: 12pt; background-color: #fffaf0; }"
+                        +
+                        ".container { width: 85%; margin: 0 auto; border: 1px solid #ddd; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }"
+                        +
+                        ".header { text-align: left; margin-bottom: 25px; background-color: #e0e0e0; padding: 15px; border-radius: 8px; }"
+                        +
+                        ".header h1 { font-size: 26pt; color: #333; margin-bottom: 5px; }" +
+                        ".header p { margin: 0; font-size: 11pt; color: #666; }" +
+                        ".section { margin-bottom: 25px; position: relative; padding-left: 20px; }" +
+                        ".section h2 { font-size: 18pt; color: #a0522d; margin-top: 0; margin-bottom: 10px; border-bottom: 1px dashed #a0522d; padding-bottom: 5px; }"
+                        +
+                        ".section::before { content: '•'; position: absolute; left: 0; color: #a0522d; font-size: 1.5em; line-height: 1; }";
+            case "professional":
+                return "body { font-family: 'Times New Roman', serif; margin: 30px; font-size: 11pt; color: #000; }" +
+                        ".container { width: 100%; margin: 0 auto; }" +
+                        ".header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }"
+                        +
+                        ".header h1 { font-size: 24pt; margin: 0; text-transform: uppercase; font-weight: bold; }" +
+                        ".header p { margin: 3px 0; font-size: 10pt; }" +
+                        ".section { margin-bottom: 15px; }" +
+                        ".section h2 { font-size: 12pt; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000; margin-bottom: 8px; padding-bottom: 2px; }"
+                        +
+                        "table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 10pt; }" +
+                        "th, td { border: 1px solid #000; padding: 5px; text-align: left; }" +
+                        "th { background-color: #f2f2f2; font-weight: bold; }" +
+                        "ul { margin: 5px 0 5px 20px; padding: 0; }" +
+                        "li { margin-bottom: 3px; }";
             default:
                 return "";
         }
