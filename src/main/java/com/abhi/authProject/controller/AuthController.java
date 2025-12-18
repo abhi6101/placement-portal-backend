@@ -50,6 +50,24 @@ public class AuthController {
     @Autowired
     private com.abhi.authProject.repo.UserRepo userRepo;
 
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getCurrentUser(org.springframework.security.core.Authentication auth) {
+        String username = auth.getName();
+        Users user = userRepo.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
+
+        return ResponseEntity.ok(Map.of(
+                "id", user.getId(),
+                "username", user.getUsername(),
+                "email", user.getEmail(),
+                "role", user.getRole(),
+                "name", user.getName() != null ? user.getName() : "",
+                "phone", user.getPhone() != null ? user.getPhone() : "",
+                "branch", user.getBranch() != null ? user.getBranch() : "",
+                "semester", user.getSemester() != null ? user.getSemester() : 0,
+                "companyName", user.getCompanyName() != null ? user.getCompanyName() : ""));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
