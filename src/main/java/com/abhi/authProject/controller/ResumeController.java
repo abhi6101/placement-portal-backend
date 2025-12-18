@@ -25,9 +25,10 @@ public class ResumeController {
     }
 
     @PostMapping("/generate-pdf")
-    public ResponseEntity<?> generatePdf(@Valid @RequestBody ResumeData resumeData) {
+    public ResponseEntity<?> generatePdf(@Valid @RequestBody ResumeData resumeData, java.security.Principal principal) {
         try {
-            String uniqueFileName = resumePdfService.generateResumePdf(resumeData);
+            String username = (principal != null) ? principal.getName() : null;
+            String uniqueFileName = resumePdfService.generateResumePdf(resumeData, username);
             // CORRECTED: Return only the filename. The frontend will build the full URL.
             return ResponseEntity.ok(Map.of("filename", uniqueFileName));
         } catch (Exception e) {

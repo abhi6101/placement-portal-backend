@@ -9,6 +9,11 @@ import org.springframework.stereotype.Service;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 import jakarta.annotation.PostConstruct; // Add this line
 
+import com.abhi.authProject.model.ResumeFile;
+import com.abhi.authProject.model.Users;
+import com.abhi.authProject.repo.ResumeFileRepository;
+import com.abhi.authProject.repo.UserRepo;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,22 +21,28 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.Optional;
 
 @Service
 public class ResumePdfService {
 
+    @Autowired
+    private ResumeFileRepository resumeFileRepository;
+
+    @Autowired
+    private UserRepo userRepo;
+
     @Value("${pdf.storage.directory:/tmp/resumes}")
     private String pdfStorageDirectory;
+    // Kept for backward compatibility or temp usage if needed, but primary is now
+    // DB
 
     @PostConstruct
     public void init() throws IOException {
-        Path path = Paths.get(pdfStorageDirectory);
-        if (!Files.exists(path)) {
-            Files.createDirectories(path);
-        }
+        // Directory creation not strictly needed for DB storage but good for fallback
     }
 
-    public String generateResumePdf(ResumeData resumeData) {
+    public String generateResumePdf(ResumeData resumeData, String username) {
         String htmlContent = buildHtmlContent(resumeData);
         String uniqueFileName = generateUniqueFilename(resumeData.getName());
 
@@ -41,8 +52,24 @@ public class ResumePdfService {
             renderer.layout();
             renderer.createPDF(os);
 
-            Path filePath = Paths.get(pdfStorageDirectory, uniqueFileName);
-            Files.write(filePath, os.toByteArray());
+            byte[] pdfBytes = os.toByteArray();
+
+            // SAVE TO DATABASE
+            if (username != null) {
+                Users user = userRepo.findByUsername(username)
+                        .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+                // Check if user already has a resume, replace it
+                ResumeFile existingCheck = resumeFileRepository.findByUser(user).orElse(null);
+                if (existingCheck != null) {
+                    existingCheck.setFileData(pdfBytes);
+                    existingCheck.setFileName(uniqueFileName);
+                    resumeFileRepository.save(existingCheck);
+                } else {
+                    ResumeFile newFile = new ResumeFile(user, uniqueFileName, "application/pdf", pdfBytes);
+                    resumeFileRepository.save(newFile);
+                }
+            }
 
             return uniqueFileName;
         } catch (DocumentException | IOException e) {
@@ -122,11 +149,19 @@ public class ResumePdfService {
     }
 
     public ByteArrayResource loadPdfAsResource(String filename) throws IOException {
-        Path filePath = Paths.get(pdfStorageDirectory).resolve(filename).normalize();
-        if (!filePath.startsWith(Paths.get(pdfStorageDirectory))) {
-            throw new IOException("Attempted to access file outside of designated directory");
+        // Try to find in DB first
+        Optional<ResumeFile> dbFile = resumeFileRepository.findByFileName(filename);
+        if (dbFile.isPresent()) {
+            return new ByteArrayResource(dbFile.get().getFileData());
         }
-        return new ByteArrayResource(Files.readAllBytes(filePath));
+
+        // Fallback to File System (Legacy)
+        Path filePath = Paths.get(pdfStorageDirectory).resolve(filename).normalize();
+        if (Files.exists(filePath)) {
+            return new ByteArrayResource(Files.readAllBytes(filePath));
+        }
+
+        throw new IOException("File not found in Database or Storage");
     }
 
     private String getCssForTemplate(String template) {
