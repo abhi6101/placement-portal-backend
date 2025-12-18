@@ -68,4 +68,10 @@ public class StudentProfileController {
             return ResponseEntity.ok(profileRepo.save(profile));
         }
     }
+
+    @GetMapping("/admin/all")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> getAllProfiles() {
+        return ResponseEntity.ok(profileRepo.findAll());
+    }
 }
