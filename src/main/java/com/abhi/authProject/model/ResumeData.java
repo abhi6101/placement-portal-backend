@@ -28,8 +28,7 @@ public class ResumeData {
     @Size(max = 50, message = "Date of Birth cannot exceed 50 characters")
     private String dateOfBirth;
 
-    @Pattern(regexp = "^(https?://)?(www\\.)?linkedin\\.com/in/[a-zA-Z0-9\\-_]+/?$", 
-             message = "Invalid LinkedIn URL format")
+    @Pattern(regexp = "^(https?://)?(www\\.)?linkedin\\.com/in/[a-zA-Z0-9\\-_]+/?$", message = "Invalid LinkedIn URL format")
     @Size(max = 255, message = "LinkedIn URL cannot exceed 255 characters")
     private String linkedin;
 
@@ -62,6 +61,6 @@ public class ResumeData {
     private String declaration;
 
     @NotBlank(message = "Template must be selected")
-    @Pattern(regexp = "classic|modern|creative", message = "Invalid template selection")
+    @Pattern(regexp = "classic|modern|creative|professional|sde", message = "Invalid template selection")
     private String template;
 }
