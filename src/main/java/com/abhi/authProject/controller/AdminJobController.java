@@ -60,7 +60,13 @@ public class AdminJobController {
             job.setCompany_name(user.getCompanyName());
         }
 
-        JobDetails savedJob = jobService.addJob(job);
+        JobDetails savedJob;
+        try {
+            savedJob = jobService.addJob(job);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error saving job: " + e.getMessage());
+        }
 
         // Async: Send notifications to all students (only if sendEmails is true)
         if (sendEmails) {
@@ -118,7 +124,12 @@ public class AdminJobController {
             job.setLast_date(updatedJob.getLast_date());
             job.setSalary(updatedJob.getSalary());
             job.setInterview_details(updatedJob.getInterview_details()); // Added missing field update
-            return ResponseEntity.ok(jobService.addJob(job));
+            try {
+                return ResponseEntity.ok(jobService.addJob(job));
+            } catch (Exception e) {
+                e.printStackTrace();
+                return ResponseEntity.status(500).body("Error updating job: " + e.getMessage());
+            }
         }
         return ResponseEntity.notFound().build();
     }
