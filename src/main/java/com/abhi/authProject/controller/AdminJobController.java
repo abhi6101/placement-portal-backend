@@ -19,7 +19,10 @@ import java.util.Optional;
 public class AdminJobController {
 
     @Autowired
-    private JobDetailsRepo jobRepository;
+    private JobDetailsRepo jobRepository; // Keep for reads if JobService doesn't cover all queries
+
+    @Autowired
+    private com.abhi.authProject.service.JobService jobService;
 
     @Autowired
     private com.abhi.authProject.service.EmailService emailService;
@@ -57,7 +60,7 @@ public class AdminJobController {
             job.setCompany_name(user.getCompanyName());
         }
 
-        JobDetails savedJob = jobRepository.save(job);
+        JobDetails savedJob = jobService.addJob(job);
 
         // Async: Send notifications to all students (only if sendEmails is true)
         if (sendEmails) {
@@ -115,7 +118,7 @@ public class AdminJobController {
             job.setLast_date(updatedJob.getLast_date());
             job.setSalary(updatedJob.getSalary());
             job.setInterview_details(updatedJob.getInterview_details()); // Added missing field update
-            return ResponseEntity.ok(jobRepository.save(job));
+            return ResponseEntity.ok(jobService.addJob(job));
         }
         return ResponseEntity.notFound().build();
     }
