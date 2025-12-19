@@ -51,7 +51,7 @@ public class JobDetails {
     private int salary;
 
     @Lob
-    @Column(name = "interview_details", columnDefinition = "TEXT")
+    @Column(name = "interview_details", nullable = false)
     private String interview_details;
 
     // Branch/Semester filtering fields
