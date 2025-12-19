@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @RestController
 public class JobController {
@@ -23,6 +24,7 @@ public class JobController {
     private UserRepo userRepo;
 
     @GetMapping("/jobs")
+    @Transactional(readOnly = true)
     public List<JobDetails> getJobs() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
@@ -57,6 +59,7 @@ public class JobController {
     // CORRECTED: Security annotation is now enabled.
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/jobs")
+    @Transactional
     public JobDetails addJob(@RequestBody JobDetails jobDetails) {
         return jobService.addJob(jobDetails);
     }

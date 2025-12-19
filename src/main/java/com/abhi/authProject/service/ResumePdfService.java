@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 import org.xhtmlrenderer.pdf.ITextRenderer;
+import org.springframework.transaction.annotation.Transactional;
 import jakarta.annotation.PostConstruct; // Add this line
 
 import com.abhi.authProject.model.ResumeFile;
@@ -24,6 +25,7 @@ import java.util.UUID;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class ResumePdfService {
 
     @Autowired
