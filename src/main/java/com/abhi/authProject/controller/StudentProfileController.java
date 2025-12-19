@@ -102,4 +102,42 @@ public class StudentProfileController {
             return ResponseEntity.ok(profileRepo.save(profile));
         }).orElse(ResponseEntity.notFound().build());
     }
+
+    @PostMapping("/upload-id-card")
+    public ResponseEntity<?> uploadIdCard(@RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            Authentication auth) throws java.io.IOException {
+        String username = auth.getName();
+        Users user = userRepo.findByUsername(username).orElse(null);
+        if (user == null)
+            return ResponseEntity.badRequest().body("User not found");
+
+        StudentProfile profile = profileRepo.findByUserId(user.getId()).orElse(new StudentProfile());
+        if (profile.getUser() == null)
+            profile.setUser(user);
+
+        com.abhi.authProject.model.IdCardImage img = new com.abhi.authProject.model.IdCardImage();
+        img.setName(file.getOriginalFilename());
+        img.setType(file.getContentType());
+        img.setData(file.getBytes());
+
+        profile.setIdCardImageEntity(img);
+        profile.setIdCardUrl("/api/student-profile/id-card/" + profile.getId()); // Helper URL
+        profileRepo.save(profile);
+        return ResponseEntity.ok("ID Card Uploaded");
+    }
+
+    @GetMapping("/id-card/{id}")
+    public ResponseEntity<org.springframework.core.io.Resource> getIdCard(@PathVariable Long id) {
+        StudentProfile profile = profileRepo.findById(id).orElse(null);
+        if (profile == null || profile.getIdCardImageEntity() == null)
+            return ResponseEntity.notFound().build();
+
+        com.abhi.authProject.model.IdCardImage img = profile.getIdCardImageEntity();
+
+        return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType(img.getType()))
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + img.getName() + "\"")
+                .body(new org.springframework.core.io.ByteArrayResource(img.getData()));
+    }
 }

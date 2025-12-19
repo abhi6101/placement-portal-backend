@@ -35,6 +35,13 @@ public class StudentProfile {
     // Additional Details
     private String skills; // Comma-separated
     private String resumeUrl; // Link to uploaded resume
+    private String idCardUrl; // Link to uploaded ID card
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_card_image_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private IdCardImage idCardImageEntity;
+
     private String linkedinProfile;
     private String githubProfile;
 
@@ -160,6 +167,22 @@ public class StudentProfile {
 
     public void setResumeUrl(String resumeUrl) {
         this.resumeUrl = resumeUrl;
+    }
+
+    public String getIdCardUrl() {
+        return idCardUrl;
+    }
+
+    public void setIdCardUrl(String idCardUrl) {
+        this.idCardUrl = idCardUrl;
+    }
+
+    public IdCardImage getIdCardImageEntity() {
+        return idCardImageEntity;
+    }
+
+    public void setIdCardImageEntity(IdCardImage idCardImageEntity) {
+        this.idCardImageEntity = idCardImageEntity;
     }
 
     public String getLinkedinProfile() {
