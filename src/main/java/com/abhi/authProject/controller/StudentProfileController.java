@@ -46,8 +46,13 @@ public class StudentProfileController {
         // Sync with User entity for checkProfileStatus
         if (profile.getBranch() != null)
             user.setBranch(profile.getBranch());
-        if (profile.getSemester() != null)
-            user.setSemester(profile.getSemester());
+        if (profile.getSemester() != null) {
+            try {
+                user.setSemester(Integer.parseInt(profile.getSemester()));
+            } catch (NumberFormatException e) {
+                // Ignore invalid format
+            }
+        }
         user.setLastProfileUpdate(java.time.LocalDate.now());
         userRepo.save(user);
 
