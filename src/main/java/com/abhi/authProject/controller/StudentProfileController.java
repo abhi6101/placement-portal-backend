@@ -44,6 +44,10 @@ public class StudentProfileController {
         }
 
         // Sync with User entity for checkProfileStatus
+        if (profile.getFullName() != null)
+            user.setName(profile.getFullName());
+        if (profile.getPhoneNumber() != null)
+            user.setPhone(profile.getPhoneNumber());
         if (profile.getBranch() != null)
             user.setBranch(profile.getBranch());
         if (profile.getSemester() != null) {
