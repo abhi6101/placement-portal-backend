@@ -31,6 +31,9 @@ public class JobApplicationController {
     @org.springframework.beans.factory.annotation.Autowired
     private com.abhi.authProject.repo.UserRepo userRepo;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.abhi.authProject.repo.StudentProfileRepo profileRepo;
+
     public JobApplicationController(JobApplicationService jobApplicationService,
             JobApplicationRepository jobApplicationRepository) {
         this.jobApplicationService = jobApplicationService;
@@ -59,6 +62,12 @@ public class JobApplicationController {
         com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         String authenticatedEmail = user.getEmail();
+
+        com.abhi.authProject.model.StudentProfile profile = profileRepo.findByUserId(user.getId()).orElse(null);
+        if (profile == null || !"APPROVED".equalsIgnoreCase(profile.getApprovalStatus())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Your student profile is not verified. Please complete the verification process via Onboarding.");
+        }
 
         JobApplicationRequest1 applicationRequest = new JobApplicationRequest1(
                 jobId, jobTitle, companyName, applicantName, authenticatedEmail, applicantPhone,
