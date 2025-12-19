@@ -40,9 +40,9 @@ public class DepartmentController {
     public ResponseEntity<?> initDefaults() {
         List<Department> defaults = Arrays.asList(
                 new Department(null, "Integrated Master of Computer Applications", "IMCA", "Head IMCA",
-                        "imca@college.edu"),
-                new Department(null, "Master of Computer Applications", "MCA", "Head MCA", "mca@college.edu"),
-                new Department(null, "Bachelor of Computer Applications", "BCA", "Head BCA", "bca@college.edu"));
+                        "imca@college.edu", 10),
+                new Department(null, "Master of Computer Applications", "MCA", "Head MCA", "mca@college.edu", 4),
+                new Department(null, "Bachelor of Computer Applications", "BCA", "Head BCA", "bca@college.edu", 6));
 
         int count = 0;
         for (Department d : defaults) {

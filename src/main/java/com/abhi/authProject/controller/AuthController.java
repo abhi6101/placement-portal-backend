@@ -94,6 +94,7 @@ public class AuthController {
                     "token", token,
                     "username", authentication.getName(),
                     "companyName", companyName != null ? companyName : "",
+                    "branch", (user != null && user.getBranch() != null) ? user.getBranch() : "",
                     "roles", authentication.getAuthorities().stream()
                             .map(GrantedAuthority::getAuthority)
                             .collect(Collectors.toList())));

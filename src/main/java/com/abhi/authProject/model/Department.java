@@ -27,4 +27,7 @@ public class Department {
 
     @Column(name = "contact_email")
     private String contactEmail;
+
+    @Column(name = "max_semesters")
+    private int maxSemesters = 8;
 }
