@@ -1,7 +1,5 @@
 package com.abhi.authProject.model;
 
-
-
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -28,7 +26,7 @@ public class JobApplication {
     private String applicantPhone;
     private String applicantRollNo; // Optional
 
-    @Lob // For larger text fields
+    @Column(columnDefinition = "TEXT") // For larger text fields
     private String coverLetter;
 
     @Column(nullable = false)
@@ -46,7 +44,8 @@ public class JobApplication {
     // @JoinColumn(name = "user_id")
     // private User applicantUser;
 
-    // Constructor, Getters, Setters (Lombok can simplify this, but manually for clarity)
+    // Constructor, Getters, Setters (Lombok can simplify this, but manually for
+    // clarity)
 
     public JobApplication() {
         this.appliedAt = LocalDateTime.now();
@@ -55,8 +54,8 @@ public class JobApplication {
 
     // You can add a constructor for easy creation from JobApplicationRequest1
     public JobApplication(String jobId, String jobTitle, String companyName, String applicantName,
-                          String applicantEmail, String applicantPhone, String applicantRollNo,
-                          String coverLetter, String resumePath) {
+            String applicantEmail, String applicantPhone, String applicantRollNo,
+            String coverLetter, String resumePath) {
         this(); // Call default constructor to set appliedAt and status
         this.jobId = jobId;
         this.jobTitle = jobTitle;
@@ -70,40 +69,111 @@ public class JobApplication {
     }
 
     // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getJobId() { return jobId; }
-    public void setJobId(String jobId) { this.jobId = jobId; }
-    public String getJobTitle() { return jobTitle; }
-    public void setJobTitle(String jobTitle) { this.jobTitle = jobTitle; }
-    public String getCompanyName() { return companyName; }
-    public void setCompanyName(String companyName) { this.companyName = companyName; }
-    public String getApplicantName() { return applicantName; }
-    public void setApplicantName(String applicantName) { this.applicantName = applicantName; }
-    public String getApplicantEmail() { return applicantEmail; }
-    public void setApplicantEmail(String applicantEmail) { this.applicantEmail = applicantEmail; }
-    public String getApplicantPhone() { return applicantPhone; }
-    public void setApplicantPhone(String applicantPhone) { this.applicantPhone = applicantPhone; }
-    public String getApplicantRollNo() { return applicantRollNo; }
-    public void setApplicantRollNo(String applicantRollNo) { this.applicantRollNo = applicantRollNo; }
-    public String getCoverLetter() { return coverLetter; }
-    public void setCoverLetter(String coverLetter) { this.coverLetter = coverLetter; }
-    public String getResumePath() { return resumePath; }
-    public void setResumePath(String resumePath) { this.resumePath = resumePath; }
-    public ApplicationStatus getStatus() { return status; }
-    public void setStatus(ApplicationStatus status) { this.status = status; }
-    public LocalDateTime getAppliedAt() { return appliedAt; }
-    public void setAppliedAt(LocalDateTime appliedAt) { this.appliedAt = appliedAt; }
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getJobId() {
+        return jobId;
+    }
+
+    public void setJobId(String jobId) {
+        this.jobId = jobId;
+    }
+
+    public String getJobTitle() {
+        return jobTitle;
+    }
+
+    public void setJobTitle(String jobTitle) {
+        this.jobTitle = jobTitle;
+    }
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+    }
+
+    public String getApplicantName() {
+        return applicantName;
+    }
+
+    public void setApplicantName(String applicantName) {
+        this.applicantName = applicantName;
+    }
+
+    public String getApplicantEmail() {
+        return applicantEmail;
+    }
+
+    public void setApplicantEmail(String applicantEmail) {
+        this.applicantEmail = applicantEmail;
+    }
+
+    public String getApplicantPhone() {
+        return applicantPhone;
+    }
+
+    public void setApplicantPhone(String applicantPhone) {
+        this.applicantPhone = applicantPhone;
+    }
+
+    public String getApplicantRollNo() {
+        return applicantRollNo;
+    }
+
+    public void setApplicantRollNo(String applicantRollNo) {
+        this.applicantRollNo = applicantRollNo;
+    }
+
+    public String getCoverLetter() {
+        return coverLetter;
+    }
+
+    public void setCoverLetter(String coverLetter) {
+        this.coverLetter = coverLetter;
+    }
+
+    public String getResumePath() {
+        return resumePath;
+    }
+
+    public void setResumePath(String resumePath) {
+        this.resumePath = resumePath;
+    }
+
+    public ApplicationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ApplicationStatus status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getAppliedAt() {
+        return appliedAt;
+    }
+
+    public void setAppliedAt(LocalDateTime appliedAt) {
+        this.appliedAt = appliedAt;
+    }
 
     @Override
     public String toString() {
         return "JobApplication{" +
-               "id=" + id +
-               ", jobId='" + jobId + '\'' +
-               ", jobTitle='" + jobTitle + '\'' +
-               ", companyName='" + companyName + '\'' +
-               ", applicantName='" + applicantName + '\'' +
-               ", status=" + status +
-               '}';
+                "id=" + id +
+                ", jobId='" + jobId + '\'' +
+                ", jobTitle='" + jobTitle + '\'' +
+                ", companyName='" + companyName + '\'' +
+                ", applicantName='" + applicantName + '\'' +
+                ", status=" + status +
+                '}';
     }
 }

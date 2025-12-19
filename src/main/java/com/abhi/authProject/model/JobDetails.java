@@ -22,8 +22,7 @@ public class JobDetails {
     private int id;
 
     @NotBlank(message = "Apply link is required")
-    @Lob
-    @Column(name = "apply_link", nullable = false)
+    @Column(name = "apply_link", nullable = false, columnDefinition = "TEXT")
     private String apply_link;
 
     @NotBlank(message = "Title is required")
@@ -42,16 +41,14 @@ public class JobDetails {
     private String company_name;
 
     @NotBlank(message = "Description is required")
-    @Lob
-    @Column(name = "description", nullable = false)
+    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
     @Min(value = 0, message = "Salary must be non-negative")
     @Column(name = "salary", nullable = false)
     private int salary;
 
-    @Lob
-    @Column(name = "interview_details", nullable = false)
+    @Column(name = "interview_details", nullable = false, columnDefinition = "TEXT")
     private String interview_details;
 
     // Branch/Semester filtering fields
