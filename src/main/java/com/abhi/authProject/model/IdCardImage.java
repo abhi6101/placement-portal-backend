@@ -18,6 +18,6 @@ public class IdCardImage {
     private String type;
 
     @Lob
-    @Column(name = "data", columnDefinition = "LONGBLOB")
+    @Column(name = "data")
     private byte[] data;
 }
