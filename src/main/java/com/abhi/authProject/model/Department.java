@@ -30,4 +30,7 @@ public class Department {
 
     @Column(name = "max_semesters")
     private int maxSemesters = 8;
+
+    private String category; // e.g. "Engineering"
+    private String degree; // e.g. "B.Tech"
 }

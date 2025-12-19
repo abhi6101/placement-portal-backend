@@ -84,6 +84,9 @@ public class Users {
     @Column(name = "semester")
     private Integer semester; // IMCA: 1-10, MCA: 1-4, BCA: 2,4,6 (Year*2)
 
+    @Column(name = "batch")
+    private String batch; // e.g., "2022-2027"
+
     @Column(name = "last_profile_update")
     private java.time.LocalDate lastProfileUpdate; // Track when student last updated profile
 

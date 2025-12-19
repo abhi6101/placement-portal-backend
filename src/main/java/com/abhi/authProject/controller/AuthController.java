@@ -123,31 +123,19 @@ public class AuthController {
             if ("USER".equals(registerRequest.getRole())) {
                 String branch = registerRequest.getBranch();
                 Integer semester = registerRequest.getSemester();
+                String batch = registerRequest.getBatch();
 
-                // Validate branch
-                if (branch == null || !java.util.Arrays.asList("IMCA", "MCA", "BCA").contains(branch)) {
+                if (branch == null) {
                     return ResponseEntity.badRequest()
-                            .body(Map.of("message", "Invalid branch. Must be IMCA, MCA, or BCA"));
+                            .body(Map.of("message", "Branch is required"));
                 }
-
-                // Validate semester based on branch
                 if (semester == null) {
                     return ResponseEntity.badRequest().body(Map.of("message", "Semester is required for students"));
-                }
-                if ("IMCA".equals(branch) && (semester < 1 || semester > 10)) {
-                    return ResponseEntity.badRequest()
-                            .body(Map.of("message", "IMCA semester must be between 1 and 10"));
-                }
-                if ("MCA".equals(branch) && (semester < 1 || semester > 4)) {
-                    return ResponseEntity.badRequest().body(Map.of("message", "MCA semester must be between 1 and 4"));
-                }
-                if ("BCA".equals(branch) && !java.util.Arrays.asList(2, 4, 6).contains(semester)) {
-                    return ResponseEntity.badRequest()
-                            .body(Map.of("message", "BCA semester must be 2, 4, or 6 (representing Year 1, 2, or 3)"));
                 }
 
                 newUser.setBranch(branch);
                 newUser.setSemester(semester);
+                newUser.setBatch(batch);
                 newUser.setLastProfileUpdate(java.time.LocalDate.now());
             }
 
@@ -310,31 +298,15 @@ public class AuthController {
         String branch = (String) payload.get("branch");
         Integer semester = payload.get("semester") != null ? Integer.parseInt(payload.get("semester").toString())
                 : null;
-
-        // Validate branch
-        if (branch != null && !java.util.Arrays.asList("IMCA", "MCA", "BCA").contains(branch)) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid branch. Must be IMCA, MCA, or BCA"));
-        }
-
-        // Validate semester based on branch
-        if (semester != null) {
-            if ("IMCA".equals(branch) && (semester < 1 || semester > 10)) {
-                return ResponseEntity.badRequest().body(Map.of("message", "IMCA semester must be between 1 and 10"));
-            }
-            if ("MCA".equals(branch) && (semester < 1 || semester > 4)) {
-                return ResponseEntity.badRequest().body(Map.of("message", "MCA semester must be between 1 and 4"));
-            }
-            if ("BCA".equals(branch) && !java.util.Arrays.asList(2, 4, 6).contains(semester)) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("message", "BCA semester must be 2, 4, or 6 (representing Year 1, 2, or 3)"));
-            }
-        }
+        String batch = (String) payload.get("batch");
 
         // Update student profile
         if (branch != null)
             student.setBranch(branch);
         if (semester != null)
             student.setSemester(semester);
+        if (batch != null)
+            student.setBatch(batch);
         student.setLastProfileUpdate(java.time.LocalDate.now());
 
         Users saved = userRepo.save(student);
@@ -405,6 +377,7 @@ public class AuthController {
         private String role;
         private String branch; // For students: IMCA, MCA, BCA
         private Integer semester; // For students: varies by branch
+        private String batch; // e.g. 2022-2027
     }
 
     // NEW DTO for verification code request

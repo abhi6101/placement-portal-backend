@@ -34,15 +34,31 @@ public class DepartmentController {
         return ResponseEntity.ok(departmentRepo.save(department));
     }
 
+    // Add Bulk Departments
+    @PostMapping("/bulk")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> addDepartmentsBulk(@RequestBody List<Department> departments) {
+        int count = 0;
+        for (Department d : departments) {
+            if (!departmentRepo.existsByCode(d.getCode())) {
+                departmentRepo.save(d);
+                count++;
+            }
+        }
+        return ResponseEntity.ok("Added " + count + " departments.");
+    }
+
     // Initialize Default Departments (One-time utility)
     @PostMapping("/init-defaults")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> initDefaults() {
         List<Department> defaults = Arrays.asList(
                 new Department(null, "Integrated Master of Computer Applications", "IMCA", "Head IMCA",
-                        "imca@college.edu", 10),
-                new Department(null, "Master of Computer Applications", "MCA", "Head MCA", "mca@college.edu", 4),
-                new Department(null, "Bachelor of Computer Applications", "BCA", "Head BCA", "bca@college.edu", 6));
+                        "imca@college.edu", 10, "Computer Applications", "IMCA"),
+                new Department(null, "Master of Computer Applications", "MCA", "Head MCA", "mca@college.edu", 4,
+                        "Computer Applications", "MCA"),
+                new Department(null, "Bachelor of Computer Applications", "BCA", "Head BCA", "bca@college.edu", 6,
+                        "Computer Applications", "BCA"));
 
         int count = 0;
         for (Department d : defaults) {

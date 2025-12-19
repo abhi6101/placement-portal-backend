@@ -25,6 +25,7 @@ public class StudentProfile {
     private String enrollmentNumber;
     private String branch;
     private String semester;
+    private String batch;
     private Double cgpa;
     private Integer backlogs;
 
@@ -108,6 +109,14 @@ public class StudentProfile {
 
     public void setSemester(String semester) {
         this.semester = semester;
+    }
+
+    public String getBatch() {
+        return batch;
+    }
+
+    public void setBatch(String batch) {
+        this.batch = batch;
     }
 
     public Double getCgpa() {
