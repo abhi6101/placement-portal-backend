@@ -43,6 +43,14 @@ public class StudentProfileController {
             return ResponseEntity.badRequest().body("User not found");
         }
 
+        // Sync with User entity for checkProfileStatus
+        if (profile.getBranch() != null)
+            user.setBranch(profile.getBranch());
+        if (profile.getSemester() != null)
+            user.setSemester(profile.getSemester());
+        user.setLastProfileUpdate(java.time.LocalDate.now());
+        userRepo.save(user);
+
         // Check if profile exists
         StudentProfile existing = profileRepo.findByUserId(user.getId()).orElse(null);
 
