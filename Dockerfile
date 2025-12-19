@@ -37,5 +37,5 @@ COPY --from=builder /build/target/*.jar /app/app.jar
 EXPOSE 8080
 
 # Define the command to run the application when the container starts
-# 'java -jar /app/app.jar' executes your Spring Boot application.
-CMD ["java", "-jar", "/app/app.jar"]
+# Optimized for fast startup and low memory (Cold starts)
+CMD ["java", "-XX:+TieredCompilation", "-XX:TieredStopAtLevel=1", "-Xmx400m", "-jar", "/app/app.jar"]
