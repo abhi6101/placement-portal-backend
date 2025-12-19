@@ -15,7 +15,10 @@ public class EmergencyAdminFix {
     @Bean
     CommandLineRunner fixDatabaseSchema() {
         return args -> {
-            System.out.println("🚨 EMERGENCY DB PATCHER: Checking Schema Health...");
+            if (true) {
+                System.out.println("⚠️ DB PATCHER IS DISABLED TEMPORARILY. Please run SQL manually in Supabase.");
+                return;
+            }
 
             // 1. Fix Users Table (Add 'batch' if missing)
             try {
