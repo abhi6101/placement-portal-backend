@@ -18,6 +18,7 @@ import java.io.IOException; // Keep this import
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @RestController
 @RequestMapping("/api")
@@ -78,15 +79,20 @@ public class JobApplicationController {
 
     @GetMapping("/job-applications/my")
     @PreAuthorize("hasRole('USER')")
+    @Transactional(readOnly = true)
     public ResponseEntity<List<JobApplication>> getMyJobApplications(Principal principal) {
-        String email = principal.getName();
-        List<JobApplication> applications = jobApplicationRepository.findByApplicantEmail(email);
+        String username = principal.getName();
+        com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        List<JobApplication> applications = jobApplicationRepository.findByApplicantEmail(user.getEmail());
         return ResponseEntity.ok(applications);
     }
 
     @GetMapping("/admin/job-applications")
     // Allow any admin role (handled by security config usually, but permissive
     // here)
+    @Transactional(readOnly = true)
     public ResponseEntity<List<JobApplication>> getAllJobApplications(Principal principal) {
         String username = principal.getName();
         com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
