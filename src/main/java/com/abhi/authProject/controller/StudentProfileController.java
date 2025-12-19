@@ -140,4 +140,70 @@ public class StudentProfileController {
                         "inline; filename=\"" + img.getName() + "\"")
                 .body(new org.springframework.core.io.ByteArrayResource(img.getData()));
     }
+
+    @PostMapping("/upload-aadhar")
+    public ResponseEntity<?> uploadAadhar(@RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            Authentication auth) throws java.io.IOException {
+        String username = auth.getName();
+        Users user = userRepo.findByUsername(username).orElse(null);
+        if (user == null)
+            return ResponseEntity.badRequest().body("User not found");
+
+        StudentProfile profile = profileRepo.findByUserId(user.getId()).orElse(new StudentProfile());
+        if (profile.getUser() == null)
+            profile.setUser(user);
+
+        com.abhi.authProject.model.IdCardImage img = new com.abhi.authProject.model.IdCardImage();
+        img.setName(file.getOriginalFilename());
+        img.setType(file.getContentType());
+        img.setData(file.getBytes());
+
+        profile.setAadharImageEntity(img);
+        profile.setAadharCardUrl("/api/student-profile/aadhar/" + profile.getId());
+        profileRepo.save(profile);
+        return ResponseEntity.ok("Aadhar Uploaded");
+    }
+
+    @GetMapping("/aadhar/{id}")
+    public ResponseEntity<org.springframework.core.io.Resource> getAadhar(@PathVariable Long id) {
+        StudentProfile profile = profileRepo.findById(id).orElse(null);
+        if (profile == null || profile.getAadharImageEntity() == null)
+            return ResponseEntity.notFound().build();
+        com.abhi.authProject.model.IdCardImage img = profile.getAadharImageEntity();
+        return ResponseEntity.ok().contentType(org.springframework.http.MediaType.parseMediaType(img.getType()))
+                .body(new org.springframework.core.io.ByteArrayResource(img.getData()));
+    }
+
+    @PostMapping("/upload-admit-card")
+    public ResponseEntity<?> uploadAdmitCard(@RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            Authentication auth) throws java.io.IOException {
+        String username = auth.getName();
+        Users user = userRepo.findByUsername(username).orElse(null);
+        if (user == null)
+            return ResponseEntity.badRequest().body("User not found");
+
+        StudentProfile profile = profileRepo.findByUserId(user.getId()).orElse(new StudentProfile());
+        if (profile.getUser() == null)
+            profile.setUser(user);
+
+        com.abhi.authProject.model.IdCardImage img = new com.abhi.authProject.model.IdCardImage();
+        img.setName(file.getOriginalFilename());
+        img.setType(file.getContentType());
+        img.setData(file.getBytes());
+
+        profile.setAdmitCardImageEntity(img);
+        profile.setAdmitCardUrl("/api/student-profile/admit-card/" + profile.getId());
+        profileRepo.save(profile);
+        return ResponseEntity.ok("Admit Card Uploaded");
+    }
+
+    @GetMapping("/admit-card/{id}")
+    public ResponseEntity<org.springframework.core.io.Resource> getAdmitCard(@PathVariable Long id) {
+        StudentProfile profile = profileRepo.findById(id).orElse(null);
+        if (profile == null || profile.getAdmitCardImageEntity() == null)
+            return ResponseEntity.notFound().build();
+        com.abhi.authProject.model.IdCardImage img = profile.getAdmitCardImageEntity();
+        return ResponseEntity.ok().contentType(org.springframework.http.MediaType.parseMediaType(img.getType()))
+                .body(new org.springframework.core.io.ByteArrayResource(img.getData()));
+    }
 }

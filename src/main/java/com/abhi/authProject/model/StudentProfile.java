@@ -42,6 +42,21 @@ public class StudentProfile {
     @com.fasterxml.jackson.annotation.JsonIgnore
     private IdCardImage idCardImageEntity;
 
+    // Enhanced Verification
+    private String collegeName;
+    private String aadharCardUrl;
+    private String admitCardUrl;
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "aadhar_image_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private IdCardImage aadharImageEntity;
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "admit_card_image_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private IdCardImage admitCardImageEntity;
+
     private String linkedinProfile;
     private String githubProfile;
 
@@ -183,6 +198,46 @@ public class StudentProfile {
 
     public void setIdCardImageEntity(IdCardImage idCardImageEntity) {
         this.idCardImageEntity = idCardImageEntity;
+    }
+
+    public String getCollegeName() {
+        return collegeName;
+    }
+
+    public void setCollegeName(String collegeName) {
+        this.collegeName = collegeName;
+    }
+
+    public String getAadharCardUrl() {
+        return aadharCardUrl;
+    }
+
+    public void setAadharCardUrl(String aadharCardUrl) {
+        this.aadharCardUrl = aadharCardUrl;
+    }
+
+    public String getAdmitCardUrl() {
+        return admitCardUrl;
+    }
+
+    public void setAdmitCardUrl(String admitCardUrl) {
+        this.admitCardUrl = admitCardUrl;
+    }
+
+    public IdCardImage getAadharImageEntity() {
+        return aadharImageEntity;
+    }
+
+    public void setAadharImageEntity(IdCardImage aadharImageEntity) {
+        this.aadharImageEntity = aadharImageEntity;
+    }
+
+    public IdCardImage getAdmitCardImageEntity() {
+        return admitCardImageEntity;
+    }
+
+    public void setAdmitCardImageEntity(IdCardImage admitCardImageEntity) {
+        this.admitCardImageEntity = admitCardImageEntity;
     }
 
     public String getLinkedinProfile() {
