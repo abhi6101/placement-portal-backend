@@ -12,4 +12,6 @@ public interface StudentProfileRepo extends JpaRepository<StudentProfile, Long> 
     Optional<StudentProfile> findByUser(Users user);
 
     Optional<StudentProfile> findByUserId(int userId);
+
+    java.util.List<StudentProfile> findByBranch(String branch);
 }

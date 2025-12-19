@@ -89,9 +89,26 @@ public class StudentProfileController {
     }
 
     @GetMapping("/admin/all")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<?> getAllProfiles() {
-        return ResponseEntity.ok(profileRepo.findAll());
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('SUPER_ADMIN', 'DEPT_ADMIN')")
+    public ResponseEntity<?> getAllProfiles(Authentication auth) {
+        String username = auth.getName();
+        Users user = userRepo.findByUsername(username).orElse(null);
+
+        if (user == null) {
+            return ResponseEntity.status(401).body("User not found");
+        }
+
+        if (user.getRole().equals("SUPER_ADMIN") || user.getRole().equals("ADMIN")) {
+            return ResponseEntity.ok(profileRepo.findAll());
+        } else if (user.getRole().equals("DEPT_ADMIN")) {
+            String branch = user.getBranch();
+            if (branch == null || branch.isEmpty()) {
+                return ResponseEntity.ok(java.util.Collections.emptyList());
+            }
+            return ResponseEntity.ok(profileRepo.findByBranch(branch));
+        }
+
+        return ResponseEntity.status(403).body("Access Denied");
     }
 
     @PutMapping("/{id}/status")

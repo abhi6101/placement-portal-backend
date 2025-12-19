@@ -115,6 +115,8 @@ public class AdminUserController {
                     }
 
                     user.setCompanyName(updatedUser.getCompanyName()); // Update company
+                    user.setBranch(updatedUser.getBranch());
+                    user.setSemester(updatedUser.getSemester());
 
                     // Only update password if new one is provided
                     if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {

@@ -61,6 +61,14 @@ public class Users {
 
     @jakarta.persistence.OneToOne(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     @lombok.ToString.Exclude
+    private StudentProfile studentProfile;
+
+    @jakarta.persistence.OneToOne(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    @lombok.ToString.Exclude
+    private ResumeFile resumeFile;
+
+    @jakarta.persistence.OneToOne(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    @lombok.ToString.Exclude
     private PasswordResetToken passwordResetToken;
 
     // Field to link Company Admin to a specific company
