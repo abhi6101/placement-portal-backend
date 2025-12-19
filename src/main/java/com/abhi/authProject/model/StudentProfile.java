@@ -29,6 +29,9 @@ public class StudentProfile {
     private Double cgpa;
     private Integer backlogs;
 
+    @Column(columnDefinition = "VARCHAR(20) DEFAULT 'PENDING'")
+    private String approvalStatus = "PENDING"; // PENDING, APPROVED, REJECTED
+
     // Additional Details
     private String skills; // Comma-separated
     private String resumeUrl; // Link to uploaded resume
@@ -133,6 +136,14 @@ public class StudentProfile {
 
     public void setBacklogs(Integer backlogs) {
         this.backlogs = backlogs;
+    }
+
+    public String getApprovalStatus() {
+        return approvalStatus;
+    }
+
+    public void setApprovalStatus(String approvalStatus) {
+        this.approvalStatus = approvalStatus;
     }
 
     public String getSkills() {

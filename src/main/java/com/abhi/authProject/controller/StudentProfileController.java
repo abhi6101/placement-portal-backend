@@ -57,6 +57,8 @@ public class StudentProfileController {
                 // Ignore invalid format
             }
         }
+        if (profile.getBatch() != null)
+            user.setBatch(profile.getBatch());
         user.setLastProfileUpdate(java.time.LocalDate.now());
         userRepo.save(user);
 
@@ -90,5 +92,14 @@ public class StudentProfileController {
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> getAllProfiles() {
         return ResponseEntity.ok(profileRepo.findAll());
+    }
+
+    @PutMapping("/{id}/status")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('SUPER_ADMIN', 'DEPT_ADMIN')")
+    public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestParam String status) {
+        return profileRepo.findById(id).map(profile -> {
+            profile.setApprovalStatus(status);
+            return ResponseEntity.ok(profileRepo.save(profile));
+        }).orElse(ResponseEntity.notFound().build());
     }
 }
