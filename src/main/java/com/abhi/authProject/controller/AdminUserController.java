@@ -57,6 +57,22 @@ public class AdminUserController {
                 return ResponseEntity.badRequest().body("Email already exists");
             }
 
+            // DEPT_ADMIN Validation: Only ONE DEPT_ADMIN per branch
+            if ("DEPT_ADMIN".equals(user.getRole())) {
+                if (user.getBranch() == null || user.getBranch().isEmpty()) {
+                    return ResponseEntity.badRequest().body("Branch is required for DEPT_ADMIN role");
+                }
+
+                // Check if a DEPT_ADMIN already exists for this branch
+                List<Users> existingDeptAdmins = userRepo.findByRoleAndBranch("DEPT_ADMIN", user.getBranch());
+                if (!existingDeptAdmins.isEmpty()) {
+                    String existingAdmin = existingDeptAdmins.get(0).getUsername();
+                    return ResponseEntity.badRequest().body(
+                            "A Department Admin already exists for " + user.getBranch() +
+                                    " (" + existingAdmin + "). Only one DEPT_ADMIN is allowed per department.");
+                }
+            }
+
             String rawPassword = user.getPassword(); // Capture raw password for email
 
             // Encrypt password if provided (simplistic, better to force it)

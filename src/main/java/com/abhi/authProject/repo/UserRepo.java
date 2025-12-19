@@ -21,4 +21,7 @@ public interface UserRepo extends JpaRepository<Users, Integer> {
 
     // NEW: Find students by branch and semester (for semester updates)
     List<Users> findByBranchAndSemester(String branch, Integer semester);
+
+    // NEW: Find users by role and branch (for DEPT_ADMIN validation)
+    List<Users> findByRoleAndBranch(String role, String branch);
 }
