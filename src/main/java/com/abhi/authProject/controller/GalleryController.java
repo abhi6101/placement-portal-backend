@@ -22,6 +22,9 @@ import java.util.Map;
 @CrossOrigin
 public class GalleryController {
 
+    @org.springframework.beans.factory.annotation.Value("${BACKEND_URL}")
+    private String backendUrl;
+
     @Autowired
     private GalleryRepository galleryRepository;
 
@@ -57,7 +60,7 @@ public class GalleryController {
 
                 // Extract filename from absolute path
                 String filename = java.nio.file.Paths.get(absolutePath).getFileName().toString();
-                finalUrl = "https://placement-portal-backend-nwaj.onrender.com/uploads/" + filename;
+                finalUrl = backendUrl + "/uploads/" + filename;
                 // Using absolute URL for safety if frontend is on different domain,
                 // but relative "/uploads/" + filename is usually fine if on same domain or
                 // proxy.

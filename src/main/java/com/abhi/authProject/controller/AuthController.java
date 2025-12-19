@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@CrossOrigin(origins = "https://hack-2-hired.onrender.com") // Adjust this based on your frontend's actual origin
 @RequestMapping("/api/auth")
 public class AuthController {
 

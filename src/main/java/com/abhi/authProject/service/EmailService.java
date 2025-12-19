@@ -24,6 +24,9 @@ public class EmailService {
     @Value("${sendgrid.from.email:hack2hired.official@gmail.com}")
     private String fromEmail;
 
+    @Value("${FRONTEND_URL}")
+    private String frontendUrl;
+
     @Autowired
     private GlobalSettingsService globalSettingsService;
 
@@ -341,7 +344,7 @@ public class EmailService {
                     "Role: " + jobTitle + "\n" +
                     "Company: " + companyName + "\n" +
                     (salary != null ? "Salary: " + salary + "\n" : "") +
-                    "\nApply here: " + (applyLink != null ? applyLink : "https://hack-2-hired.onrender.com/jobs")
+                    "\nApply here: " + (applyLink != null ? applyLink : frontendUrl + "/jobs")
                     + "\n\n" +
                     "Best,\nPlacement Portal Team";
             Content textContent = new Content("text/plain", plainText);
@@ -522,7 +525,7 @@ public class EmailService {
         }
         html.append("<br/>");
         html.append("<a href='").append(
-                applyLink != null && !applyLink.isEmpty() ? applyLink : "https://hack-2-hired.onrender.com/jobs")
+                applyLink != null && !applyLink.isEmpty() ? applyLink : frontendUrl + "/jobs")
                 .append("' class='btn-apply'>View & Apply</a>");
         html.append("</div>");
 
