@@ -19,17 +19,17 @@ public class EmergencyAdminFix {
 
             // 1. Fix Users Table (Add 'batch' if missing)
             try {
-                // Set statement timeout to 0 (unlimited) for this session to ensure ALTER TABLE
-                // completes
-                jdbcTemplate.execute("SET statement_timeout = 0");
-                jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS batch VARCHAR(255)");
-                System.out.println("✅ Checked/Added 'batch' column to 'users'");
+                // Set statement timeout to 0 (unlimited) and add column in one go
+                jdbcTemplate.execute(
+                        "SET statement_timeout = 0; ALTER TABLE users ADD COLUMN IF NOT EXISTS batch VARCHAR(255);");
+                System.out.println("✅ Checked/Added 'batch' column to 'users' (Combined Statement)");
             } catch (Exception e) {
                 System.err.println("⚠️ Error patching users table: " + e.getMessage());
-                // Try a simpler version if IF NOT EXISTS is failing for some reason
+                // Alternate attempt without IF NOT EXISTS
                 try {
                     jdbcTemplate.execute("ALTER TABLE users ADD COLUMN batch VARCHAR(255)");
                 } catch (Exception e2) {
+                    // It might already exist now
                 }
             }
 

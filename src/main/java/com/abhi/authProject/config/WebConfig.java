@@ -2,8 +2,6 @@ package com.abhi.authProject.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * Configures Cross-Origin Resource Sharing (CORS) for the application.
@@ -17,20 +15,16 @@ public class WebConfig {
     private String frontendUrl;
 
     @Bean
-    public WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**") // Apply CORS to all endpoints
-                        .allowedOrigins(
-                                frontendUrl,
-                                "https://hack-2-hired.vercel.app",
-                                "https://hack-2-hired.vercel.app/")
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                        .allowedHeaders("*")
-                        .allowCredentials(true)
-                        .maxAge(3600);
-            }
-        };
+    public org.springframework.web.filter.CorsFilter corsFilter() {
+        org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+        org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.addAllowedOrigin(frontendUrl);
+        config.addAllowedOrigin("https://hack-2-hired.vercel.app");
+        config.addAllowedOrigin("https://hack-2-hired.vercel.app/");
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
+        source.registerCorsConfiguration("/**", config);
+        return new org.springframework.web.filter.CorsFilter(source);
     }
 }
