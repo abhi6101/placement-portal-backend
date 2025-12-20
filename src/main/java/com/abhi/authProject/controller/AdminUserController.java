@@ -82,7 +82,9 @@ public class AdminUserController {
                         user.getBranch(),
                         user.getSemester(),
                         user.getAdminBranch(),
-                        user.getAllowedDepartments()))
+                        user.getAllowedDepartments(),
+                        user.getComputerCode(),
+                        user.getBatch()))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(userDtos);
@@ -158,7 +160,9 @@ public class AdminUserController {
                     savedUser.getBranch(),
                     savedUser.getSemester(),
                     savedUser.getAdminBranch(),
-                    savedUser.getAllowedDepartments()));
+                    savedUser.getAllowedDepartments(),
+                    savedUser.getComputerCode(),
+                    savedUser.getBatch()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Failed to create user: " + e.getMessage());
         }
@@ -230,7 +234,9 @@ public class AdminUserController {
                             saved.getBranch(),
                             saved.getSemester(),
                             saved.getAdminBranch(),
-                            saved.getAllowedDepartments()));
+                            saved.getAllowedDepartments(),
+                            saved.getComputerCode(),
+                            saved.getBatch()));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -366,7 +372,9 @@ public class AdminUserController {
                     student.getBranch(),
                     student.getSemester(),
                     student.getAdminBranch(),
-                    student.getAllowedDepartments()));
+                    student.getAllowedDepartments(),
+                    student.getComputerCode(),
+                    student.getBatch()));
         }
 
         // Create response

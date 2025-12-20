@@ -20,4 +20,6 @@ public class UserDto {
     private Integer semester; // Student's semester/year
     private String adminBranch; // For DEPT_ADMIN - which branch they manage
     private String allowedDepartments; // For COMPANY_ADMIN - which departments they can post jobs for
+    private String computerCode; // Unique student identifier (e.g., 59500)
+    private String batch; // Passout year (e.g., 2027, 2026)
 }
