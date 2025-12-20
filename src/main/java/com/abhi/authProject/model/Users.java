@@ -87,6 +87,10 @@ public class Users {
     @Column(name = "allowed_departments", length = 500)
     private String allowedDepartments; // e.g., "MCA,BCA,IMCA"
 
+    // Unique computer code for students (enrollment/roll number)
+    @Column(name = "computer_code", unique = true)
+    private String computerCode; // e.g., "MCA2023001", "BCA2024015"
+
     // Student profile fields
     @Column(name = "name")
     private String name; // Full name
