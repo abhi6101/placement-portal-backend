@@ -29,7 +29,7 @@ public class InterviewDriveController {
     }
 
     @PostMapping("/admin")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN', 'DEPT_ADMIN')")
     public InterviewDrive createDrive(@RequestBody InterviewDrive drive, java.security.Principal principal) {
         String username = principal.getName();
         com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
@@ -41,12 +41,37 @@ public class InterviewDriveController {
                 throw new RuntimeException("Your company account has been disabled. Please contact the administrator.");
             }
             drive.setCompany(user.getCompanyName());
+
+            // Restrict to allowed departments
+            if (user.getAllowedDepartments() != null && !user.getAllowedDepartments().isEmpty()) {
+                String[] allowedDepts = user.getAllowedDepartments().split(",");
+                // Filter eligible branches to only include allowed departments
+                if (drive.getEligibleBranches() != null) {
+                    drive.getEligibleBranches().removeIf(branch -> {
+                        for (String dept : allowedDepts) {
+                            if (branch.trim().equalsIgnoreCase(dept.trim())) {
+                                return false; // Keep this branch
+                            }
+                        }
+                        return true; // Remove this branch
+                    });
+                }
+            }
+        } else if ("DEPT_ADMIN".equals(user.getRole())) {
+            // DEPT_ADMIN can only post for their assigned branch
+            if (user.getAdminBranch() != null && !user.getAdminBranch().isEmpty()) {
+                // Override eligible branches to only their branch
+                drive.setEligibleBranches(java.util.Arrays.asList(user.getAdminBranch()));
+            } else {
+                throw new RuntimeException("Department admin must have an assigned branch.");
+            }
         }
+
         return interviewDriveRepo.save(drive);
     }
 
     @PutMapping("/admin/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN', 'DEPT_ADMIN')")
     public ResponseEntity<?> updateDrive(@PathVariable Long id, @RequestBody InterviewDrive updatedDrive,
             java.security.Principal principal) {
         String username = principal.getName();
@@ -61,6 +86,14 @@ public class InterviewDriveController {
                 }
                 // Ensure they can't change the company name
                 updatedDrive.setCompany(user.getCompanyName());
+            } else if ("DEPT_ADMIN".equals(user.getRole())) {
+                // DEPT_ADMIN can only update drives for their branch
+                if (drive.getEligibleBranches() == null ||
+                        !drive.getEligibleBranches().contains(user.getAdminBranch())) {
+                    return ResponseEntity.status(403).body("You are not authorized to update this interview drive.");
+                }
+                // Ensure they can't change branches
+                updatedDrive.setEligibleBranches(java.util.Arrays.asList(user.getAdminBranch()));
             }
 
             drive.setCompany(updatedDrive.getCompany());
@@ -75,7 +108,7 @@ public class InterviewDriveController {
     }
 
     @DeleteMapping("/admin/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN', 'DEPT_ADMIN')")
     public ResponseEntity<?> deleteDrive(@PathVariable Long id, java.security.Principal principal) {
         String username = principal.getName();
         com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
@@ -85,6 +118,12 @@ public class InterviewDriveController {
             // Security Check
             if ("COMPANY_ADMIN".equals(user.getRole())) {
                 if (!drive.getCompany().equals(user.getCompanyName())) {
+                    return ResponseEntity.status(403).body("You are not authorized to delete this interview drive.");
+                }
+            } else if ("DEPT_ADMIN".equals(user.getRole())) {
+                // DEPT_ADMIN can only delete drives for their branch
+                if (drive.getEligibleBranches() == null ||
+                        !drive.getEligibleBranches().contains(user.getAdminBranch())) {
                     return ResponseEntity.status(403).body("You are not authorized to delete this interview drive.");
                 }
             }
