@@ -43,6 +43,14 @@ public class InterviewDrive {
     @Column(name = "semester")
     private List<Integer> eligibleSemesters;
 
+    // Passout batch filtering (e.g., 2024, 2025, 2026, 2027)
+    // Allows companies to post jobs for passed out students or specific graduating
+    // years
+    @ElementCollection
+    @CollectionTable(name = "interview_eligible_batches", joinColumns = @JoinColumn(name = "interview_id"))
+    @Column(name = "batch")
+    private List<String> eligibleBatches; // e.g., ["2024", "2025", "2027"]
+
     public InterviewDrive() {
     }
 
@@ -132,5 +140,13 @@ public class InterviewDrive {
 
     public void setEligibleSemesters(List<Integer> eligibleSemesters) {
         this.eligibleSemesters = eligibleSemesters;
+    }
+
+    public List<String> getEligibleBatches() {
+        return eligibleBatches;
+    }
+
+    public void setEligibleBatches(List<String> eligibleBatches) {
+        this.eligibleBatches = eligibleBatches;
     }
 }
