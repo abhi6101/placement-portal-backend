@@ -26,8 +26,49 @@ public class AdminUserController {
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @GetMapping("/users")
-    public ResponseEntity<List<UserDto>> getAllUsers() {
+    public ResponseEntity<List<UserDto>> getAllUsers(java.security.Principal principal) {
         List<Users> users = userRepo.findAll();
+
+        // Filter users based on role
+        if (principal != null) {
+            String username = principal.getName();
+            Users currentUser = userRepo.findByUsername(username).orElse(null);
+
+            if (currentUser != null && "DEPT_ADMIN".equals(currentUser.getRole())) {
+                // DEPT_ADMIN: Only show students from their branch
+                String adminBranch = currentUser.getAdminBranch();
+                if (adminBranch != null && !adminBranch.isEmpty()) {
+                    users = users.stream()
+                            .filter(user -> {
+                                // Show only students (USER role) from their branch
+                                if ("USER".equals(user.getRole())) {
+                                    return adminBranch.equals(user.getBranch());
+                                }
+                                return false;
+                            })
+                            .collect(Collectors.toList());
+                }
+            } else if (currentUser != null && "COMPANY_ADMIN".equals(currentUser.getRole())) {
+                // COMPANY_ADMIN: Only show students from their allowed departments
+                String allowedDepartments = currentUser.getAllowedDepartments();
+                if (allowedDepartments != null && !allowedDepartments.isEmpty()) {
+                    String[] allowedDepts = allowedDepartments.split(",");
+                    users = users.stream()
+                            .filter(user -> {
+                                // Show only students (USER role) from allowed departments
+                                if ("USER".equals(user.getRole()) && user.getBranch() != null) {
+                                    for (String dept : allowedDepts) {
+                                        if (user.getBranch().trim().equalsIgnoreCase(dept.trim())) {
+                                            return true;
+                                        }
+                                    }
+                                }
+                                return false;
+                            })
+                            .collect(Collectors.toList());
+                }
+            }
+        }
 
         List<UserDto> userDtos = users.stream()
                 .map(user -> new UserDto(
@@ -124,10 +165,35 @@ public class AdminUserController {
     }
 
     @PutMapping("/users/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<?> updateUser(@PathVariable Integer id, @RequestBody Users updatedUser) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN')")
+    public ResponseEntity<?> updateUser(@PathVariable Integer id, @RequestBody Users updatedUser,
+            java.security.Principal principal) {
         return userRepo.findById(id)
                 .map(user -> {
+                    // DEPT_ADMIN validation: Can only update students from their branch
+                    if (principal != null) {
+                        String username = principal.getName();
+                        Users currentUser = userRepo.findByUsername(username).orElse(null);
+
+                        if (currentUser != null && "DEPT_ADMIN".equals(currentUser.getRole())) {
+                            String adminBranch = currentUser.getAdminBranch();
+
+                            // Check if user being updated is a student from their branch
+                            if (!"USER".equals(user.getRole()) || !adminBranch.equals(user.getBranch())) {
+                                return ResponseEntity.status(403)
+                                        .body("Access Denied: You can only update students from your department ("
+                                                + adminBranch + ")");
+                            }
+
+                            // DEPT_ADMIN cannot change student's branch or role
+                            if (!user.getBranch().equals(updatedUser.getBranch()) ||
+                                    !user.getRole().equals(updatedUser.getRole())) {
+                                return ResponseEntity.badRequest()
+                                        .body("DEPT_ADMIN cannot change student's branch or role");
+                            }
+                        }
+                    }
+
                     user.setUsername(updatedUser.getUsername());
                     user.setEmail(updatedUser.getEmail());
                     user.setRole(updatedUser.getRole());
@@ -170,8 +236,29 @@ public class AdminUserController {
     }
 
     @DeleteMapping("/users/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<?> deleteUser(@PathVariable Integer id) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN')")
+    public ResponseEntity<?> deleteUser(@PathVariable Integer id, java.security.Principal principal) {
+        // DEPT_ADMIN validation: Can only delete students from their branch
+        if (principal != null) {
+            String username = principal.getName();
+            Users currentUser = userRepo.findByUsername(username).orElse(null);
+
+            if (currentUser != null && "DEPT_ADMIN".equals(currentUser.getRole())) {
+                Users userToDelete = userRepo.findById(id).orElse(null);
+
+                if (userToDelete != null) {
+                    String adminBranch = currentUser.getAdminBranch();
+
+                    // Check if user being deleted is a student from their branch
+                    if (!"USER".equals(userToDelete.getRole()) || !adminBranch.equals(userToDelete.getBranch())) {
+                        return ResponseEntity.status(403)
+                                .body("Access Denied: You can only delete students from your department (" + adminBranch
+                                        + ")");
+                    }
+                }
+            }
+        }
+
         if (userRepo.existsById(id)) {
             userRepo.deleteById(id);
             return ResponseEntity.ok().build();
