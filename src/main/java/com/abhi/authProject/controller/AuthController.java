@@ -55,16 +55,20 @@ public class AuthController {
         String username = auth.getName();
         Users user = userRepo.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
 
-        return ResponseEntity.ok(Map.of(
-                "id", user.getId(),
-                "username", user.getUsername(),
-                "email", user.getEmail(),
-                "role", user.getRole(),
-                "name", user.getName() != null ? user.getName() : "",
-                "phone", user.getPhone() != null ? user.getPhone() : "",
-                "branch", user.getBranch() != null ? user.getBranch() : "",
-                "semester", user.getSemester() != null ? user.getSemester() : 0,
-                "companyName", user.getCompanyName() != null ? user.getCompanyName() : ""));
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("id", user.getId());
+        response.put("username", user.getUsername());
+        response.put("email", user.getEmail());
+        response.put("role", user.getRole());
+        response.put("name", user.getName() != null ? user.getName() : "");
+        response.put("phone", user.getPhone() != null ? user.getPhone() : "");
+        response.put("branch", user.getBranch() != null ? user.getBranch() : "");
+        response.put("semester", user.getSemester() != null ? user.getSemester() : 0);
+        response.put("batch", user.getBatch() != null ? user.getBatch() : "");
+        response.put("computerCode", user.getComputerCode() != null ? user.getComputerCode() : "");
+        response.put("companyName", user.getCompanyName() != null ? user.getCompanyName() : "");
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/login")
@@ -306,6 +310,15 @@ public class AuthController {
             student.setSemester(semester);
         if (batch != null)
             student.setBatch(batch);
+
+        // Allow updating computer code if not already set (or if we want to allow
+        // updates)
+        if (payload.containsKey("computerCode")) {
+            String computerCode = (String) payload.get("computerCode");
+            // Check uniqueness if necessary, or let DB throw error
+            student.setComputerCode(computerCode);
+        }
+
         student.setLastProfileUpdate(java.time.LocalDate.now());
 
         Users saved = userRepo.save(student);
