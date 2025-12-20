@@ -289,4 +289,92 @@ public class AdminUserController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    // Get students grouped by branch, semester, or batch
+    @GetMapping("/students/grouped")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN', 'COMPANY_ADMIN')")
+    public ResponseEntity<?> getStudentsGrouped(
+            @RequestParam(defaultValue = "branch") String groupBy,
+            java.security.Principal principal) {
+
+        // Get all students (USER role only)
+        List<Users> students = userRepo.findAll().stream()
+                .filter(user -> "USER".equals(user.getRole()))
+                .collect(Collectors.toList());
+
+        // Filter based on role
+        if (principal != null) {
+            String username = principal.getName();
+            Users currentUser = userRepo.findByUsername(username).orElse(null);
+
+            if (currentUser != null && "DEPT_ADMIN".equals(currentUser.getRole())) {
+                // DEPT_ADMIN: Only their branch students
+                String adminBranch = currentUser.getAdminBranch();
+                students = students.stream()
+                        .filter(s -> adminBranch.equals(s.getBranch()))
+                        .collect(Collectors.toList());
+            } else if (currentUser != null && "COMPANY_ADMIN".equals(currentUser.getRole())) {
+                // COMPANY_ADMIN: Only allowed departments
+                String allowedDepartments = currentUser.getAllowedDepartments();
+                if (allowedDepartments != null && !allowedDepartments.isEmpty()) {
+                    String[] allowedDepts = allowedDepartments.split(",");
+                    students = students.stream()
+                            .filter(s -> {
+                                if (s.getBranch() != null) {
+                                    for (String dept : allowedDepts) {
+                                        if (s.getBranch().trim().equalsIgnoreCase(dept.trim())) {
+                                            return true;
+                                        }
+                                    }
+                                }
+                                return false;
+                            })
+                            .collect(Collectors.toList());
+                }
+            }
+        }
+
+        // Group students
+        java.util.Map<String, List<UserDto>> groups = new java.util.LinkedHashMap<>();
+
+        for (Users student : students) {
+            String key = "";
+
+            switch (groupBy.toLowerCase()) {
+                case "branch":
+                    key = student.getBranch() != null ? student.getBranch() : "Unknown";
+                    break;
+                case "semester":
+                    key = student.getSemester() != null ? "Semester " + student.getSemester() : "Unknown";
+                    break;
+                case "batch":
+                    key = student.getBatch() != null ? student.getBatch() : "Unknown";
+                    break;
+                default:
+                    key = "All Students";
+            }
+
+            groups.putIfAbsent(key, new java.util.ArrayList<>());
+            groups.get(key).add(new UserDto(
+                    student.getId(),
+                    student.getUsername(),
+                    student.getEmail(),
+                    student.getRole(),
+                    student.isVerified(),
+                    student.getCompanyName(),
+                    student.isEnabled(),
+                    student.getBranch(),
+                    student.getSemester(),
+                    student.getAdminBranch(),
+                    student.getAllowedDepartments()));
+        }
+
+        // Create response
+        com.abhi.authProject.model.StudentGroupedDto response = new com.abhi.authProject.model.StudentGroupedDto();
+        response.setGroupBy(groupBy);
+        response.setGroups(groups);
+        response.setTotalStudents(students.size());
+
+        return ResponseEntity.ok(response);
+    }
 }
