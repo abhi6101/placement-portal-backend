@@ -157,4 +157,14 @@ public class AdminJobController {
         }
         return ResponseEntity.notFound().build();
     }
+
+    // Delete ALL jobs (SUPER_ADMIN only) - Use with caution!
+    @DeleteMapping("/all")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @Transactional
+    public ResponseEntity<?> deleteAllJobs() {
+        long count = jobRepository.count();
+        jobRepository.deleteAll();
+        return ResponseEntity.ok("Deleted " + count + " jobs successfully.");
+    }
 }
