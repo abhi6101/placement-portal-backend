@@ -27,4 +27,13 @@ public interface UserRepo extends JpaRepository<Users, Integer> {
 
     // NEW: Find users by role and admin branch (for DEPT_ADMIN validation)
     List<Users> findByRoleAndAdminBranch(String role, String adminBranch);
+
+    // NEW: Find user by computer code (unique identifier like 59500)
+    Optional<Users> findByComputerCode(String computerCode);
+
+    // NEW: Find user by computer code OR username (for flexible login)
+    default Optional<Users> findByComputerCodeOrUsername(String identifier) {
+        return findByComputerCode(identifier)
+                .or(() -> findByUsername(identifier));
+    }
 }
