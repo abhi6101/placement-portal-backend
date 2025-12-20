@@ -96,21 +96,41 @@ public class InterviewApplicationController {
     }
 
     @GetMapping("/admin/interview-applications")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN', 'DEPT_ADMIN')")
     public ResponseEntity<List<InterviewApplication>> getAllInterviewApplications(java.security.Principal principal) {
         String username = principal.getName();
         com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // COMPANY_ADMIN: Only see applications for their company
         if ("COMPANY_ADMIN".equals(user.getRole())) {
             return ResponseEntity.ok(interviewApplicationRepo.findByCompanyName(user.getCompanyName()));
         }
 
+        // DEPT_ADMIN: Only see applications from students in their branch
+        if ("DEPT_ADMIN".equals(user.getRole())) {
+            String adminBranch = user.getAdminBranch();
+            if (adminBranch != null && !adminBranch.isEmpty()) {
+                // Filter applications by student's branch
+                List<InterviewApplication> allApplications = interviewApplicationRepo.findAll();
+                return ResponseEntity.ok(
+                        allApplications.stream()
+                                .filter(app -> {
+                                    // Get student's branch from their email
+                                    com.abhi.authProject.model.Users student = userRepo
+                                            .findByEmail(app.getApplicantEmail()).orElse(null);
+                                    return student != null && adminBranch.equals(student.getBranch());
+                                })
+                                .collect(java.util.stream.Collectors.toList()));
+            }
+        }
+
+        // SUPER_ADMIN/ADMIN: See all applications
         return ResponseEntity.ok(interviewApplicationRepo.findAll());
     }
 
     @PutMapping("/admin/interview-applications/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN', 'DEPT_ADMIN')")
     public ResponseEntity<InterviewApplication> updateStatus(
             @PathVariable Long id,
             @RequestBody java.util.Map<String, String> payload,
@@ -127,8 +147,22 @@ public class InterviewApplicationController {
         com.abhi.authProject.model.Users user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // COMPANY_ADMIN: Can only change status for their company's applications
         if ("COMPANY_ADMIN".equals(user.getRole()) && !application.getCompanyName().equals(user.getCompanyName())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access Denied");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access Denied: Not your company's application");
+        }
+
+        // DEPT_ADMIN: Can only change status for applications from their branch
+        // students
+        if ("DEPT_ADMIN".equals(user.getRole())) {
+            String adminBranch = user.getAdminBranch();
+            com.abhi.authProject.model.Users student = userRepo.findByEmail(application.getApplicantEmail())
+                    .orElse(null);
+
+            if (student == null || !adminBranch.equals(student.getBranch())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Access Denied: Student not in your department (" + adminBranch + ")");
+            }
         }
 
         try {
