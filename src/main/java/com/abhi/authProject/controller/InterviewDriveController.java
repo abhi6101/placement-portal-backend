@@ -22,10 +22,46 @@ public class InterviewDriveController {
     private InterviewDriveRepo interviewDriveRepo;
 
     @GetMapping
-    public List<InterviewDrive> getAllDrives() {
-        // Return only future/today drives for cleaner list, or all?
-        // Let's return all upcoming for now
-        return interviewDriveRepo.findByDateAfterOrderByDateAsc(LocalDate.now().minusDays(1));
+    public List<InterviewDrive> getAllDrives(java.security.Principal principal) {
+        // Get all upcoming drives
+        List<InterviewDrive> allDrives = interviewDriveRepo.findByDateAfterOrderByDateAsc(LocalDate.now().minusDays(1));
+
+        // If user is authenticated, filter based on their profile
+        if (principal != null) {
+            String username = principal.getName();
+            com.abhi.authProject.model.Users user = userRepo.findByUsername(username).orElse(null);
+
+            if (user != null && "USER".equals(user.getRole())) {
+                // Filter for students based on branch, semester, and batch
+                String userBranch = user.getBranch();
+                Integer userSemester = user.getSemester();
+                String userBatch = user.getBatch();
+
+                return allDrives.stream()
+                        .filter(drive -> {
+                            // Check branch eligibility
+                            boolean branchMatch = drive.getEligibleBranches() == null ||
+                                    drive.getEligibleBranches().isEmpty() ||
+                                    drive.getEligibleBranches().contains(userBranch);
+
+                            // Check semester eligibility
+                            boolean semesterMatch = drive.getEligibleSemesters() == null ||
+                                    drive.getEligibleSemesters().isEmpty() ||
+                                    drive.getEligibleSemesters().contains(userSemester);
+
+                            // Check batch eligibility
+                            boolean batchMatch = drive.getEligibleBatches() == null ||
+                                    drive.getEligibleBatches().isEmpty() ||
+                                    drive.getEligibleBatches().contains(userBatch);
+
+                            return branchMatch && semesterMatch && batchMatch;
+                        })
+                        .collect(java.util.stream.Collectors.toList());
+            }
+        }
+
+        // For non-students (admins, etc.), return all drives
+        return allDrives;
     }
 
     @PostMapping("/admin")
