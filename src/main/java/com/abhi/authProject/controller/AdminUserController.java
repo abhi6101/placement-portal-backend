@@ -2,7 +2,7 @@ package com.abhi.authProject.controller;
 
 import com.abhi.authProject.model.UserDto; // Import the new DTO
 import com.abhi.authProject.model.Users;
-import com.abhi.authProject.repo.UserRepo;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
