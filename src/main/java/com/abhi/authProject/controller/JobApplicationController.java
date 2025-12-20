@@ -181,4 +181,13 @@ public class JobApplicationController {
         return ResponseEntity.noContent().build();
     }
 
+    // Delete ALL job applications (SUPER_ADMIN only) - Use with caution!
+    @DeleteMapping("/admin/job-applications/all")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> deleteAllJobApplications() {
+        long count = jobApplicationRepository.count();
+        jobApplicationRepository.deleteAll();
+        return ResponseEntity.ok("Deleted " + count + " job applications successfully.");
+    }
+
 }

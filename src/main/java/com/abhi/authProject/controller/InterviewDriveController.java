@@ -167,4 +167,13 @@ public class InterviewDriveController {
             return ResponseEntity.ok().build();
         }).orElse(ResponseEntity.notFound().build());
     }
+
+    // Delete ALL interview drives (SUPER_ADMIN only) - Use with caution!
+    @DeleteMapping("/admin/all")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> deleteAllDrives() {
+        long count = interviewDriveRepo.count();
+        interviewDriveRepo.deleteAll();
+        return ResponseEntity.ok("Deleted " + count + " interview drives successfully.");
+    }
 }

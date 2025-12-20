@@ -194,4 +194,13 @@ public class InterviewApplicationController {
         // Query using the USER's EMAIL, not their username
         return ResponseEntity.ok(interviewApplicationRepo.findByApplicantEmail(user.getEmail()));
     }
+
+    // Delete ALL interview applications (SUPER_ADMIN only) - Use with caution!
+    @DeleteMapping("/admin/interview-applications/all")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> deleteAllInterviewApplications() {
+        long count = interviewApplicationRepo.count();
+        interviewApplicationRepo.deleteAll();
+        return ResponseEntity.ok("Deleted " + count + " interview applications successfully.");
+    }
 }
