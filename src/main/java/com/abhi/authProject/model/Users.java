@@ -78,6 +78,15 @@ public class Users {
     @Column(name = "enabled", nullable = false, columnDefinition = "boolean default true")
     private boolean enabled = true; // Default: enabled
 
+    // Field for DEPT_ADMIN to specify which branch/department they manage
+    @Column(name = "admin_branch")
+    private String adminBranch; // e.g., "MCA", "BCA", "IMCA", "B.Tech CSE"
+
+    // Field for COMPANY_ADMIN to specify which departments they can post jobs for
+    // Stored as comma-separated values: "MCA,BCA,IMCA"
+    @Column(name = "allowed_departments", length = 500)
+    private String allowedDepartments; // e.g., "MCA,BCA,IMCA"
+
     // Student profile fields
     @Column(name = "name")
     private String name; // Full name

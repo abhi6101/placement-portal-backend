@@ -16,6 +16,8 @@ public class UserDto {
     private boolean isVerified;
     private String companyName;
     private boolean enabled; // For company enable/disable feature
-    private String branch; // IMCA, MCA, BCA
+    private String branch; // IMCA, MCA, BCA (for students)
     private Integer semester; // Student's semester/year
+    private String adminBranch; // For DEPT_ADMIN - which branch they manage
+    private String allowedDepartments; // For COMPANY_ADMIN - which departments they can post jobs for
 }

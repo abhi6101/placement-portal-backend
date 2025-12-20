@@ -39,7 +39,9 @@ public class AdminUserController {
                         user.getCompanyName(),
                         user.isEnabled(),
                         user.getBranch(),
-                        user.getSemester()))
+                        user.getSemester(),
+                        user.getAdminBranch(),
+                        user.getAllowedDepartments()))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(userDtos);
@@ -59,17 +61,24 @@ public class AdminUserController {
 
             // DEPT_ADMIN Validation: Only ONE DEPT_ADMIN per branch
             if ("DEPT_ADMIN".equals(user.getRole())) {
-                if (user.getBranch() == null || user.getBranch().isEmpty()) {
-                    return ResponseEntity.badRequest().body("Branch is required for DEPT_ADMIN role");
+                if (user.getAdminBranch() == null || user.getAdminBranch().isEmpty()) {
+                    return ResponseEntity.badRequest().body("Admin branch is required for DEPT_ADMIN role");
                 }
 
                 // Check if a DEPT_ADMIN already exists for this branch
-                List<Users> existingDeptAdmins = userRepo.findByRoleAndBranch("DEPT_ADMIN", user.getBranch());
+                List<Users> existingDeptAdmins = userRepo.findByRoleAndAdminBranch("DEPT_ADMIN", user.getAdminBranch());
                 if (!existingDeptAdmins.isEmpty()) {
                     String existingAdmin = existingDeptAdmins.get(0).getUsername();
                     return ResponseEntity.badRequest().body(
-                            "A Department Admin already exists for " + user.getBranch() +
+                            "A Department Admin already exists for " + user.getAdminBranch() +
                                     " (" + existingAdmin + "). Only one DEPT_ADMIN is allowed per department.");
+                }
+            }
+
+            // COMPANY_ADMIN Validation: Require allowedDepartments
+            if ("COMPANY_ADMIN".equals(user.getRole())) {
+                if (user.getAllowedDepartments() == null || user.getAllowedDepartments().isEmpty()) {
+                    return ResponseEntity.badRequest().body("Allowed departments are required for COMPANY_ADMIN role");
                 }
             }
 
@@ -106,7 +115,9 @@ public class AdminUserController {
                     savedUser.getCompanyName(),
                     savedUser.isEnabled(),
                     savedUser.getBranch(),
-                    savedUser.getSemester()));
+                    savedUser.getSemester(),
+                    savedUser.getAdminBranch(),
+                    savedUser.getAllowedDepartments()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Failed to create user: " + e.getMessage());
         }
@@ -133,6 +144,8 @@ public class AdminUserController {
                     user.setCompanyName(updatedUser.getCompanyName()); // Update company
                     user.setBranch(updatedUser.getBranch());
                     user.setSemester(updatedUser.getSemester());
+                    user.setAdminBranch(updatedUser.getAdminBranch()); // Update admin branch
+                    user.setAllowedDepartments(updatedUser.getAllowedDepartments()); // Update allowed departments
 
                     // Only update password if new one is provided
                     if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
@@ -149,7 +162,9 @@ public class AdminUserController {
                             saved.getCompanyName(),
                             saved.isEnabled(),
                             saved.getBranch(),
-                            saved.getSemester()));
+                            saved.getSemester(),
+                            saved.getAdminBranch(),
+                            saved.getAllowedDepartments()));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

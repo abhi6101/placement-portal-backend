@@ -24,4 +24,7 @@ public interface UserRepo extends JpaRepository<Users, Integer> {
 
     // NEW: Find users by role and branch (for DEPT_ADMIN validation)
     List<Users> findByRoleAndBranch(String role, String branch);
+
+    // NEW: Find users by role and admin branch (for DEPT_ADMIN validation)
+    List<Users> findByRoleAndAdminBranch(String role, String adminBranch);
 }
