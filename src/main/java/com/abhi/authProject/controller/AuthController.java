@@ -139,6 +139,7 @@ public class AuthController {
                 newUser.setBranch(branch);
                 newUser.setSemester(semester);
                 newUser.setBatch(batch);
+                newUser.setComputerCode(registerRequest.getComputerCode());
                 newUser.setLastProfileUpdate(java.time.LocalDate.now());
             }
 
@@ -390,6 +391,7 @@ public class AuthController {
         private String branch; // For students: IMCA, MCA, BCA
         private Integer semester; // For students: varies by branch
         private String batch; // e.g. 2022-2027
+        private String computerCode;
     }
 
     // NEW DTO for verification code request
