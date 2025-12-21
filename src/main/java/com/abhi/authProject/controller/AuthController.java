@@ -196,6 +196,49 @@ public class AuthController {
         }
     }
 
+    // Update Profile Endpoint
+    @PutMapping("/update-profile")
+    public ResponseEntity<?> updateProfile(@RequestBody UpdateProfileRequest request,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            // Extract token from Authorization header
+            String token = authHeader.replace("Bearer ", "");
+            String username = jwtUtil.extractUsername(token);
+
+            // Find user by username
+            Users user = userService.findByUsername(username);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
+            }
+
+            // Update only the fields that are provided
+            if (request.getFullName() != null)
+                user.setFullName(request.getFullName());
+            if (request.getFatherName() != null)
+                user.setFatherName(request.getFatherName());
+            if (request.getInstitution() != null)
+                user.setInstitution(request.getInstitution());
+            if (request.getAadharNumber() != null)
+                user.setAadharNumber(request.getAadharNumber());
+            if (request.getMobilePrimary() != null)
+                user.setMobilePrimary(request.getMobilePrimary());
+            if (request.getMobileSecondary() != null)
+                user.setMobileSecondary(request.getMobileSecondary());
+            if (request.getEnrollmentNumber() != null)
+                user.setEnrollmentNumber(request.getEnrollmentNumber());
+            if (request.getStartYear() != null)
+                user.setStartYear(request.getStartYear());
+
+            // Save updated user
+            userService.updateUser(user);
+
+            return ResponseEntity.ok(Map.of("message", "Profile updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Failed to update profile: " + e.getMessage()));
+        }
+    }
+
     // Removed the old /verify-email GET endpoint for link-based verification
 
     // --- DTOs for Request Bodies ---
@@ -442,4 +485,5 @@ public class AuthController {
         private String identifier; // Can be username or email
         private String code;
     }
-}
+} 
+ 
