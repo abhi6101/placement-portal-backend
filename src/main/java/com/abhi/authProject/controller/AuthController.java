@@ -124,6 +124,10 @@ public class AuthController {
             response.put("startYear", user.getStartYear() != null ? user.getStartYear() : "");
             response.put("companyName", user.getCompanyName() != null ? user.getCompanyName() : "");
 
+            // Return Images
+            response.put("idCardImage", user.getIdCardImage() != null ? user.getIdCardImage() : "");
+            response.put("aadharCardImage", user.getAadharCardImage() != null ? user.getAadharCardImage() : "");
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -182,6 +186,10 @@ public class AuthController {
                     }
                     newUser.setAadharNumber(registerRequest.getAadharNumber());
                 }
+
+                // Save Images
+                newUser.setIdCardImage(registerRequest.getIdCardImage());
+                newUser.setAadharCardImage(registerRequest.getAadharCardImage());
 
                 newUser.setLastProfileUpdate(java.time.LocalDate.now());
             }
@@ -481,6 +489,10 @@ public class AuthController {
         // Additional Academic Info
         private String enrollmentNumber;
         private String startYear;
+
+        // Images
+        private String idCardImage;
+        private String aadharCardImage;
     }
 
     // NEW DTO for verification code request

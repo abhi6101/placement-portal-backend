@@ -144,4 +144,11 @@ public class Users {
 
     @Column(name = "start_year")
     private String startYear; // Admission year
+
+    // Images (Base64 or URL)
+    @Column(name = "id_card_image", columnDefinition = "TEXT")
+    private String idCardImage;
+
+    @Column(name = "aadhar_card_image", columnDefinition = "TEXT")
+    private String aadharCardImage;
 }
