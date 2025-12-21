@@ -49,27 +49,7 @@ public class AuthController {
     @Autowired
     private com.abhi.authProject.repo.UserRepo userRepo;
 
-    @GetMapping("/me")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> getCurrentUser(org.springframework.security.core.Authentication auth) {
-        String username = auth.getName();
-        Users user = userRepo.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
-
-        java.util.Map<String, Object> response = new java.util.HashMap<>();
-        response.put("id", user.getId());
-        response.put("username", user.getUsername());
-        response.put("email", user.getEmail());
-        response.put("role", user.getRole());
-        response.put("name", user.getName() != null ? user.getName() : "");
-        response.put("phone", user.getPhone() != null ? user.getPhone() : "");
-        response.put("branch", user.getBranch() != null ? user.getBranch() : "");
-        response.put("semester", user.getSemester() != null ? user.getSemester() : 0);
-        response.put("batch", user.getBatch() != null ? user.getBatch() : "");
-        response.put("computerCode", user.getComputerCode() != null ? user.getComputerCode() : "");
-        response.put("companyName", user.getCompanyName() != null ? user.getCompanyName() : "");
-
-        return ResponseEntity.ok(response);
-    }
+    // Link-based /me endpoint removed. Please use the Header-based one below.
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
@@ -354,17 +334,43 @@ public class AuthController {
             return ResponseEntity.notFound().build();
         }
 
-        // Update name and phone if provided
-        if (payload.containsKey("name")) {
+        // Update basic fields
+        if (payload.containsKey("name"))
             student.setName((String) payload.get("name"));
-        }
-        if (payload.containsKey("phone")) {
+        if (payload.containsKey("phone"))
             student.setPhone((String) payload.get("phone"));
-        }
+
+        // Update new ID/Registration fields
+        if (payload.containsKey("fullName"))
+            student.setFullName((String) payload.get("fullName"));
+        if (payload.containsKey("fatherName"))
+            student.setFatherName((String) payload.get("fatherName"));
+        if (payload.containsKey("institution"))
+            student.setInstitution((String) payload.get("institution"));
+        // Aadhar is usually not editable after registration for security, but we skip
+        // it here
+
+        if (payload.containsKey("mobilePrimary"))
+            student.setMobilePrimary((String) payload.get("mobilePrimary"));
+        if (payload.containsKey("mobileSecondary"))
+            student.setMobileSecondary((String) payload.get("mobileSecondary"));
+        if (payload.containsKey("enrollmentNumber"))
+            student.setEnrollmentNumber((String) payload.get("enrollmentNumber"));
+        if (payload.containsKey("startYear"))
+            student.setStartYear((String) payload.get("startYear"));
+        if (payload.containsKey("session"))
+            student.setSession((String) payload.get("session"));
 
         String branch = (String) payload.get("branch");
-        Integer semester = payload.get("semester") != null ? Integer.parseInt(payload.get("semester").toString())
-                : null;
+        // Handle semester safely as it might be Integer or String
+        Integer semester = null;
+        if (payload.get("semester") != null) {
+            try {
+                semester = Integer.parseInt(payload.get("semester").toString());
+            } catch (NumberFormatException e) {
+                // ignore
+            }
+        }
         String batch = (String) payload.get("batch");
 
         // Update student profile
@@ -375,24 +381,29 @@ public class AuthController {
         if (batch != null)
             student.setBatch(batch);
 
-        // Allow updating computer code if not already set (or if we want to allow
-        // updates)
         if (payload.containsKey("computerCode")) {
-            String computerCode = (String) payload.get("computerCode");
-            // Check uniqueness if necessary, or let DB throw error
-            student.setComputerCode(computerCode);
+            student.setComputerCode((String) payload.get("computerCode"));
         }
 
         student.setLastProfileUpdate(java.time.LocalDate.now());
 
         Users saved = userRepo.save(student);
 
-        return ResponseEntity.ok(Map.of(
-                "message", "Profile updated successfully",
-                "name", saved.getName() != null ? saved.getName() : "",
-                "phone", saved.getPhone() != null ? saved.getPhone() : "",
-                "branch", saved.getBranch() != null ? saved.getBranch() : "",
-                "semester", saved.getSemester() != null ? saved.getSemester() : 0));
+        // Use HashMap for response map to avoid 10-item limit
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("message", "Profile updated successfully");
+        response.put("name", saved.getName() != null ? saved.getName() : "");
+        response.put("fullName", saved.getFullName() != null ? saved.getFullName() : "");
+        response.put("phone", saved.getPhone() != null ? saved.getPhone() : "");
+        response.put("mobilePrimary", saved.getMobilePrimary() != null ? saved.getMobilePrimary() : "");
+        response.put("mobileSecondary", saved.getMobileSecondary() != null ? saved.getMobileSecondary() : "");
+        response.put("branch", saved.getBranch() != null ? saved.getBranch() : "");
+        response.put("semester", saved.getSemester() != null ? saved.getSemester() : 0);
+        response.put("enrollmentNumber", saved.getEnrollmentNumber() != null ? saved.getEnrollmentNumber() : "");
+        response.put("startYear", saved.getStartYear() != null ? saved.getStartYear() : "");
+        response.put("session", saved.getSession() != null ? saved.getSession() : "");
+
+        return ResponseEntity.ok(response);
     }
 
     /**
