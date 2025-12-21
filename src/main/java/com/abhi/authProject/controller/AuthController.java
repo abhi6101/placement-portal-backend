@@ -520,4 +520,4 @@ public class AuthController {
         private String identifier; // Can be username or email
         private String code;
     }
-}   
+} 
