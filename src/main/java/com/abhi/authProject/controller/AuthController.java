@@ -141,20 +141,6 @@ public class AuthController {
                 newUser.setBatch(batch);
                 newUser.setComputerCode(registerRequest.getComputerCode());
 
-                // Save verified identity data from ID card scan
-                newUser.setFullName(registerRequest.getFullName());
-                newUser.setFatherName(registerRequest.getFatherName());
-                newUser.setInstitution(registerRequest.getInstitution());
-                newUser.setSession(registerRequest.getSession());
-
-                // Save mobile numbers
-                newUser.setMobilePrimary(registerRequest.getMobilePrimary());
-                newUser.setMobileSecondary(registerRequest.getMobileSecondary());
-
-                // Save additional academic info
-                newUser.setEnrollmentNumber(registerRequest.getEnrollmentNumber());
-                newUser.setStartYear(registerRequest.getStartYear());
-
                 // SECURITY CRITICAL: Duplicate Aadhar Check
                 if (registerRequest.getAadharNumber() != null) {
                     if (userRepo.findByAadharNumber(registerRequest.getAadharNumber()).isPresent()) {
@@ -417,20 +403,6 @@ public class AuthController {
         private String batch; // e.g. 2022-2027
         private String computerCode;
         private String aadharNumber;
-
-        // Verified Identity Data (from ID card scan)
-        private String fullName;
-        private String fatherName;
-        private String institution;
-        private String session;
-
-        // Mobile Numbers
-        private String mobilePrimary;
-        private String mobileSecondary;
-
-        // Additional Academic Info
-        private String enrollmentNumber;
-        private String startYear;
     }
 
     // NEW DTO for verification code request
