@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/verification")
+@RequestMapping("/api/verification")
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin
