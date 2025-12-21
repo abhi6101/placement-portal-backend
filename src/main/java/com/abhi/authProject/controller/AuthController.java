@@ -112,6 +112,7 @@ public class AuthController {
         }
     }
 
+    
     // Get current user information
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
@@ -123,29 +124,31 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
             }
             return ResponseEntity.ok(Map.of(
-                    "id", user.getId(),
-                    "username", user.getUsername(),
-                    "email", user.getEmail(),
-                    "role", user.getRole(),
-                    "branch", user.getBranch() != null ? user.getBranch() : "",
-                    "semester", user.getSemester() != null ? user.getSemester() : 0,
-                    "batch", user.getBatch() != null ? user.getBatch() : "",
-                    "computerCode", user.getComputerCode() != null ? user.getComputerCode() : "",
-                    "aadharNumber", user.getAadharNumber() != null ? user.getAadharNumber() : "",
-                    "fullName", user.getFullName() != null ? user.getFullName() : "",
-                    "fatherName", user.getFatherName() != null ? user.getFatherName() : "",
-                    "institution", user.getInstitution() != null ? user.getInstitution() : "",
-                    "session", user.getSession() != null ? user.getSession() : "",
-                    "mobilePrimary", user.getMobilePrimary() != null ? user.getMobilePrimary() : "",
-                    "mobileSecondary", user.getMobileSecondary() != null ? user.getMobileSecondary() : "",
-                    "enrollmentNumber", user.getEnrollmentNumber() != null ? user.getEnrollmentNumber() : "",
-                    "startYear", user.getStartYear() != null ? user.getStartYear() : "",
-                    "companyName", user.getCompanyName() != null ? user.getCompanyName() : ""));
+                "id", user.getId(),
+                "username", user.getUsername(),
+                "email", user.getEmail(),
+                "role", user.getRole(),
+                "branch", user.getBranch() != null ? user.getBranch() : "",
+                "semester", user.getSemester() != null ? user.getSemester() : 0,
+                "batch", user.getBatch() != null ? user.getBatch() : "",
+                "computerCode", user.getComputerCode() != null ? user.getComputerCode() : "",
+                "aadharNumber", user.getAadharNumber() != null ? user.getAadharNumber() : "",
+                "fullName", user.getFullName() != null ? user.getFullName() : "",
+                "fatherName", user.getFatherName() != null ? user.getFatherName() : "",
+                "institution", user.getInstitution() != null ? user.getInstitution() : "",
+                "session", user.getSession() != null ? user.getSession() : "",
+                "mobilePrimary", user.getMobilePrimary() != null ? user.getMobilePrimary() : "",
+                "mobileSecondary", user.getMobileSecondary() != null ? user.getMobileSecondary() : "",
+                "enrollmentNumber", user.getEnrollmentNumber() != null ? user.getEnrollmentNumber() : "",
+                "startYear", user.getStartYear() != null ? user.getStartYear() : "",
+                "companyName", user.getCompanyName() != null ? user.getCompanyName() : ""
+            ));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Failed to get user info: " + e.getMessage()));
         }
     }
+
 
     // --- REGISTER ENDPOINT (MODIFIED RESPONSE) ---
     @PostMapping("/register")
@@ -520,4 +523,5 @@ public class AuthController {
         private String identifier; // Can be username or email
         private String code;
     }
-} 
+}
+
