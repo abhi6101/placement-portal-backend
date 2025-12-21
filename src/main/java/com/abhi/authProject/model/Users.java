@@ -117,4 +117,31 @@ public class Users {
 
     @Column(name = "last_login_date")
     private LocalDateTime lastLoginDate;
+
+    // Verified Identity Data (from ID card scan)
+    @Column(name = "full_name")
+    private String fullName;
+
+    @Column(name = "father_name")
+    private String fatherName;
+
+    @Column(name = "institution")
+    private String institution;
+
+    @Column(name = "session")
+    private String session; // e.g., "2022-2027"
+
+    // Mobile Numbers (from ID card or manual entry)
+    @Column(name = "mobile_primary")
+    private String mobilePrimary;
+
+    @Column(name = "mobile_secondary")
+    private String mobileSecondary;
+
+    // Additional Academic Info
+    @Column(name = "enrollment_number")
+    private String enrollmentNumber;
+
+    @Column(name = "start_year")
+    private String startYear; // Admission year
 }
