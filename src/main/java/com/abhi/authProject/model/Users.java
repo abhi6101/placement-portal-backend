@@ -98,6 +98,10 @@ public class Users {
     @Column(name = "phone")
     private String phone; // Phone number
 
+    // NEW: Aadhar Number for unique identity tracking
+    @Column(name = "aadhar_number", unique = true)
+    private String aadharNumber;
+
     // Branch/Semester filtering fields
     @Column(name = "branch")
     private String branch; // IMCA, MCA, BCA

@@ -31,6 +31,9 @@ public interface UserRepo extends JpaRepository<Users, Integer> {
     // NEW: Find user by computer code (unique identifier like 59500)
     Optional<Users> findByComputerCode(String computerCode);
 
+    // NEW: Find user by Aadhar Number (Critical Security Check)
+    Optional<Users> findByAadharNumber(String aadharNumber);
+
     // NEW: Find user by computer code OR username (for flexible login)
     default Optional<Users> findByComputerCodeOrUsername(String identifier) {
         return findByComputerCode(identifier)

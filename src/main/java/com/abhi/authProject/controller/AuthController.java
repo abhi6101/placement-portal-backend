@@ -140,6 +140,16 @@ public class AuthController {
                 newUser.setSemester(semester);
                 newUser.setBatch(batch);
                 newUser.setComputerCode(registerRequest.getComputerCode());
+
+                // SECURITY CRITICAL: Duplicate Aadhar Check
+                if (registerRequest.getAadharNumber() != null) {
+                    if (userRepo.findByAadharNumber(registerRequest.getAadharNumber()).isPresent()) {
+                        return ResponseEntity.badRequest()
+                                .body(Map.of("message", "Aadhar Number is already registered with another account."));
+                    }
+                    newUser.setAadharNumber(registerRequest.getAadharNumber());
+                }
+
                 newUser.setLastProfileUpdate(java.time.LocalDate.now());
             }
 
@@ -392,6 +402,7 @@ public class AuthController {
         private Integer semester; // For students: varies by branch
         private String batch; // e.g. 2022-2027
         private String computerCode;
+        private String aadharNumber;
     }
 
     // NEW DTO for verification code request

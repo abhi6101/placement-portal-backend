@@ -46,6 +46,24 @@ public class VerificationController {
                         .build());
             }
 
+            // NEW: Check Aadhar Uniqueness (if provided)
+            if (request.getAadharNumber() != null && !request.getAadharNumber().isEmpty()) {
+                Optional<Users> existingAadhar = userRepo.findByAadharNumber(request.getAadharNumber());
+                if (existingAadhar.isPresent()) {
+                    Users user = existingAadhar.get();
+                    log.info("Aadhar number already registered: {}", request.getAadharNumber());
+                    return ResponseEntity.ok(VerificationStatusResponse.builder()
+                            .status("ALREADY_REGISTERED")
+                            .message("Aadhar Number is already linked to an account.")
+                            .userData(UserDataDTO.builder()
+                                    .username(user.getUsername())
+                                    .email(maskEmail(user.getEmail()))
+                                    .fullName(user.getName())
+                                    .build())
+                            .build());
+                }
+            }
+
             // In a real system, you might verify the device fingerprint against a "verified
             // devices" table here
             // For now, we assume if they aren't registered, they are a new user
@@ -73,6 +91,7 @@ public class VerificationController {
     @Data
     public static class VerificationStatusRequest {
         private String computerCode;
+        private String aadharNumber;
         private String deviceFingerprint;
         private String ipAddress;
         private Object location;
