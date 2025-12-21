@@ -117,8 +117,8 @@ public class AuthController {
     public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
         try {
             String token = authHeader.replace("Bearer ", "");
-            String username = jwtService.extractUsername(token);
-            Users user = userRepo.findByUsername(username);
+            String username = jwtService.extractUserName(token);
+            Users user = userRepo.findByUsername(username).orElse(null);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
             }
