@@ -117,30 +117,34 @@ public class AuthController {
     public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
         try {
             String token = authHeader.replace("Bearer ", "");
-            String username = jwtUtil.extractUsername(token);
-            Users user = userService.findByUsername(username);
+            String username = jwtService.extractUsername(token);
+            Users user = userRepo.findByUsername(username);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
             }
-            return ResponseEntity.ok(Map.of(
-                    "id", user.getId(),
-                    "username", user.getUsername(),
-                    "email", user.getEmail(),
-                    "role", user.getRole(),
-                    "branch", user.getBranch() != null ? user.getBranch() : "",
-                    "semester", user.getSemester() != null ? user.getSemester() : 0,
-                    "batch", user.getBatch() != null ? user.getBatch() : "",
-                    "computerCode", user.getComputerCode() != null ? user.getComputerCode() : "",
-                    "aadharNumber", user.getAadharNumber() != null ? user.getAadharNumber() : "",
-                    "fullName", user.getFullName() != null ? user.getFullName() : "",
-                    "fatherName", user.getFatherName() != null ? user.getFatherName() : "",
-                    "institution", user.getInstitution() != null ? user.getInstitution() : "",
-                    "session", user.getSession() != null ? user.getSession() : "",
-                    "mobilePrimary", user.getMobilePrimary() != null ? user.getMobilePrimary() : "",
-                    "mobileSecondary", user.getMobileSecondary() != null ? user.getMobileSecondary() : "",
-                    "enrollmentNumber", user.getEnrollmentNumber() != null ? user.getEnrollmentNumber() : "",
-                    "startYear", user.getStartYear() != null ? user.getStartYear() : "",
-                    "companyName", user.getCompanyName() != null ? user.getCompanyName() : ""));
+
+            // Use HashMap for more than 10 key-value pairs
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("id", user.getId());
+            response.put("username", user.getUsername());
+            response.put("email", user.getEmail());
+            response.put("role", user.getRole());
+            response.put("branch", user.getBranch() != null ? user.getBranch() : "");
+            response.put("semester", user.getSemester() != null ? user.getSemester() : 0);
+            response.put("batch", user.getBatch() != null ? user.getBatch() : "");
+            response.put("computerCode", user.getComputerCode() != null ? user.getComputerCode() : "");
+            response.put("aadharNumber", user.getAadharNumber() != null ? user.getAadharNumber() : "");
+            response.put("fullName", user.getFullName() != null ? user.getFullName() : "");
+            response.put("fatherName", user.getFatherName() != null ? user.getFatherName() : "");
+            response.put("institution", user.getInstitution() != null ? user.getInstitution() : "");
+            response.put("session", user.getSession() != null ? user.getSession() : "");
+            response.put("mobilePrimary", user.getMobilePrimary() != null ? user.getMobilePrimary() : "");
+            response.put("mobileSecondary", user.getMobileSecondary() != null ? user.getMobileSecondary() : "");
+            response.put("enrollmentNumber", user.getEnrollmentNumber() != null ? user.getEnrollmentNumber() : "");
+            response.put("startYear", user.getStartYear() != null ? user.getStartYear() : "");
+            response.put("companyName", user.getCompanyName() != null ? user.getCompanyName() : "");
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Failed to get user info: " + e.getMessage()));
