@@ -129,6 +129,7 @@ public class AuthController {
             // Return Images
             response.put("idCardImage", user.getIdCardImage() != null ? user.getIdCardImage() : "");
             response.put("aadharCardImage", user.getAadharCardImage() != null ? user.getAadharCardImage() : "");
+            response.put("profilePictureUrl", user.getProfilePictureUrl() != null ? user.getProfilePictureUrl() : "");
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {

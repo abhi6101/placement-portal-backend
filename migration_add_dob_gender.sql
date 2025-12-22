@@ -1,4 +1,4 @@
--- Database Migration for Smart Password Recovery System
+    -- Database Migration for Smart Password Recovery System
 -- Add DOB and Gender fields to users table
 
 -- Add dob column (Date of Birth from Aadhar verification)
