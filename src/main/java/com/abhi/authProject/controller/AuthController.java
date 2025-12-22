@@ -54,17 +54,19 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
-            String token = userService.verifyAndLogin(
-                    loginRequest.getUsername(),
-                    loginRequest.getPassword());
+            // Support both username and computerCode
+            String identifier = loginRequest.getComputerCode() != null && !loginRequest.getComputerCode().isEmpty()
+                    ? loginRequest.getComputerCode()
+                    : loginRequest.getUsername();
+
+            String token = userService.verifyAndLogin(identifier, loginRequest.getPassword());
 
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            loginRequest.getUsername(),
-                            loginRequest.getPassword()));
+                    new UsernamePasswordAuthenticationToken(identifier, loginRequest.getPassword()));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            Users user = userRepo.findByUsername(loginRequest.getUsername()).orElse(null);
+            // Find user by computerCode or username
+            Users user = userRepo.findByComputerCodeOrUsername(identifier).orElse(null);
 
             if (user != null) {
                 user.setLastLoginDate(java.time.LocalDateTime.now());
@@ -83,7 +85,7 @@ public class AuthController {
                             .collect(Collectors.toList())));
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid username or password"));
+                    .body(Map.of("message", "Invalid credentials"));
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
@@ -233,6 +235,7 @@ public class AuthController {
     @AllArgsConstructor
     static class LoginRequest {
         private String username;
+        private String computerCode; // Support Computer Code login
         private String password;
     }
 
@@ -317,153 +320,7 @@ public class AuthController {
                 existingData.put("username", user.getUsername());
 
             return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "route", "FULL_VERIFICATION",
-                    "token", recoveryToken,
-                    "userData", Map.of(
-                            "email", user.getEmail(),
-                            "existingData", existingData)));
-        }
-    }
-
-    // Reset password with Token (Route A - Simple Reset)
-    @PostMapping("/reset-password")
-    @Transactional
-    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request,
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        String email = request.get("email");
-        String newPassword = request.get("newPassword");
-
-        // Verify token from header
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Missing or invalid authorization token"));
-        }
-
-        String token = authHeader.replace("Bearer ", "");
-        String username = jwtService.extractUserName(token);
-
-        Users user = userService.findByEmail(email);
-        if (user == null || !user.getUsername().equals(username)) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid request"));
-        }
-
-        // Update password
-        userService.updatePassword(user, newPassword);
-
-        // Delete any password reset tokens
-        passwordResetTokenRepo.findByUser(user).ifPresent(passwordResetTokenRepo::delete);
-
-        // Send confirmation email
-        try {
-            emailService.sendPasswordResetConfirmation(user.getEmail());
-        } catch (Exception e) {
-            System.err.println("Failed to send confirmation email: " + e.getMessage());
-        }
-
-        return ResponseEntity.ok(Map.of("success", true, "message", "Password reset successful"));
-    }
-
-    // Complete Recovery with Full Verification (Route B - Legacy User Migration)
-    @PostMapping("/complete-recovery")
-    @Transactional
-    public ResponseEntity<?> completeRecovery(@RequestBody Map<String, Object> request,
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        // Verify token from header
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Missing or invalid authorization token"));
-        }
-
-        String token = authHeader.replace("Bearer ", "");
-        String username = jwtService.extractUserName(token);
-
-        String email = (String) request.get("email");
-        Users user = userService.findByEmail(email);
-
-        if (user == null || !user.getUsername().equals(username)) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid request"));
-        }
-
-        // Extract data from request
-        String computerCode = (String) request.get("computerCode");
-        String aadharNumber = (String) request.get("aadharNumber");
-        String dob = (String) request.get("dob");
-        String gender = (String) request.get("gender");
-        String name = (String) request.get("name");
-        String newPassword = (String) request.get("newPassword");
-        String semester = (String) request.get("semester");
-        String enrollmentNumber = (String) request.get("enrollmentNumber");
-        String selfieImage = (String) request.get("selfieImage");
-        String idCardImage = (String) request.get("idCardImage");
-        String aadharImage = (String) request.get("aadharImage");
-
-        // Validate required fields
-        if (computerCode == null || aadharNumber == null || dob == null || gender == null || newPassword == null) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Missing required fields"));
-        }
-
-        // Check if Computer Code already exists (for different user)
-        if (userRepo.findByComputerCode(computerCode).isPresent()) {
-            Users existingUser = userRepo.findByComputerCode(computerCode).get();
-            if (existingUser.getId() != user.getId()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("message", "Computer Code is already in use"));
-            }
-        }
-
-        // Check if Aadhar already exists (for different user)
-        if (userRepo.findByAadharNumber(aadharNumber).isPresent()) {
-            Users existingUser = userRepo.findByAadharNumber(aadharNumber).get();
-            if (existingUser.getId() != user.getId()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("message", "Aadhar Number is already registered"));
-            }
-        }
-
-        // Update user record - MIGRATE TO NEW SYSTEM
-        user.setUsername(computerCode); // Change username to Computer Code
-        user.setComputerCode(computerCode);
-        user.setAadharNumber(aadharNumber);
-        user.setDob(dob);
-        user.setGender(gender);
-        if (name != null)
-            user.setFullName(name);
-        if (semester != null) {
-            try {
-                user.setSemester(Integer.parseInt(semester));
-            } catch (NumberFormatException e) {
-                // Ignore invalid semester
-            }
-        }
-        if (enrollmentNumber != null)
-            user.setEnrollmentNumber(enrollmentNumber);
-
-        // Save images
-        if (idCardImage != null)
-            user.setIdCardImage(idCardImage);
-        if (aadharImage != null)
-            user.setAadharCardImage(aadharImage);
-
-        // Mark as verified and no longer legacy
-        user.setVerified(true);
-        user.setLastProfileUpdate(java.time.LocalDate.now());
-
-        // Update password
-        userService.updatePassword(user, newPassword);
-
-        // Save user
-        userRepo.save(user);
-
-        // Delete password reset token
-        passwordResetTokenRepo.findByUser(user).ifPresent(passwordResetTokenRepo::delete);
-
-        // Send confirmation email
-        try {
-            emailService.sendAccountUpgradeConfirmation(user.getEmail(), computerCode, name);
-        } catch (Exception e) {
-            System.err.println("Failed to send confirmation email: " + e.getMessage());
++
         }
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Account recovery and upgrade successful"));

@@ -89,24 +89,26 @@ public class UserService {
         return savedUser;
     }
 
-    public String verifyAndLogin(String username, String password) {
-        Authentication authentication = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password));
-
-        Optional<Users> userOptional = repo.findByUsername(username);
+    public String verifyAndLogin(String identifier, String password) {
+        // Try to find user by computerCode or username
+        Optional<Users> userOptional = repo.findByComputerCodeOrUsername(identifier);
 
         if (userOptional.isEmpty()) {
-            throw new BadCredentialsException("User not found after authentication.");
+            throw new BadCredentialsException("User not found");
         }
 
         Users user = userOptional.get();
+
+        // Authenticate using the actual username stored in database
+        Authentication authentication = authManager.authenticate(
+                new UsernamePasswordAuthenticationToken(user.getUsername(), password));
 
         if (!user.isVerified()) {
             throw new IllegalStateException("Please verify your email address with the code to log in.");
         }
 
         if (authentication.isAuthenticated()) {
-            return jwtservice.generateToken(username);
+            return jwtservice.generateToken(user.getUsername());
         } else {
             throw new BadCredentialsException("Authentication failed");
         }
