@@ -450,6 +450,8 @@ public class AuthController {
             user.setIdCardImage(idCardImage);
         if (aadharImage != null)
             user.setAadharCardImage(aadharImage);
+        if (selfieImage != null)
+            user.setProfilePictureUrl(selfieImage);
 
         // Mark as verified and no longer legacy
         user.setVerified(true);
