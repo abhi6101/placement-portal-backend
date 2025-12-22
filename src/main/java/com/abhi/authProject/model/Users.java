@@ -102,6 +102,14 @@ public class Users {
     @Column(name = "aadhar_number", unique = true)
     private String aadharNumber;
 
+    // NEW: Date of Birth (from Aadhar verification)
+    @Column(name = "dob")
+    private String dob; // Format: DD/MM/YYYY or YYYY-MM-DD
+
+    // NEW: Gender (from Aadhar verification)
+    @Column(name = "gender")
+    private String gender; // Male/Female
+
     // Branch/Semester filtering fields
     @Column(name = "branch")
     private String branch; // IMCA, MCA, BCA

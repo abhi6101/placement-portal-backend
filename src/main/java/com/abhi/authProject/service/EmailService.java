@@ -693,4 +693,74 @@ public class EmailService {
 
         logger.info("Rejected email sent to: {} - Status: {}", toEmail, response.getStatusCode());
     }
+
+    // Account Upgrade Confirmation (for legacy user migration)
+    public void sendAccountUpgradeConfirmation(String toEmail, String computerCode, String name) throws IOException {
+        if (!globalSettingsService.isAccountEmailAllowed()) {
+            logger.info("Email sending (Account) is DISABLED. Skipping Account Upgrade Email to {}", toEmail);
+            return;
+        }
+        Email from = new Email(fromEmail);
+        Email to = new Email(toEmail);
+        String subject = "✅ Account Successfully Upgraded - Placement Portal";
+
+        String htmlContent = "<!DOCTYPE html>" +
+                "<html>" +
+                "<head><meta charset='UTF-8'></head>" +
+                "<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>" +
+                "<div style='max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #10b981 0%, #4ade80 100%); border-radius: 10px;'>"
+                +
+                "<div style='background: white; padding: 30px; border-radius: 8px;'>" +
+                "<h2 style='color: #10b981; text-align: center;'>✅ Account Upgraded Successfully!</h2>" +
+                "<p>Dear " + (name != null ? name : "User") + ",</p>" +
+                "<p>Your account has been successfully <strong>recovered and upgraded</strong> to the new system!</p>" +
+                "<div style='background-color: #f0fdf4; padding: 20px; border-left: 4px solid #10b981; margin: 20px 0;'>"
+                +
+                "<h3 style='color: #10b981; margin-top: 0;'>🔑 Your New Login Credentials:</h3>" +
+                "<p style='margin: 10px 0;'><strong>Computer Code:</strong> <span style='color: #4ade80; font-size: 24px; font-weight: bold;'>"
+                + computerCode + "</span></p>" +
+                "<p style='margin: 10px 0;'><strong>Password:</strong> [The password you just created]</p>" +
+                "</div>" +
+                "<div style='background-color: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin: 20px 0;'>"
+                +
+                "<h4 style='margin-top: 0;'>⚠️ Important Changes:</h4>" +
+                "<ul style='margin: 10px 0; padding-left: 20px;'>" +
+                "<li>Your old username is <strong>no longer valid</strong></li>" +
+                "<li>Always use <strong>Computer Code (" + computerCode + ")</strong> to login</li>" +
+                "<li>Your account is now <strong>fully verified</strong></li>" +
+                "<li>All your data has been preserved</li>" +
+                "</ul>" +
+                "</div>" +
+                "<div style='background-color: #f0f9ff; padding: 15px; border-radius: 8px; margin: 20px 0;'>" +
+                "<h4 style='margin-top: 0; color: #667eea;'>✓ Verified Information:</h4>" +
+                "<p style='margin: 5px 0;'><strong>Name:</strong> " + (name != null ? name : "N/A") + "</p>" +
+                "<p style='margin: 5px 0;'><strong>Computer Code:</strong> " + computerCode + "</p>" +
+                "<p style='margin: 5px 0;'><strong>Email:</strong> " + toEmail + "</p>" +
+                "</div>" +
+                "<p style='text-align: center; margin-top: 30px;'>" +
+                "<a href='" + frontendUrl
+                + "/login' style='display: inline-block; background-color: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 50px; font-weight: bold;'>Login Now</a>"
+                +
+                "</p>" +
+                "<hr style='margin: 30px 0; border: none; border-top: 1px solid #ddd;'>" +
+                "<p style='color: #666; font-size: 14px;'>If you didn't perform this action, please contact support immediately.</p>"
+                +
+                "<p style='color: #666; font-size: 14px;'>Best regards,<br/>Placement Portal Team</p>" +
+                "</div>" +
+                "</div>" +
+                "</body>" +
+                "</html>";
+
+        Content content = new Content("text/html", htmlContent);
+        Mail mail = new Mail(from, subject, to, content);
+
+        SendGrid sg = new SendGrid(sendGridApiKey);
+        Request request = new Request();
+        request.setMethod(Method.POST);
+        request.setEndpoint("mail/send");
+        request.setBody(mail.build());
+        Response response = sg.api(request);
+
+        logger.info("Account upgrade email sent to: {} - Status: {}", toEmail, response.getStatusCode());
+    }
 }
