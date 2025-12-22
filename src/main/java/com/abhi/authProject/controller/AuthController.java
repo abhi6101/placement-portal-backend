@@ -193,6 +193,7 @@ public class AuthController {
                 // Save Images
                 newUser.setIdCardImage(registerRequest.getIdCardImage());
                 newUser.setAadharCardImage(registerRequest.getAadharCardImage());
+                newUser.setProfilePictureUrl(registerRequest.getProfilePictureUrl());
 
                 newUser.setLastProfileUpdate(java.time.LocalDate.now());
             }
@@ -640,6 +641,7 @@ public class AuthController {
         // Images
         private String idCardImage;
         private String aadharCardImage;
+        private String profilePictureUrl; // Added for selfie/avatar
     }
 
     // NEW DTO for verification code request
