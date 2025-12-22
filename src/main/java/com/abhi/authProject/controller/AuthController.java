@@ -320,11 +320,16 @@ public class AuthController {
                 existingData.put("username", user.getUsername());
 
             return ResponseEntity.ok(Map.of(
-+
+                    "success", true,
+                    "route", "FULL_VERIFICATION",
+                    "token", recoveryToken,
+                    "userData", Map.of(
+                            "email", user.getEmail(),
+                            "existingData", existingData)));
         }
-
-        return ResponseEntity.ok(Map.of("success", true, "message", "Account recovery and upgrade successful"));
     }
+
+    // Reset password with Token (Route A - Simple Reset)
 
     // --- STUDENT PROFILE UPDATE ENDPOINTS ---
 
