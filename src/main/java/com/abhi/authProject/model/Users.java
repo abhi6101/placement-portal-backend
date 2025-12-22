@@ -52,7 +52,7 @@ public class Users {
     private String verificationToken; // This will now store the OTP code
     private LocalDateTime verificationTokenExpires;
 
-    @Column(name = "profile_picture_url", length = 500)
+    @Column(name = "profile_picture_url", columnDefinition = "TEXT")
     private String profilePictureUrl;
 
     @jakarta.persistence.OneToMany(mappedBy = "student", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
