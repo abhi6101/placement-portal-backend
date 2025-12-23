@@ -454,6 +454,42 @@ public class AuthController {
             }
 
             return ResponseEntity.ok(Map.of("message", "OTP sent successfully!"));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Handle duplicate key error - delete old token and retry
+            System.err.println("⚠️ Duplicate token detected, cleaning up and retrying...");
+            try {
+                Users user = userService.findByEmail(request.get("email"));
+                passwordResetTokenRepo.findByUser(user).ifPresent(token -> {
+                    System.out.println("🗑️ Force deleting existing token");
+                    passwordResetTokenRepo.delete(token);
+                    passwordResetTokenRepo.flush();
+                });
+
+                // Generate new OTP
+                String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
+                PasswordResetToken resetToken = new PasswordResetToken(otp, user);
+                passwordResetTokenRepo.save(resetToken);
+
+                System.out.println("✅ OTP regenerated: " + otp);
+                System.out.println("═══════════════════════════════════════");
+                System.out.println("🔐 PASSWORD RESET OTP (COPY THIS)");
+                System.out.println("Email: " + user.getEmail());
+                System.out.println("OTP: " + otp);
+                System.out.println("═══════════════════════════════════════");
+
+                // Try to send email
+                try {
+                    emailService.sendPasswordResetEmail(user.getEmail(), otp);
+                } catch (Exception emailEx) {
+                    System.err.println("Email send failed: " + emailEx.getMessage());
+                }
+
+                return ResponseEntity.ok(Map.of("message", "OTP sent successfully!"));
+            } catch (Exception retryEx) {
+                System.err.println("❌ Retry failed: " + retryEx.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("message", "Failed to generate OTP. Please try again."));
+            }
         } catch (Exception e) {
             System.err.println("❌ Unexpected error in forgotPassword: " + e.getMessage());
             e.printStackTrace();
