@@ -363,11 +363,16 @@ public class AuthController {
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
         String email = request.get("email");
 
+        System.out.println("📧 Forgot Password Request - Email: " + email);
+
         try {
             Users user = userService.findByEmail(email);
             if (user == null) {
+                System.err.println("❌ User not found for email: " + email);
                 return ResponseEntity.badRequest().body(Map.of("message", "Email address not found. Please register."));
             }
+
+            System.out.println("✅ User found: " + user.getUsername());
 
             // Delete any existing tokens for this user
             passwordResetTokenRepo.findByUser(user).ifPresent(passwordResetTokenRepo::delete);
@@ -377,19 +382,46 @@ public class AuthController {
             PasswordResetToken resetToken = new PasswordResetToken(otp, user);
             passwordResetTokenRepo.save(resetToken);
 
+            System.out.println("✅ OTP generated and saved: " + otp);
+
+            // DEVELOPMENT MODE: Always log OTP to console for testing
+            System.out.println("═══════════════════════════════════════");
+            System.out.println("🔐 PASSWORD RESET OTP (COPY THIS)");
+            System.out.println("Email: " + user.getEmail());
+            System.out.println("OTP: " + otp);
+            System.out.println("Valid for: 10 minutes");
+            System.out.println("═══════════════════════════════════════");
+
             // Send email
             try {
+                System.out.println("📤 Attempting to send email to: " + user.getEmail());
                 emailService.sendPasswordResetEmail(user.getEmail(), otp);
+                System.out.println("✅ Email sent successfully!");
             } catch (Exception e) {
-                // Log error but don't reveal to user
-                System.err.println("Failed to send reset email: " + e.getMessage());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("message", "Failed to send email. Please try again."));
+                // Log detailed error
+                System.err.println("❌ Failed to send reset email: " + e.getMessage());
+                e.printStackTrace();
+
+                // Check if it's a SendGrid configuration issue
+                if (e.getMessage() != null && e.getMessage().contains("401")) {
+                    System.err.println("⚠️ SendGrid API Key issue - Check SENDGRID_API_KEY environment variable");
+                } else if (e.getMessage() != null && e.getMessage().contains("403")) {
+                    System.err.println("⚠️ SendGrid sender email not verified - Check SENDER_FROM_EMAIL");
+                }
+
+                System.err.println("⚠️ EMAIL FAILED - But OTP is logged above in console. Use it for testing!");
+
+                // Still return success so user can use console OTP for testing
+                return ResponseEntity.ok(Map.of(
+                        "message", "OTP generated! Check backend console for OTP (email service not configured)."));
             }
 
             return ResponseEntity.ok(Map.of("message", "OTP sent successfully!"));
         } catch (Exception e) {
-            return ResponseEntity.ok(Map.of("message", "If the email exists, an OTP has been sent."));
+            System.err.println("❌ Unexpected error in forgotPassword: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "An error occurred. Please try again."));
         }
     }
 
