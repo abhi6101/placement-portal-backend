@@ -408,7 +408,11 @@ public class AuthController {
             System.out.println("✅ User found: " + user.getUsername());
 
             // Delete any existing tokens for this user
-            passwordResetTokenRepo.findByUser(user).ifPresent(passwordResetTokenRepo::delete);
+            passwordResetTokenRepo.findByUser(user).ifPresent(token -> {
+                System.out.println("🗑️ Deleting existing token for user: " + user.getUsername());
+                passwordResetTokenRepo.delete(token);
+                passwordResetTokenRepo.flush(); // Force immediate deletion
+            });
 
             // Generate 6-digit OTP
             String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
