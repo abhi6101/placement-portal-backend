@@ -15,6 +15,8 @@ public interface PasswordResetTokenRepo extends JpaRepository<PasswordResetToken
 
     Optional<PasswordResetToken> findByUser(Users user);
 
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
     void deleteByUser(Users user);
 
     void deleteByExpiryDateBefore(LocalDateTime now);

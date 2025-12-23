@@ -392,6 +392,7 @@ public class AuthController {
     }
 
     // Forgot Password - Request reset
+    @Transactional
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
         String email = request.get("email");
@@ -407,12 +408,11 @@ public class AuthController {
 
             System.out.println("✅ User found: " + user.getUsername());
 
-            // Delete any existing tokens for this user
-            passwordResetTokenRepo.findByUser(user).ifPresent(token -> {
-                System.out.println("🗑️ Deleting existing token for user: " + user.getUsername());
-                passwordResetTokenRepo.delete(token);
-                passwordResetTokenRepo.flush(); // Force immediate deletion
-            });
+            // Delete any existing tokens for this user using direct delete method
+            System.out.println("🗑️ Deleting any existing tokens for user: " + user.getUsername());
+            passwordResetTokenRepo.deleteByUser(user);
+            passwordResetTokenRepo.flush();
+            System.out.println("✅ Token deletion completed");
 
             // Generate 6-digit OTP
             String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
