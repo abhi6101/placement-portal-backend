@@ -31,6 +31,23 @@ public class EmailService {
     private GlobalSettingsService globalSettingsService;
 
     public void sendPasswordResetEmail(String toEmail, String otp) throws IOException {
+        System.out.println("📧 sendPasswordResetEmail called");
+        System.out.println("To Email: " + toEmail);
+        System.out.println("OTP: " + otp);
+        System.out.println("From Email (configured): " + fromEmail);
+        System.out.println("SendGrid API Key present: " + (sendGridApiKey != null && !sendGridApiKey.isEmpty()));
+        System.out.println("SendGrid API Key length: " + (sendGridApiKey != null ? sendGridApiKey.length() : 0));
+
+        if (sendGridApiKey == null || sendGridApiKey.isEmpty()) {
+            System.err.println("❌ CRITICAL: SendGrid API Key is NULL or EMPTY!");
+            throw new IOException("SendGrid API Key not configured");
+        }
+
+        if (fromEmail == null || fromEmail.isEmpty()) {
+            System.err.println("❌ CRITICAL: Sender email is NULL or EMPTY!");
+            throw new IOException("Sender email not configured");
+        }
+
         Email from = new Email(fromEmail);
         Email to = new Email(toEmail);
         String subject = "Password Reset OTP - Placement Portal";
@@ -59,6 +76,8 @@ public class EmailService {
 
         Content content = new Content("text/html", htmlContent);
         Mail mail = new Mail(from, subject, to, content);
+
+        System.out.println("📤 Creating SendGrid client...");
         SendGrid sg = new SendGrid(sendGridApiKey);
         Request request = new Request();
 
@@ -66,11 +85,19 @@ public class EmailService {
         request.setEndpoint("mail/send");
         request.setBody(mail.build());
 
+        System.out.println("📤 Sending request to SendGrid...");
         Response response = sg.api(request);
 
+        System.out.println("📬 SendGrid response status: " + response.getStatusCode());
+        System.out.println("📬 SendGrid response body: " + response.getBody());
+
         if (response.getStatusCode() >= 400) {
+            System.err.println("❌ SendGrid returned error status: " + response.getStatusCode());
+            System.err.println("❌ Error body: " + response.getBody());
             throw new IOException("Failed to send email: " + response.getBody());
         }
+
+        System.out.println("✅ Email sent successfully via SendGrid!");
     }
 
     public void sendEmail(String toEmail, String subject, String body) throws IOException {
