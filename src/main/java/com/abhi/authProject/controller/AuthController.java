@@ -54,41 +54,74 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
+            System.out.println("🔐 Login attempt started");
+            System.out.println("Username provided: " + loginRequest.getUsername());
+            System.out.println("Computer Code provided: " + loginRequest.getComputerCode());
+            System.out.println("Password provided: "
+                    + (loginRequest.getPassword() != null ? "***" + loginRequest.getPassword().length() + " chars***"
+                            : "null"));
+
             // Support both username and computerCode
             String identifier = loginRequest.getComputerCode() != null && !loginRequest.getComputerCode().isEmpty()
                     ? loginRequest.getComputerCode()
                     : loginRequest.getUsername();
 
+            System.out.println("Identifier being used for login: " + identifier);
+
+            // Check if user exists
+            Users user = userRepo.findByComputerCodeOrUsername(identifier).orElse(null);
+            if (user == null) {
+                System.err.println("❌ User not found with identifier: " + identifier);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "User not found. Please check your credentials."));
+            }
+
+            System.out.println("✅ User found: " + user.getUsername());
+            System.out.println("User ID: " + user.getId());
+            System.out.println("User Email: " + user.getEmail());
+            System.out.println("User Computer Code: " + user.getComputerCode());
+            System.out.println("User Verified: " + user.isVerified());
+            System.out.println("User Role: " + user.getRole());
+
+            // Check if user is verified
+            if (!user.isVerified()) {
+                System.err.println("❌ User not verified: " + identifier);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Please verify your email before logging in."));
+            }
+
+            System.out.println("Attempting authentication...");
             String token = userService.verifyAndLogin(identifier, loginRequest.getPassword());
 
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(identifier, loginRequest.getPassword()));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // Find user by computerCode or username
-            Users user = userRepo.findByComputerCodeOrUsername(identifier).orElse(null);
+            System.out.println("✅ Authentication successful!");
 
-            if (user != null) {
-                user.setLastLoginDate(java.time.LocalDateTime.now());
-                userRepo.save(user);
-            }
+            user.setLastLoginDate(java.time.LocalDateTime.now());
+            userRepo.save(user);
 
-            String companyName = (user != null) ? user.getCompanyName() : null;
+            String companyName = user.getCompanyName();
 
             return ResponseEntity.ok(Map.of(
                     "token", token,
                     "username", authentication.getName(),
                     "companyName", companyName != null ? companyName : "",
-                    "branch", (user != null && user.getBranch() != null) ? user.getBranch() : "",
+                    "branch", (user.getBranch() != null) ? user.getBranch() : "",
                     "roles", authentication.getAuthorities().stream()
                             .map(GrantedAuthority::getAuthority)
                             .collect(Collectors.toList())));
         } catch (BadCredentialsException e) {
+            System.err.println("❌ Bad credentials exception: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Invalid credentials"));
         } catch (IllegalStateException e) {
+            System.err.println("❌ Illegal state exception: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
+            System.err.println("❌ Unexpected error during login: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "An error occurred during login: " + e.getMessage()));
         }
