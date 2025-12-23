@@ -537,11 +537,9 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Invalid or expired OTP"));
         }
 
-        // Check if user has complete data
+        // Check if user has complete data (NEW USER CHECK)
         boolean hasComputerCode = user.getComputerCode() != null && !user.getComputerCode().isEmpty();
         boolean hasAadhar = user.getAadharNumber() != null && !user.getAadharNumber().isEmpty();
-        boolean hasDob = user.getDob() != null;
-        boolean hasGender = user.getGender() != null && !user.getGender().isEmpty();
 
         System.out.println("🔍 User Completeness Check for: " + user.getEmail());
         System.out.println("Computer Code: " + user.getComputerCode() + " (has: " + hasComputerCode + ")");
@@ -551,55 +549,44 @@ public class AuthController {
                                 + (user.getAadharNumber() != null ? "***" + user.getAadharNumber()
                                         .substring(Math.max(0, user.getAadharNumber().length() - 4)) : "null")
                                 + " (has: " + hasAadhar + ")");
-        System.out.println("DOB: " + user.getDob() + " (has: " + hasDob + ")");
-        System.out.println("Gender: " + user.getGender() + " (has: " + hasGender + ")");
 
-        // NEW USERS: Have computerCode + aadharNumber (Aadhar contains DOB/Gender)
-        // OLD USERS: Missing computerCode or aadharNumber
-        // For new users, we don't require separate dob/gender fields since Aadhar has
-        // this info
-        boolean isComplete = hasComputerCode && hasAadhar;
+        // NEW USERS ONLY: Must have computerCode + aadharNumber
+        // OLD USERS: Will be told to create a new account
+        boolean isNewUser = hasComputerCode && hasAadhar;
 
-        System.out.println("✅ Is Complete: " + isComplete);
-        System.out.println("📍 Route: " + (isComplete ? "SIMPLE_RESET" : "FULL_VERIFICATION"));
+        // EXCEPTION: Admins do NOT need computerCode/Aadhar
+        boolean isAdmin = user.getRole() != null && user.getRole().toUpperCase().contains("ADMIN");
 
-        // EXCEPTION: Admins do NOT need to complete registration (No ID/Aadhar needed)
-        // If user is ANY kind of Admin, treat as complete.
-        if (user.getRole() != null && user.getRole().toUpperCase().contains("ADMIN")) {
-            isComplete = true;
-            System.out.println("👑 Admin exception applied - Route: SIMPLE_RESET");
+        System.out.println("✅ Is New User: " + isNewUser);
+        System.out.println("✅ Is Admin: " + isAdmin);
+
+        if (!isNewUser && !isAdmin) {
+            // OLD USER - Tell them to create a new account
+            System.out.println("❌ OLD USER detected - Missing computerCode or Aadhar");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                    "success", false,
+                    "message",
+                    "Your account is from an older system. Please create a new account with your College ID and Aadhar card.",
+                    "action", "REGISTER_NEW_ACCOUNT"));
         }
+
+        System.out.println("✅ User verified - Route: SIMPLE_RESET");
 
         // Generate recovery token (JWT valid for 1 hour)
         String recoveryToken = jwtService.generateToken(user.getUsername());
 
-        if (isComplete) {
-            // Route A: Simple password reset
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "route", "SIMPLE_RESET",
-                    "token", recoveryToken,
-                    "userData", Map.of(
-                            "name", user.getFullName() != null ? user.getFullName() : user.getUsername(),
-                            "computerCode", user.getComputerCode(),
-                            "email", user.getEmail(),
-                            "role", user.getRole())));
-        } else {
-            // Route B: Full verification needed
-            Map<String, Object> existingData = new java.util.HashMap<>();
-            if (user.getFullName() != null)
-                existingData.put("name", user.getFullName());
-            if (user.getUsername() != null)
-                existingData.put("username", user.getUsername());
+        // Return simple reset for both new users and admins
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "route", "SIMPLE_RESET",
+                "token", recoveryToken,
+                "userData", Map.of(
+                        "name", user.getFullName() != null ? user.getFullName() : user.getUsername(),
+                        "computerCode", user.getComputerCode() != null ? user.getComputerCode() : "",
+                        "email", user.getEmail(),
+                        "role", user.getRole())));
+    }
 
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "route", "FULL_VERIFICATION",
-                    "token", recoveryToken,
-                    "userData", Map.of(
-                            "email", user.getEmail(),
-                            "existingData", existingData)));
-        }
     }
 
     // Reset password with Token (Route A - Simple Reset)
