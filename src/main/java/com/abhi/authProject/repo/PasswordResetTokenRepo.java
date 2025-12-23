@@ -19,5 +19,10 @@ public interface PasswordResetTokenRepo extends JpaRepository<PasswordResetToken
     @org.springframework.transaction.annotation.Transactional
     void deleteByUser(Users user);
 
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query(value = "DELETE FROM password_reset_tokens WHERE user_id = ?1", nativeQuery = true)
+    @org.springframework.transaction.annotation.Transactional
+    void deleteByUserId(Long userId);
+
     void deleteByExpiryDateBefore(LocalDateTime now);
 }

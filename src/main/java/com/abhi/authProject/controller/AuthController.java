@@ -427,11 +427,14 @@ public class AuthController {
 
             System.out.println("✅ User found: " + user.getUsername());
 
-            // Delete any existing tokens for this user using direct delete method
-            System.out.println("🗑️ Deleting any existing tokens for user: " + user.getUsername());
-            passwordResetTokenRepo.deleteByUser(user);
-            passwordResetTokenRepo.flush();
-            System.out.println("✅ Token deletion completed");
+            // Delete any existing tokens using native SQL (bypasses JPA caching)
+            System.out.println("🗑️ Deleting any existing tokens for user ID: " + user.getId());
+            try {
+                passwordResetTokenRepo.deleteByUserId(Long.valueOf(user.getId()));
+                System.out.println("✅ Token deletion completed via native SQL");
+            } catch (Exception e) {
+                System.out.println("⚠️ Token deletion failed (may not exist): " + e.getMessage());
+            }
 
             // Generate 6-digit OTP
             String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
