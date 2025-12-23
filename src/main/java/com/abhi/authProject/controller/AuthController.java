@@ -481,16 +481,31 @@ public class AuthController {
         boolean hasDob = user.getDob() != null;
         boolean hasGender = user.getGender() != null && !user.getGender().isEmpty();
 
+        System.out.println("🔍 User Completeness Check for: " + user.getEmail());
+        System.out.println("Computer Code: " + user.getComputerCode() + " (has: " + hasComputerCode + ")");
+        System.out
+                .println(
+                        "Aadhar Number: "
+                                + (user.getAadharNumber() != null ? "***" + user.getAadharNumber()
+                                        .substring(Math.max(0, user.getAadharNumber().length() - 4)) : "null")
+                                + " (has: " + hasAadhar + ")");
+        System.out.println("DOB: " + user.getDob() + " (has: " + hasDob + ")");
+        System.out.println("Gender: " + user.getGender() + " (has: " + hasGender + ")");
+
         // NEW USERS: Have computerCode + aadharNumber (Aadhar contains DOB/Gender)
         // OLD USERS: Missing computerCode or aadharNumber
         // For new users, we don't require separate dob/gender fields since Aadhar has
         // this info
         boolean isComplete = hasComputerCode && hasAadhar;
 
+        System.out.println("✅ Is Complete: " + isComplete);
+        System.out.println("📍 Route: " + (isComplete ? "SIMPLE_RESET" : "FULL_VERIFICATION"));
+
         // EXCEPTION: Admins do NOT need to complete registration (No ID/Aadhar needed)
         // If user is ANY kind of Admin, treat as complete.
         if (user.getRole() != null && user.getRole().toUpperCase().contains("ADMIN")) {
             isComplete = true;
+            System.out.println("👑 Admin exception applied - Route: SIMPLE_RESET");
         }
 
         // Generate recovery token (JWT valid for 1 hour)
