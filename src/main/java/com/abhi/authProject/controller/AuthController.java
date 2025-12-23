@@ -391,6 +391,25 @@ public class AuthController {
         private String password;
     }
 
+    // TEMPORARY: Cleanup endpoint to delete stuck tokens
+    @PostMapping("/cleanup-tokens")
+    public ResponseEntity<?> cleanupTokens(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        try {
+            Users user = userService.findByEmail(email);
+            if (user == null) {
+                return ResponseEntity.badRequest().body(Map.of("message", "User not found"));
+            }
+
+            // Delete all tokens for this user
+            passwordResetTokenRepo.deleteByUser(user);
+
+            return ResponseEntity.ok(Map.of("message", "Tokens cleaned up successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("message", "Cleanup attempted: " + e.getMessage()));
+        }
+    }
+
     // Forgot Password - Request reset
     @Transactional
     @PostMapping("/forgot-password")
