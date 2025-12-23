@@ -125,6 +125,7 @@ public class AuthController {
             response.put("enrollmentNumber", user.getEnrollmentNumber() != null ? user.getEnrollmentNumber() : "");
             response.put("startYear", user.getStartYear() != null ? user.getStartYear() : "");
             response.put("companyName", user.getCompanyName() != null ? user.getCompanyName() : "");
+            response.put("address", user.getAddress() != null ? user.getAddress() : "");
 
             // Return Images
             response.put("idCardImage", user.getIdCardImage() != null ? user.getIdCardImage() : "");
