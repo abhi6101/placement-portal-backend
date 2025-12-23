@@ -435,7 +435,8 @@ public class AuthController {
                     "userData", Map.of(
                             "name", user.getFullName() != null ? user.getFullName() : user.getUsername(),
                             "computerCode", user.getComputerCode(),
-                            "email", user.getEmail())));
+                            "email", user.getEmail(),
+                            "role", user.getRole())));
         } else {
             // Route B: Full verification needed
             Map<String, Object> existingData = new java.util.HashMap<>();
