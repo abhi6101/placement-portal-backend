@@ -138,10 +138,100 @@ public class AuthController {
         }
     }
 
-    // --- REGISTER ENDPOINT (MODIFIED RESPONSE) ---
+    // --- REGISTER ENDPOINT (MODIFIED WITH LEGACY MIGRATION) ---
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
         try {
+            // Check if user already exists by email
+            java.util.Optional<Users> existingUserOpt = userRepo.findByEmail(registerRequest.getEmail());
+
+            if (existingUserOpt.isPresent()) {
+                Users existingUser = existingUserOpt.get();
+
+                // Check if this is an "Old User" (No Computer Code/Incomplete Profile)
+                boolean isLegacyUser = existingUser.getComputerCode() == null
+                        || existingUser.getComputerCode().isEmpty();
+
+                if (isLegacyUser) {
+                    // --- MIGRATION LOGIC: Update Existing Account ---
+
+                    // Update basic fields
+                    // Note: We don't update username yet to computerCode until we are sure,
+                    // or maybe we should? The register request sends 'username' but usually we want
+                    // computerCode.
+
+                    // If the user entered a password in the form, update it.
+                    if (registerRequest.getPassword() != null && !registerRequest.getPassword().isEmpty()) {
+                        userService.updatePassword(existingUser, registerRequest.getPassword());
+                    }
+
+                    // Update Role
+                    existingUser.setRole(registerRequest.getRole());
+
+                    // Update Student Details
+                    if ("USER".equals(registerRequest.getRole())) {
+                        existingUser.setBranch(registerRequest.getBranch());
+                        existingUser.setSemester(registerRequest.getSemester());
+                        existingUser.setBatch(registerRequest.getBatch());
+                        existingUser.setComputerCode(registerRequest.getComputerCode());
+
+                        // Identity Data
+                        existingUser.setFullName(registerRequest.getFullName());
+                        existingUser.setFatherName(registerRequest.getFatherName());
+                        existingUser.setInstitution(registerRequest.getInstitution());
+                        existingUser.setSession(registerRequest.getSession());
+
+                        // Mobile
+                        existingUser.setMobilePrimary(registerRequest.getMobilePrimary());
+                        existingUser.setMobileSecondary(registerRequest.getMobileSecondary());
+
+                        // Academic
+                        existingUser.setEnrollmentNumber(registerRequest.getEnrollmentNumber());
+                        existingUser.setStartYear(registerRequest.getStartYear());
+
+                        // Aadhar Check (Ensure no one else used this Aadhar)
+                        if (registerRequest.getAadharNumber() != null) {
+                            java.util.Optional<Users> aadharUser = userRepo
+                                    .findByAadharNumber(registerRequest.getAadharNumber());
+                            if (aadharUser.isPresent() && aadharUser.get().getId() != existingUser.getId()) {
+                                return ResponseEntity.badRequest().body(
+                                        Map.of("message", "Aadhar Number is already registered with another account."));
+                            }
+                            existingUser.setAadharNumber(registerRequest.getAadharNumber());
+                            existingUser.setAddress(registerRequest.getAddress());
+                        }
+
+                        // Images
+                        existingUser.setIdCardImage(registerRequest.getIdCardImage());
+                        existingUser.setAadharCardImage(registerRequest.getAadharCardImage());
+                        existingUser.setProfilePictureUrl(registerRequest.getProfilePictureUrl());
+
+                        existingUser.setLastProfileUpdate(java.time.LocalDate.now());
+                    }
+
+                    // Change username to computerCode for consistency?
+                    // Usually legacy users have a random username.
+                    // New system prefers computerCode as username or unique identifier.
+                    if (registerRequest.getComputerCode() != null && !registerRequest.getComputerCode().isEmpty()) {
+                        existingUser.setUsername(registerRequest.getComputerCode());
+                    }
+
+                    // Mark verified (Since they likely came from Forgot Password flow)
+                    // Or we can assume if they are updating, they are verified.
+                    existingUser.setVerified(true);
+
+                    userRepo.save(existingUser);
+
+                    return ResponseEntity.ok(Map.of("message", "Account updated successfully! You can now log in."));
+
+                } else {
+                    // User exists and is NOT legacy (Duplicate Account)
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("message", "Email already registered. Please log in."));
+                }
+            }
+
+            // --- STANDARD NEW USER REGISTRATION ---
             Users newUser = new Users();
             newUser.setUsername(registerRequest.getUsername());
             newUser.setEmail(registerRequest.getEmail());
@@ -188,6 +278,7 @@ public class AuthController {
                                 .body(Map.of("message", "Aadhar Number is already registered with another account."));
                     }
                     newUser.setAadharNumber(registerRequest.getAadharNumber());
+                    newUser.setAddress(registerRequest.getAddress());
                 }
 
                 // Save Images
@@ -625,6 +716,7 @@ public class AuthController {
         private String batch; // e.g. 2022-2027
         private String computerCode;
         private String aadharNumber;
+        private String address; // NEW: Address from Aadhar
 
         // Verified Identity Data (from ID card scan)
         private String fullName;

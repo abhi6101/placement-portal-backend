@@ -159,4 +159,8 @@ public class Users {
 
     @Column(name = "aadhar_card_image", columnDefinition = "TEXT")
     private String aadharCardImage;
+
+    // NEW: Address from Aadhar
+    @Column(name = "address", columnDefinition = "TEXT")
+    private String address;
 }
