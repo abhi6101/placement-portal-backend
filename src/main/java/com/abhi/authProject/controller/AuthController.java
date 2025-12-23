@@ -542,13 +542,31 @@ public class AuthController {
         System.out.println("✅ Is Admin: " + isAdmin);
 
         if (!isNewUser && !isAdmin) {
-            // OLD USER - Tell them to create a new account
+            // OLD USER - Delete their account and tell them to re-register
             System.out.println("❌ OLD USER detected - Missing computerCode or Aadhar");
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
-                    "success", false,
-                    "message",
-                    "Your account is from an older system. Please create a new account with your College ID and Aadhar card.",
-                    "action", "REGISTER_NEW_ACCOUNT"));
+            System.out.println("🗑️ Auto-deleting old account to allow re-registration...");
+
+            try {
+                // Delete password reset tokens first
+                passwordResetTokenRepo.deleteByUser(user);
+
+                // Delete the user account
+                userRepo.delete(user);
+
+                System.out.println("✅ Old account deleted successfully");
+
+                return ResponseEntity.status(HttpStatus.GONE).body(Map.of(
+                        "success", false,
+                        "message",
+                        "Your old account has been removed. You can now register again with your College ID and Aadhar card.",
+                        "action", "REGISTER_NEW_ACCOUNT",
+                        "accountDeleted", true));
+            } catch (Exception e) {
+                System.err.println("❌ Failed to delete old account: " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                        "success", false,
+                        "message", "Error processing your request. Please contact support."));
+            }
         }
 
         System.out.println("✅ User verified - Route: SIMPLE_RESET");
