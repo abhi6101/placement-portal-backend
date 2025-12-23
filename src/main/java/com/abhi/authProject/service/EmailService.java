@@ -21,7 +21,7 @@ public class EmailService {
     @Value("${sendgrid.api.key}")
     private String sendGridApiKey;
 
-    @Value("${sendgrid.from.email:hack2hired.official@gmail.com}")
+    @Value("${SENDER_FROM_EMAIL:hack2hired.official@gmail.com}")
     private String fromEmail;
 
     @Value("${FRONTEND_URL}")
