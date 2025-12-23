@@ -461,43 +461,74 @@ public class AuthController {
     @Transactional
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        String email = request.get("email");
-        String newPassword = request.get("newPassword");
-
-        // Verify token from header
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Missing or invalid authorization token"));
-        }
-
-        String token = authHeader.replace("Bearer ", "");
-        String username = jwtService.extractUserName(token);
-
-        Users user = userService.findByEmail(email);
-        if (user == null || !user.getUsername().equals(username)) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid request"));
-        }
-
-        // Update password
-        userService.updatePassword(user, newPassword);
-
-        // Delete any password reset tokens
-        passwordResetTokenRepo.findByUser(user).ifPresent(passwordResetTokenRepo::delete);
-
-        // Send confirmation email
         try {
-            emailService.sendPasswordResetConfirmation(user.getEmail());
+            String email = request.get("email");
+            String newPassword = request.get("newPassword");
+
+            System.out.println("🔐 Password Reset Request - Email: " + email);
+            System.out.println("Authorization Header Present: " + (authHeader != null));
+
+            // Verify token from header
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                System.err.println("❌ Missing or invalid authorization header");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Missing or invalid authorization token"));
+            }
+
+            String token = authHeader.replace("Bearer ", "");
+            System.out.println("Token extracted, length: " + token.length());
+
+            String username;
+            try {
+                username = jwtService.extractUserName(token);
+                System.out.println("✅ Username extracted from token: " + username);
+            } catch (Exception e) {
+                System.err.println("❌ Failed to extract username from token: " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Invalid or expired token"));
+            }
+
+            Users user = userService.findByEmail(email);
+            if (user == null) {
+                System.err.println("❌ User not found for email: " + email);
+                return ResponseEntity.badRequest().body(Map.of("message", "User not found"));
+            }
+
+            if (!user.getUsername().equals(username)) {
+                System.err.println("❌ Username mismatch - Token: " + username + ", User: " + user.getUsername());
+                return ResponseEntity.badRequest().body(Map.of("message", "Invalid request - username mismatch"));
+            }
+
+            System.out.println("✅ Validation passed, updating password...");
+
+            // Update password
+            userService.updatePassword(user, newPassword);
+
+            // Delete any password reset tokens
+            passwordResetTokenRepo.findByUser(user).ifPresent(passwordResetTokenRepo::delete);
+
+            // Send confirmation email
+            try {
+                emailService.sendPasswordResetConfirmation(user.getEmail());
+            } catch (Exception e) {
+                System.err.println("Failed to send confirmation email: " + e.getMessage());
+            }
+
+            // Generate NEW Login Token for Auto-Login / Verification
+            String newToken = jwtService.generateToken(user.getUsername());
+
+            System.out.println("✅ Password reset successful for user: " + username);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Password reset successful",
+                    "token", newToken));
         } catch (Exception e) {
-            System.err.println("Failed to send confirmation email: " + e.getMessage());
+            System.err.println("❌ Unexpected error in resetPassword: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "An error occurred: " + e.getMessage()));
         }
-
-        // Generate NEW Login Token for Auto-Login / Verification
-        String newToken = jwtService.generateToken(user.getUsername());
-
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Password reset successful",
-                "token", newToken));
     }
 
     // Complete Recovery with Full Verification (Route B - Legacy User Migration)
