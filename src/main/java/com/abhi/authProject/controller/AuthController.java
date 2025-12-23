@@ -391,25 +391,6 @@ public class AuthController {
         private String password;
     }
 
-    // TEMPORARY: Cleanup endpoint to delete stuck tokens
-    @PostMapping("/cleanup-tokens")
-    public ResponseEntity<?> cleanupTokens(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        try {
-            Users user = userService.findByEmail(email);
-            if (user == null) {
-                return ResponseEntity.badRequest().body(Map.of("message", "User not found"));
-            }
-
-            // Delete all tokens for this user
-            passwordResetTokenRepo.deleteByUser(user);
-
-            return ResponseEntity.ok(Map.of("message", "Tokens cleaned up successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.ok(Map.of("message", "Cleanup attempted: " + e.getMessage()));
-        }
-    }
-
     // Forgot Password - Request reset
     @Transactional
     @PostMapping("/forgot-password")
@@ -587,8 +568,6 @@ public class AuthController {
                         "role", user.getRole())));
     }
 
-    }
-
     // Reset password with Token (Route A - Simple Reset)
     @PostMapping("/reset-password")
     @Transactional
@@ -662,113 +641,6 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "An error occurred: " + e.getMessage()));
         }
-    }
-
-    // Complete Recovery with Full Verification (Route B - Legacy User Migration)
-    @PostMapping("/complete-recovery")
-    @Transactional
-    public ResponseEntity<?> completeRecovery(@RequestBody Map<String, Object> request,
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        // Verify token from header
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Missing or invalid authorization token"));
-        }
-
-        String token = authHeader.replace("Bearer ", "");
-        String username = jwtService.extractUserName(token);
-
-        String email = (String) request.get("email");
-        Users user = userService.findByEmail(email);
-
-        if (user == null || !user.getUsername().equals(username)) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid request"));
-        }
-
-        // Extract data from request
-        String computerCode = (String) request.get("computerCode");
-        String aadharNumber = (String) request.get("aadharNumber");
-        String dob = (String) request.get("dob");
-        String gender = (String) request.get("gender");
-        String name = (String) request.get("name");
-        String newPassword = (String) request.get("newPassword");
-        String semester = (String) request.get("semester");
-        String enrollmentNumber = (String) request.get("enrollmentNumber");
-        String selfieImage = (String) request.get("selfieImage");
-        String idCardImage = (String) request.get("idCardImage");
-        String aadharImage = (String) request.get("aadharImage");
-
-        // Validate required fields
-        if (computerCode == null || aadharNumber == null || dob == null || gender == null || newPassword == null) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Missing required fields"));
-        }
-
-        // Check if Computer Code already exists (for different user)
-        if (userRepo.findByComputerCode(computerCode).isPresent()) {
-            Users existingUser = userRepo.findByComputerCode(computerCode).get();
-            if (existingUser.getId() != user.getId()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("message", "Computer Code is already in use"));
-            }
-        }
-
-        // Check if Aadhar already exists (for different user)
-        if (userRepo.findByAadharNumber(aadharNumber).isPresent()) {
-            Users existingUser = userRepo.findByAadharNumber(aadharNumber).get();
-            if (existingUser.getId() != user.getId()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("message", "Aadhar Number is already registered"));
-            }
-        }
-
-        // Update user record - MIGRATE TO NEW SYSTEM
-        user.setUsername(computerCode); // Change username to Computer Code
-        user.setComputerCode(computerCode);
-        user.setAadharNumber(aadharNumber);
-        user.setDob(dob);
-        user.setGender(gender);
-        if (name != null)
-            user.setFullName(name);
-        if (semester != null) {
-            try {
-                user.setSemester(Integer.parseInt(semester));
-            } catch (NumberFormatException e) {
-                // Ignore invalid semester
-            }
-        }
-        if (enrollmentNumber != null)
-            user.setEnrollmentNumber(enrollmentNumber);
-
-        // Save images
-        if (idCardImage != null)
-            user.setIdCardImage(idCardImage);
-        if (aadharImage != null)
-            user.setAadharCardImage(aadharImage);
-        if (selfieImage != null)
-            user.setProfilePictureUrl(selfieImage);
-
-        // Mark as verified and no longer legacy
-        user.setVerified(true);
-        user.setLastProfileUpdate(java.time.LocalDate.now());
-
-        // Update password
-        userService.updatePassword(user, newPassword);
-
-        // Save user
-        userRepo.save(user);
-
-        // Delete password reset token
-        passwordResetTokenRepo.findByUser(user).ifPresent(passwordResetTokenRepo::delete);
-
-        // Send confirmation email
-        try {
-            emailService.sendAccountUpgradeConfirmation(user.getEmail(), computerCode, name);
-        } catch (Exception e) {
-            System.err.println("Failed to send confirmation email: " + e.getMessage());
-        }
-
-        return ResponseEntity.ok(Map.of("success", true, "message", "Account recovery and upgrade successful"));
     }
 
     // --- STUDENT PROFILE UPDATE ENDPOINTS ---
