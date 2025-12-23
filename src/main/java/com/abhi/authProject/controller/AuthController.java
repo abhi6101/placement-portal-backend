@@ -140,8 +140,10 @@ public class AuthController {
     }
 
     // --- REGISTER ENDPOINT (MODIFIED WITH LEGACY MIGRATION) ---
+    // --- REGISTER ENDPOINT (MODIFIED WITH LEGACY MIGRATION) ---
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
             // Check if user already exists by email
             java.util.Optional<Users> existingUserOpt = userRepo.findByEmail(registerRequest.getEmail());
@@ -154,6 +156,29 @@ public class AuthController {
                         || existingUser.getComputerCode().isEmpty();
 
                 if (isLegacyUser) {
+                    // --- SECURITY CHECK: Require Authorization Token for Updates ---
+                    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                .body(Map.of("message",
+                                        "Account exists. Please use 'Forgot Password' to recover your account securely."));
+                    }
+
+                    try {
+                        String token = authHeader.replace("Bearer ", "");
+                        String username = jwtService.extractUserName(token);
+
+                        // We must ensure the token belongs to the USER strictly (by username or email)
+                        // existingUser might have a random username, but the token was generated for
+                        // it.
+                        if (!existingUser.getUsername().equals(username)) {
+                            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                    .body(Map.of("message", "Security validation failed. Token mismatch."));
+                        }
+                    } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                .body(Map.of("message", "Security validation failed. Invalid token."));
+                    }
+
                     // --- MIGRATION LOGIC: Update Existing Account ---
 
                     // Update basic fields
@@ -458,7 +483,13 @@ public class AuthController {
             System.err.println("Failed to send confirmation email: " + e.getMessage());
         }
 
-        return ResponseEntity.ok(Map.of("success", true, "message", "Password reset successful"));
+        // Generate NEW Login Token for Auto-Login / Verification
+        String newToken = jwtService.generateToken(user.getUsername());
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Password reset successful",
+                "token", newToken));
     }
 
     // Complete Recovery with Full Verification (Route B - Legacy User Migration)
