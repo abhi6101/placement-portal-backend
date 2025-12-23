@@ -366,8 +366,7 @@ public class AuthController {
         try {
             Users user = userService.findByEmail(email);
             if (user == null) {
-                // Don't reveal if email exists (security)
-                return ResponseEntity.ok(Map.of("message", "If the email exists, an OTP has been sent."));
+                return ResponseEntity.badRequest().body(Map.of("message", "Email address not found. Please register."));
             }
 
             // Delete any existing tokens for this user
@@ -384,9 +383,11 @@ public class AuthController {
             } catch (Exception e) {
                 // Log error but don't reveal to user
                 System.err.println("Failed to send reset email: " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("message", "Failed to send email. Please try again."));
             }
 
-            return ResponseEntity.ok(Map.of("message", "If the email exists, an OTP has been sent."));
+            return ResponseEntity.ok(Map.of("message", "OTP sent successfully!"));
         } catch (Exception e) {
             return ResponseEntity.ok(Map.of("message", "If the email exists, an OTP has been sent."));
         }
