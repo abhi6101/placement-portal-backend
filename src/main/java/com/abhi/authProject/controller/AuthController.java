@@ -481,7 +481,11 @@ public class AuthController {
         boolean hasDob = user.getDob() != null;
         boolean hasGender = user.getGender() != null && !user.getGender().isEmpty();
 
-        boolean isComplete = hasComputerCode && hasAadhar && hasDob && hasGender;
+        // NEW USERS: Have computerCode + aadharNumber (Aadhar contains DOB/Gender)
+        // OLD USERS: Missing computerCode or aadharNumber
+        // For new users, we don't require separate dob/gender fields since Aadhar has
+        // this info
+        boolean isComplete = hasComputerCode && hasAadhar;
 
         // EXCEPTION: Admins do NOT need to complete registration (No ID/Aadhar needed)
         // If user is ANY kind of Admin, treat as complete.
