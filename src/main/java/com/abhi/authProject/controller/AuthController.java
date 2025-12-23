@@ -417,6 +417,12 @@ public class AuthController {
 
         boolean isComplete = hasComputerCode && hasAadhar && hasDob && hasGender;
 
+        // EXCEPTION: Admins do NOT need to complete registration (No ID/Aadhar needed)
+        // If user is ANY kind of Admin, treat as complete.
+        if (user.getRole() != null && user.getRole().toUpperCase().contains("ADMIN")) {
+            isComplete = true;
+        }
+
         // Generate recovery token (JWT valid for 1 hour)
         String recoveryToken = jwtService.generateToken(user.getUsername());
 
