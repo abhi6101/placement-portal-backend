@@ -24,7 +24,7 @@ public class EmailService {
     @Value("${SENDER_FROM_EMAIL:hack2hired.official@gmail.com}")
     private String fromEmail;
 
-    @Value("${FRONTEND_URL}")
+    @Value("${frontend.url}")
     private String frontendUrl;
 
     @Autowired

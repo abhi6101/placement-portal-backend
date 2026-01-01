@@ -22,7 +22,7 @@ import java.util.Map;
 @CrossOrigin
 public class GalleryController {
 
-    @org.springframework.beans.factory.annotation.Value("${BACKEND_URL}")
+    @org.springframework.beans.factory.annotation.Value("${backend.url}")
     private String backendUrl;
 
     @Autowired

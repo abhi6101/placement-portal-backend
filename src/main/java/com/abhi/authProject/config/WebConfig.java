@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class WebConfig {
 
-    @org.springframework.beans.factory.annotation.Value("$ {FRONTEND_URL}")
+    @org.springframework.beans.factory.annotation.Value("${frontend.url}")
     private String frontendUrl;
 
     @Bean

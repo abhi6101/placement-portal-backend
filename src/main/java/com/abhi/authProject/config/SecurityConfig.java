@@ -100,7 +100,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @org.springframework.beans.factory.annotation.Value("${FRONTEND_URL}")
+    @org.springframework.beans.factory.annotation.Value("${frontend.url}")
     private String frontendUrl;
 
     @Bean
@@ -108,6 +108,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
                 frontendUrl,
+                "https://hack-2-hired.onrender.com",
                 "https://hack-2-hired.vercel.app",
                 "https://hack-2-hired.vercel.app/"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
