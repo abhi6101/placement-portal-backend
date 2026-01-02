@@ -52,6 +52,9 @@ public class SecurityConfig {
                         // THIS IS THE ONLY NEW LINE. It permits the browser's preflight checks.
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
+                        // Allow HEAD requests for health checks (UptimeRobot, monitoring tools)
+                        .requestMatchers(HttpMethod.HEAD, "/api/health", "/api/health/**").permitAll()
+
                         .requestMatchers(HttpMethod.GET,
                                 "/", "/home", "/index", "/login.html", "/register.html", "/verify-account.html",
                                 "/css/**", "/js/**", "/images/**", "/jobs", "/api/resume/download/**",
