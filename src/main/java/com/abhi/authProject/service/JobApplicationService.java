@@ -27,7 +27,7 @@ public class JobApplicationService {
     private static final Logger logger = LoggerFactory.getLogger(JobApplicationService.class);
 
     // --- DEPENDENCIES ARE NOW UPDATED ---
-    private final SendGridEmailService sendGridEmailService;
+    private final MailjetEmailService mailjetEmailService;
     private final EmailService emailService;
     private final JobApplicationRepository jobApplicationRepository;
     private final com.abhi.authProject.repo.UserRepo userRepo;
@@ -40,12 +40,12 @@ public class JobApplicationService {
     private String resumeStorageDirectory;
 
     @Autowired
-    public JobApplicationService(SendGridEmailService sendGridEmailService,
+    public JobApplicationService(MailjetEmailService mailjetEmailService,
             EmailService emailService,
             JobApplicationRepository jobApplicationRepository,
             com.abhi.authProject.repo.UserRepo userRepo,
             com.abhi.authProject.repo.JobDetailsRepo jobDetailsRepo) {
-        this.sendGridEmailService = sendGridEmailService;
+        this.mailjetEmailService = mailjetEmailService;
         this.emailService = emailService;
         this.jobApplicationRepository = jobApplicationRepository;
         this.userRepo = userRepo;
@@ -168,7 +168,7 @@ public class JobApplicationService {
                 "Best regards,<br>The Placement Team";
 
         // Use the SendGrid service for application confirmation
-        sendGridEmailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody,
+        mailjetEmailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody,
                 application.getResumePath());
         logger.info("Applicant confirmation email sent to: {}", application.getApplicantEmail());
     }
@@ -198,7 +198,7 @@ public class JobApplicationService {
                 .append("</p>");
 
         // Use the SendGrid service for HR notification
-        sendGridEmailService.sendEmailWithAttachment(recipientEmail, subject, emailBody.toString(),
+        mailjetEmailService.sendEmailWithAttachment(recipientEmail, subject, emailBody.toString(),
                 application.getResumePath());
         logger.info("HR/Admin notification email sent to: {}", recipientEmail);
     }
@@ -247,7 +247,7 @@ public class JobApplicationService {
                 "The HR team will be in touch shortly to discuss the next steps and schedule your interview.<br><br>" +
                 "Congratulations!<br><br>" +
                 "Best regards,<br>The Placement Team";
-        sendGridEmailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody, null);
+        mailjetEmailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody, null);
         logger.info("Accepted application email sent to: {}", application.getApplicantEmail());
     }
 
@@ -260,7 +260,7 @@ public class JobApplicationService {
                 +
                 "We wish you the best in your job search.<br><br>" +
                 "Sincerely,<br>The Placement Team";
-        sendGridEmailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody, null);
+        mailjetEmailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody, null);
         logger.info("Rejected application email sent to: {}", application.getApplicantEmail());
     }
 }

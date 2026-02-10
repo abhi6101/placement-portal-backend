@@ -120,9 +120,9 @@
             <version>5.2.2</version>
         </dependency>
         <dependency>
-            <groupId>com.sendgrid</groupId>
-            <artifactId>sendgrid-java</artifactId>
-            <version>4.10.0</version>
+            <groupId>com.mailjet</groupId>
+            <artifactId>mailjet-client</artifactId>
+            <version>6.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.cloudinary</groupId>
