@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
 public class JobApplicationServiceTest {
 
     @Mock
-    private SendGridEmailService sendGridEmailService;
+    private MailjetEmailService mailjetEmailService;
 
     @Mock
     private EmailService emailService;
@@ -73,10 +73,10 @@ public class JobApplicationServiceTest {
 
         // Assert
         // Verify Applicant Confirmation
-        verify(sendGridEmailService).sendEmailWithAttachment(eq("alice@test.com"), anyString(), anyString(),
+        verify(mailjetEmailService).sendEmailWithAttachment(eq("alice@test.com"), anyString(), anyString(),
                 anyString());
         // Verify Admin Notification
-        verify(sendGridEmailService).sendEmailWithAttachment(eq("admin@test.com"), anyString(), anyString(),
+        verify(mailjetEmailService).sendEmailWithAttachment(eq("admin@test.com"), anyString(), anyString(),
                 anyString());
     }
 
