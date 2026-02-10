@@ -39,9 +39,9 @@ public class UserService {
     // @Autowired
     // private EmailService emailService;
 
-    // ADDED: The new SendGridEmailService.
+    // ADDED: The new MailjetEmailService.
     @Autowired
-    private SendGridEmailService emailService;
+    private MailjetEmailService emailService;
 
     private String generateOTP() {
         Random random = new Random();

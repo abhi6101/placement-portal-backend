@@ -34,7 +34,7 @@ public class InterviewApplicationController {
     private com.abhi.authProject.repo.UserRepo userRepo;
 
     @Autowired
-    private com.abhi.authProject.service.SendGridEmailService sendGridEmailService;
+    private com.abhi.authProject.service.MailjetEmailService mailjetEmailService;
 
     @Value("${placement.portal.application.recipient-email:hack2hired.official@gmail.com}")
     private String recipientEmail;
@@ -82,7 +82,7 @@ public class InterviewApplicationController {
                     "<p><strong>Applicant Phone:</strong> " + applicantPhone + "</p>";
 
             try {
-                sendGridEmailService.sendEmailWithAttachment(recipientEmail, adminSubject, adminBody, resumePath);
+                mailjetEmailService.sendEmailWithAttachment(recipientEmail, adminSubject, adminBody, resumePath);
             } catch (Exception e) {
                 // Log but don't fail the request
                 System.err.println("Failed to send Admin notification: " + e.getMessage());
