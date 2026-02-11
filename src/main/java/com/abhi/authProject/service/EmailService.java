@@ -53,7 +53,16 @@ public class EmailService {
         }
 
         try {
+            // Log API credentials (masked)
+            logger.info("🔑 Mailjet API Key: {}...",
+                    apiKey != null ? apiKey.substring(0, Math.min(8, apiKey.length())) : "NULL");
+            logger.info("🔑 Mailjet Secret Key: {}...",
+                    secretKey != null ? secretKey.substring(0, Math.min(8, secretKey.length())) : "NULL");
+            logger.info("📧 From Email: {}", fromEmail);
+            logger.info("📧 From Name: {}", fromName);
+
             MailjetClient client = getMailjetClient();
+            logger.info("✅ Mailjet client created successfully");
 
             JSONObject message = new JSONObject();
             message.put("From", new JSONObject()
@@ -65,18 +74,26 @@ public class EmailService {
             message.put("Subject", subject);
             message.put("HTMLPart", htmlContent);
 
+            logger.info("📤 Email payload: From={}, To={}, Subject={}", fromEmail, toEmail, subject);
+
             MailjetRequest request = new MailjetRequest(Emailv31.resource)
                     .property(Emailv31.MESSAGES, new JSONArray().put(message));
 
+            logger.info("🚀 Sending request to Mailjet API...");
             MailjetResponse response = client.post(request);
+            logger.info("📥 Mailjet API Response - Status: {}, Data: {}", response.getStatus(), response.getData());
 
             if (response.getStatus() >= 200 && response.getStatus() < 300) {
-                logger.info("Email successfully sent to {}. Status: {}", toEmail, response.getStatus());
+                logger.info("✅ Email successfully sent to {}. Status: {}", toEmail, response.getStatus());
             } else {
-                throw new IOException("Failed to send email. Status: " + response.getStatus());
+                logger.error("❌ Mailjet API returned error. Status: {}, Data: {}", response.getStatus(),
+                        response.getData());
+                throw new IOException(
+                        "Failed to send email. Status: " + response.getStatus() + " Data: " + response.getData());
             }
         } catch (Exception e) {
-            logger.error("Error sending email to {}: {}", toEmail, e.getMessage());
+            logger.error("❌ Exception while sending email to {}: {}", toEmail, e.getMessage());
+            e.printStackTrace();
             throw new IOException("Mailjet error: " + e.getMessage());
         }
     }
