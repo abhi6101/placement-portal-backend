@@ -71,7 +71,9 @@ public class EmailService {
         if (attachment != null && attachment.length > 0) {
             SendSmtpEmailAttachment attach = new SendSmtpEmailAttachment();
             attach.setName(filename != null ? filename : "attachment.pdf");
-            attach.setContent(attachment); // SDK accepts byte[] or base64? Usually byte[] in v3
+            // The SDK expects Base64 encoded bytes for the content
+            byte[] base64Encoded = Base64.getEncoder().encode(attachment);
+            attach.setContent(base64Encoded);
             List<SendSmtpEmailAttachment> attachmentList = new ArrayList<>();
             attachmentList.add(attach);
             sendSmtpEmail.setAttachment(attachmentList);
