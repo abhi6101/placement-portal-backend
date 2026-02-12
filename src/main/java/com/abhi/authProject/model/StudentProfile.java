@@ -29,7 +29,7 @@ public class StudentProfile {
     private Double cgpa;
     private Integer backlogs;
 
-    @Column(columnDefinition = "VARCHAR(20) DEFAULT 'PENDING'")
+    @Column(length = 20)
     private String approvalStatus = "PENDING"; // PENDING, APPROVED, REJECTED
 
     // Additional Details
