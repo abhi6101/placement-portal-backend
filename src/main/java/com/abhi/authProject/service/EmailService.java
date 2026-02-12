@@ -1,14 +1,20 @@
 package com.abhi.authProject.service;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @Service
 public class EmailService {
@@ -18,11 +24,17 @@ public class EmailService {
     @Value("${frontend.url}")
     private String frontendUrl;
 
+    @Value("${mail.from.email}")
+    private String fromEmail;
+
+    @Value("${mail.from.name}")
+    private String fromName;
+
     @Autowired
     private GlobalSettingsService globalSettingsService;
 
     @Autowired
-    private ResendEmailService resendEmailService;
+    private JavaMailSender mailSender;
 
     public void sendEmail(String toEmail, String subject, String htmlContent) throws IOException {
         if (!globalSettingsService.isEmailAllowed()) {
@@ -31,11 +43,19 @@ public class EmailService {
         }
 
         try {
-            logger.info("📧 Sending email via Resend to: {}", toEmail);
-            resendEmailService.sendEmail(toEmail, subject, htmlContent);
-            logger.info("✅ Email sent successfully via Resend to: {}", toEmail);
-        } catch (Exception e) {
-            logger.error("❌ Failed to send email via Resend to {}: {}", toEmail, e.getMessage());
+            logger.info("📧 Sending email via Gmail SMTP to: {}", toEmail);
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromName + " <" + fromEmail + ">");
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            logger.info("✅ Email sent successfully via Gmail SMTP to: {}", toEmail);
+        } catch (MessagingException e) {
+            logger.error("❌ Failed to send email via Gmail SMTP to {}: {}", toEmail, e.getMessage());
             throw new IOException("Email sending failed: " + e.getMessage());
         }
     }
@@ -159,18 +179,8 @@ public class EmailService {
     }
 
     private String formatInterviewDetailsHtml(String interviewDetailsJson) {
-        StringBuilder html = new StringBuilder();
-        try {
-            JSONObject details = new JSONObject(interviewDetailsJson);
-            html.append("<div style='margin: 20px 0;'>");
-            html.append("<h3 style='color: #4361ee;'>Interview Schedule:</h3>");
-            // Add interview details parsing logic here
-            html.append("</div>");
-        } catch (Exception e) {
-            logger.error("Error formatting interview details: {}", e.getMessage());
-            html.append("<p>Interview details will be available in your portal.</p>");
-        }
-        return html.toString();
+        // Simple implementation for now as in original
+        return "<p>Interview details will be available in your portal.</p>";
     }
 
     public void sendNewJobAlert(String toEmail, String studentName, String jobTitle, String companyName, String salary,
@@ -253,39 +263,54 @@ public class EmailService {
         sendEmail(toEmail, "✅ Account Successfully Upgraded - Placement Portal", htmlContent);
     }
 
-    public void sendEmailWithAttachment(String toEmail, String subject, String htmlContent, byte[] attachment)
-            throws IOException {
-        if (!globalSettingsService.isEmailAllowed()) {
-            logger.info("Email sending is DISABLED (Master). Skipping Email with Attachment to {}", toEmail);
-            return;
-        }
-        resendEmailService.sendEmail(toEmail, subject, htmlContent); // Resend simplified for now
-    }
-
     public void sendEmailWithAttachment(String toEmail, String subject, String htmlContent, byte[] attachment,
             String filename) throws IOException {
         if (!globalSettingsService.isEmailAllowed()) {
             logger.info("Email sending is DISABLED (Master). Skipping Email with Attachment to {}", toEmail);
             return;
         }
-        resendEmailService.sendEmailWithAttachment(toEmail, subject, htmlContent, attachment, filename);
+
+        try {
+            logger.info("📎 Sending email with attachment via Gmail SMTP to: {}", toEmail);
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromName + " <" + fromEmail + ">");
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
+
+            if (attachment != null && attachment.length > 0) {
+                helper.addAttachment(filename != null ? filename : "attachment.pdf", new ByteArrayResource(attachment));
+            }
+
+            mailSender.send(message);
+            logger.info("✅ Email with attachment sent successfully via Gmail SMTP to: {}", toEmail);
+        } catch (MessagingException e) {
+            logger.error("❌ Failed to send email with attachment via Gmail SMTP to {}: {}", toEmail, e.getMessage());
+            throw new IOException("Email sending failed: " + e.getMessage());
+        }
     }
 
-    // ADDED: Compatibility method for String paths (like from local storage)
+    public void sendEmailWithAttachment(String toEmail, String subject, String htmlContent, byte[] attachment)
+            throws IOException {
+        sendEmailWithAttachment(toEmail, subject, htmlContent, attachment, null);
+    }
+
     public void sendEmailWithLocalFile(String toEmail, String subject, String htmlContent, String filePath)
             throws IOException {
         if (!globalSettingsService.isEmailAllowed()) {
-            logger.info("Email sending is DISABLED (Master). Skipping Email with Attachment to {}", toEmail);
+            logger.info("Email sending is DISABLED (Master). Skipping Email with Local Attachment to {}", toEmail);
             return;
         }
         try {
-            java.nio.file.Path path = java.nio.file.Paths.get(filePath);
-            byte[] fileContent = java.nio.file.Files.readAllBytes(path);
+            Path path = Paths.get(filePath);
+            byte[] fileContent = Files.readAllBytes(path);
             String fileName = path.getFileName().toString();
-            resendEmailService.sendEmailWithAttachment(toEmail, subject, htmlContent, fileContent, fileName);
+            sendEmailWithAttachment(toEmail, subject, htmlContent, fileContent, fileName);
         } catch (Exception e) {
             logger.error("Error reading attachment from path: {}. Sending without attachment.", filePath);
-            resendEmailService.sendEmail(toEmail, subject, htmlContent);
+            sendEmail(toEmail, subject, htmlContent);
         }
     }
 }

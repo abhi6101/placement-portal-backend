@@ -28,7 +28,7 @@ public class Users {
     private String role;
 
     // --- START: CRITICAL CHANGES FOR isVerified FIELD ---
-    @Column(name = "is_verified", nullable = false, columnDefinition = "boolean default false")
+    @Column(name = "is_verified", nullable = false)
     private boolean isVerified = false; // Initialize to false directly. This is the default value for new users.
 
     // Also consider adding a constructor to ensure it's false when creating new
@@ -75,7 +75,7 @@ public class Users {
     private String companyName;
 
     // Field to enable/disable Company Admin (Super Admin control)
-    @Column(name = "enabled", nullable = false, columnDefinition = "boolean default true")
+    @Column(name = "enabled", nullable = false)
     private boolean enabled = true; // Default: enabled
 
     // Field for DEPT_ADMIN to specify which branch/department they manage
