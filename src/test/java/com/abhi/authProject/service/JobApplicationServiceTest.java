@@ -18,7 +18,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -29,9 +28,6 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class JobApplicationServiceTest {
-
-    @Mock
-    private MailjetEmailService mailjetEmailService;
 
     @Mock
     private EmailService emailService;
@@ -73,11 +69,11 @@ public class JobApplicationServiceTest {
 
         // Assert
         // Verify Applicant Confirmation
-        verify(mailjetEmailService).sendEmailWithAttachment(eq("alice@test.com"), anyString(), anyString(),
-                anyString());
+        verify(emailService).sendEmailWithLocalFile(eq("alice@test.com"), anyString(), anyString(),
+                any());
         // Verify Admin Notification
-        verify(mailjetEmailService).sendEmailWithAttachment(eq("admin@test.com"), anyString(), anyString(),
-                anyString());
+        verify(emailService).sendEmailWithLocalFile(eq("admin@test.com"), anyString(), anyString(),
+                any());
     }
 
     @Test
