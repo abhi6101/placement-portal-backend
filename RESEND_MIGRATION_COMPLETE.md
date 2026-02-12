@@ -20,7 +20,7 @@ Successfully migrated from **Mailjet** to **Resend** email service.
 
 ### 1. **Dependencies** (`pom.xml`)
 - ✅ Added Resend Java SDK (v3.0.0)
-- ⚠️ Kept Mailjet dependency (can be removed later)
+- ✅ **Removed Mailjet dependency** (cleanup complete)
 
 ### 2. **New Service** (`ResendEmailService.java`)
 - ✅ Created dedicated Resend email service
@@ -35,6 +35,12 @@ Successfully migrated from **Mailjet** to **Resend** email service.
 ### 4. **Configuration** (`application.properties`)
 - ✅ Replaced Mailjet config with Resend config
 - ✅ Using `onboarding@resend.dev` as default sender
+
+### 5. **Cleanup** (Files Removed)
+- ✅ Deleted `MailjetEmailService.java`
+- ✅ Deleted `MAILJET_ENV_VARS.md`
+- ✅ Deleted `MAILJET_MIGRATION_COMPLETE.md`
+- ✅ Deleted `MAILJET_SETUP_GUIDE.md`
 
 ---
 
@@ -110,11 +116,7 @@ Monitor email delivery:
    - Verify in Resend dashboard
    - Use: `noreply@hack2hired.com`
 
-2. **Remove Mailjet Dependency**
-   - Once confirmed working, remove from `pom.xml`
-   - Delete `MailjetEmailService.java`
-
-3. **Email Templates**
+2. **Email Templates**
    - Create reusable HTML templates
    - Add company branding
    - Improve email design
