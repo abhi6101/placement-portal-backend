@@ -235,29 +235,4 @@ public class JobApplicationService {
         return sanitizedApplicantName + "_" + System.currentTimeMillis() + fileExtension;
     }
 
-    private void sendAcceptedApplicationEmailToApplicant(JobApplication application) throws IOException {
-        String subject = "Good News! Your Application for " + application.getJobTitle() + " has been Accepted!";
-        String emailBody = "Dear " + application.getApplicantName() + ",<br><br>" +
-                "We are pleased to inform you that your application for the <strong>" + application.getJobTitle()
-                + "</strong> position at <strong>" + application.getCompanyName()
-                + "</strong> has been accepted!<br><br>" +
-                "The HR team will be in touch shortly to discuss the next steps and schedule your interview.<br><br>" +
-                "Congratulations!<br><br>" +
-                "Best regards,<br>The Placement Team";
-        emailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody, (byte[]) null);
-        logger.info("Accepted application email sent to: {}", application.getApplicantEmail());
-    }
-
-    private void sendRejectedApplicationEmailToApplicant(JobApplication application) throws IOException {
-        String subject = "Update on your application for " + application.getJobTitle();
-        String emailBody = "Dear " + application.getApplicantName() + ",<br><br>" +
-                "Thank you for your interest in the <strong>" + application.getJobTitle()
-                + "</strong> position at <strong>" + application.getCompanyName() + "</strong>.<br><br>" +
-                "After careful consideration, we regret to inform you that we will not be moving forward with your application at this time.<br><br>"
-                +
-                "We wish you the best in your job search.<br><br>" +
-                "Sincerely,<br>The Placement Team";
-        emailService.sendEmailWithAttachment(application.getApplicantEmail(), subject, emailBody, (byte[]) null);
-        logger.info("Rejected application email sent to: {}", application.getApplicantEmail());
-    }
 }
