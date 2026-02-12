@@ -68,29 +68,52 @@ public class ResendEmailService {
     }
 
     /**
-     * Send an email with attachments (for future use)
+     * Send an email with attachments
      */
     public void sendEmailWithAttachment(String toEmail, String subject, String htmlContent, byte[] attachment,
             String filename) throws IOException {
         try {
-            logger.info("📎 Sending email with attachment to: {}", toEmail);
+            logger.info("📎 Preparing email with attachment '{}' to: {}", filename, toEmail);
 
             Resend resend = new Resend(apiKey);
 
-            SendEmailRequest emailRequest = SendEmailRequest.builder()
+            // Create the attachment object if provided
+            SendEmailRequest.Attachment resendAttachment = null;
+            if (attachment != null && attachment.length > 0) {
+                resendAttachment = SendEmailRequest.Attachment.builder()
+                        .fileName(filename != null ? filename : "attachment.pdf")
+                        .content(attachment)
+                        .build();
+            }
+
+            // Build email request
+            SendEmailRequest.Builder builder = SendEmailRequest.builder()
                     .from(fromName + " <" + fromEmail + ">")
                     .to(toEmail)
                     .subject(subject)
-                    .html(htmlContent)
-                    .build();
+                    .html(htmlContent);
 
+            if (resendAttachment != null) {
+                builder.attachments(resendAttachment);
+            }
+
+            SendEmailRequest emailRequest = builder.build();
+
+            logger.info("🚀 Sending request to Resend API (with attachment)...");
             SendEmailResponse response = resend.emails().send(emailRequest);
 
-            logger.info("✅ Email with attachment sent successfully. Email ID: {}", response.getId());
+            if (response != null && response.getId() != null) {
+                logger.info("✅ Email with attachment sent successfully. Email ID: {}", response.getId());
+            } else {
+                logger.warn("⚠️ Email sent but no ID was returned from Resend.");
+            }
 
         } catch (ResendException e) {
-            logger.error("❌ Resend API error with attachment: {}", e.getMessage());
+            logger.error("❌ Resend API error with attachment: Status={}, Message={}", e.statusCode(), e.getMessage());
             throw new IOException("Resend error: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("❌ Unexpected error sending email with attachment: {}", e.getMessage());
+            throw new IOException("Email sending failed: " + e.getMessage());
         }
     }
 }
