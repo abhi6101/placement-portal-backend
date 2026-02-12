@@ -1,24 +1,30 @@
 package com.abhi.authProject.service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import sibModel.*;
+import sendinblue.ApiClient;
+import sendinblue.Configuration;
+import sendinblue.auth.ApiKeyAuth;
+import sibApi.TransactionalEmailsApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
 
 @Service
 public class EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
+
+    @Value("${brevo.api.key}")
+    private String apiKey;
 
     @Value("${mail.from.email}")
     private String fromEmail;
@@ -29,31 +35,8 @@ public class EmailService {
     @Autowired
     private GlobalSettingsService globalSettingsService;
 
-    @Autowired
-    private JavaMailSender mailSender;
-
     public void sendEmail(String toEmail, String subject, String htmlContent) throws IOException {
-        if (!globalSettingsService.isEmailAllowed()) {
-            logger.info("Email sending is DISABLED (Master). Skipping: {}", toEmail);
-            return;
-        }
-
-        try {
-            logger.info("📧 Sending email via Gmail SMTP to: {}", toEmail);
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setFrom(fromName + " <" + fromEmail + ">");
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            helper.setText(htmlContent, true);
-
-            mailSender.send(message);
-            logger.info("✅ Email sent successfully via Gmail SMTP to: {}", toEmail);
-        } catch (MessagingException e) {
-            logger.error("❌ Failed to send email via Gmail SMTP to {}: {}", toEmail, e.getMessage());
-            throw new IOException("Email sending failed: " + e.getMessage());
-        }
+        sendEmailWithAttachment(toEmail, subject, htmlContent, null, null);
     }
 
     public void sendEmailWithAttachment(String toEmail, String subject, String htmlContent, byte[] attachment,
@@ -63,29 +46,47 @@ public class EmailService {
             return;
         }
 
+        ApiClient defaultClient = Configuration.getDefaultApiClient();
+        ApiKeyAuth apiKeyAuth = (ApiKeyAuth) defaultClient.getAuthentication("api-key");
+        apiKeyAuth.setApiKey(apiKey);
+
+        TransactionalEmailsApi apiInstance = new TransactionalEmailsApi();
+
+        SendSmtpEmailSender sender = new SendSmtpEmailSender();
+        sender.setEmail(fromEmail);
+        sender.setName(fromName);
+
+        SendSmtpEmailTo to = new SendSmtpEmailTo();
+        to.setEmail(toEmail);
+        List<SendSmtpEmailTo> toList = new ArrayList<>();
+        toList.add(to);
+
+        SendSmtpEmail sendSmtpEmail = new SendSmtpEmail();
+        sendSmtpEmail.setSender(sender);
+        sendSmtpEmail.setTo(toList);
+        sendSmtpEmail.setHtmlContent(htmlContent);
+        sendSmtpEmail.setSubject(subject);
+
+        // Handle attachment
+        if (attachment != null && attachment.length > 0) {
+            SendSmtpEmailAttachment attach = new SendSmtpEmailAttachment();
+            attach.setName(filename != null ? filename : "attachment.pdf");
+            attach.setContent(attachment); // SDK accepts byte[] or base64? Usually byte[] in v3
+            List<SendSmtpEmailAttachment> attachmentList = new ArrayList<>();
+            attachmentList.add(attach);
+            sendSmtpEmail.setAttachment(attachmentList);
+        }
+
         try {
-            logger.info("📧 Sending email with attachment via Gmail SMTP to: {}", toEmail);
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setFrom(fromName + " <" + fromEmail + ">");
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            helper.setText(htmlContent, true);
-
-            if (attachment != null && attachment.length > 0) {
-                helper.addAttachment(filename != null ? filename : "attachment.pdf", new ByteArrayResource(attachment));
-            }
-
-            mailSender.send(message);
-            logger.info("✅ Email with attachment sent successfully via Gmail SMTP to: {}", toEmail);
-        } catch (MessagingException e) {
-            logger.error("❌ Failed to send email with attachment to {}: {}", toEmail, e.getMessage());
-            throw new IOException("Email sending with attachment failed: " + e.getMessage());
+            CreateSmtpEmail response = apiInstance.sendTransacEmail(sendSmtpEmail);
+            logger.info("✅ Email sent successfully via Brevo to: {}. Message ID: {}", toEmail, response.getMessageId());
+        } catch (Exception e) {
+            logger.error("❌ Brevo exception: {}", e.getMessage());
+            throw new IOException("Email sending failed via Brevo: " + e.getMessage());
         }
     }
 
-    // Overloaded to support old calls that didn't pass filename
+    // Overloaded to support old calls
     public void sendEmailWithAttachment(String toEmail, String subject, String htmlContent, byte[] attachment)
             throws IOException {
         sendEmailWithAttachment(toEmail, subject, htmlContent, attachment, null);
