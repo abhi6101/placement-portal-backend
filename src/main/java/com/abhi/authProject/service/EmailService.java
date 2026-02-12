@@ -1,12 +1,5 @@
 package com.abhi.authProject.service;
 
-import com.mailjet.client.ClientOptions;
-import com.mailjet.client.MailjetClient;
-import com.mailjet.client.MailjetRequest;
-import com.mailjet.client.MailjetResponse;
-import com.mailjet.client.resource.Emailv31;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,31 +13,14 @@ public class EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
-    @Value("${mailjet.api.key}")
-    private String apiKey;
-
-    @Value("${mailjet.secret.key}")
-    private String secretKey;
-
-    @Value("${mailjet.from.email}")
-    private String fromEmail;
-
-    @Value("${mailjet.from.name}")
-    private String fromName;
-
     @Value("${frontend.url}")
     private String frontendUrl;
 
     @Autowired
     private GlobalSettingsService globalSettingsService;
 
-    private MailjetClient getMailjetClient() {
-        return new MailjetClient(
-                ClientOptions.builder()
-                        .apiKey(apiKey)
-                        .apiSecretKey(secretKey)
-                        .build());
-    }
+    @Autowired
+    private ResendEmailService resendEmailService;
 
     public void sendEmail(String toEmail, String subject, String htmlContent) throws IOException {
         if (!globalSettingsService.isEmailAllowed()) {
@@ -53,48 +29,12 @@ public class EmailService {
         }
 
         try {
-            // Log API credentials (masked)
-            logger.info("🔑 Mailjet API Key: {}...",
-                    apiKey != null ? apiKey.substring(0, Math.min(8, apiKey.length())) : "NULL");
-            logger.info("🔑 Mailjet Secret Key: {}...",
-                    secretKey != null ? secretKey.substring(0, Math.min(8, secretKey.length())) : "NULL");
-            logger.info("📧 From Email: {}", fromEmail);
-            logger.info("📧 From Name: {}", fromName);
-
-            MailjetClient client = getMailjetClient();
-            logger.info("✅ Mailjet client created successfully");
-
-            JSONObject message = new JSONObject();
-            message.put("From", new JSONObject()
-                    .put("Email", fromEmail)
-                    .put("Name", fromName));
-            message.put("To", new JSONArray()
-                    .put(new JSONObject()
-                            .put("Email", toEmail)));
-            message.put("Subject", subject);
-            message.put("HTMLPart", htmlContent);
-
-            logger.info("📤 Email payload: From={}, To={}, Subject={}", fromEmail, toEmail, subject);
-
-            MailjetRequest request = new MailjetRequest(Emailv31.resource)
-                    .property(Emailv31.MESSAGES, new JSONArray().put(message));
-
-            logger.info("🚀 Sending request to Mailjet API...");
-            MailjetResponse response = client.post(request);
-            logger.info("📥 Mailjet API Response - Status: {}, Data: {}", response.getStatus(), response.getData());
-
-            if (response.getStatus() >= 200 && response.getStatus() < 300) {
-                logger.info("✅ Email successfully sent to {}. Status: {}", toEmail, response.getStatus());
-            } else {
-                logger.error("❌ Mailjet API returned error. Status: {}, Data: {}", response.getStatus(),
-                        response.getData());
-                throw new IOException(
-                        "Failed to send email. Status: " + response.getStatus() + " Data: " + response.getData());
-            }
+            logger.info("📧 Sending email via Resend to: {}", toEmail);
+            resendEmailService.sendEmail(toEmail, subject, htmlContent);
+            logger.info("✅ Email sent successfully via Resend to: {}", toEmail);
         } catch (Exception e) {
-            logger.error("❌ Exception while sending email to {}: {}", toEmail, e.getMessage());
-            e.printStackTrace();
-            throw new IOException("Mailjet error: " + e.getMessage());
+            logger.error("❌ Failed to send email via Resend to {}: {}", toEmail, e.getMessage());
+            throw new IOException("Email sending failed: " + e.getMessage());
         }
     }
 
