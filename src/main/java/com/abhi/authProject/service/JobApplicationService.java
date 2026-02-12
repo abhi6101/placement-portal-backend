@@ -164,7 +164,7 @@ public class JobApplicationService {
                 + "<br><br>" +
                 "Best regards,<br>The Placement Team";
 
-        // Use the EmailService (now Resend) for application confirmation
+        // Use the EmailService (Brevo) for application confirmation
         emailService.sendEmailWithLocalFile(application.getApplicantEmail(), subject, emailBody,
                 application.getResumePath());
         logger.info("Applicant confirmation email sent to: {}", application.getApplicantEmail());
@@ -194,7 +194,7 @@ public class JobApplicationService {
                 .append(application.getAppliedAt().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")))
                 .append("</p>");
 
-        // Use the EmailService (now Resend) for HR notification
+        // Use the EmailService (Brevo) for HR notification
         emailService.sendEmailWithLocalFile(recipientEmail, subject, emailBody.toString(),
                 application.getResumePath());
         logger.info("HR/Admin notification email sent to: {}", recipientEmail);
