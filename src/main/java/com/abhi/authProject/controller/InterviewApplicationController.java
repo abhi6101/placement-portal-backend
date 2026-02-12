@@ -176,6 +176,9 @@ public class InterviewApplicationController {
                     status.name());
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid status");
+        } catch (IOException e) {
+            System.err.println("Failed to send status update email: " + e.getMessage());
+            // Log but return OK since DB update was successful
         }
 
         return ResponseEntity.ok(application);
