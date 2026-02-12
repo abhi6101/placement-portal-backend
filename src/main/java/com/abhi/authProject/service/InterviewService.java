@@ -25,16 +25,16 @@ public class InterviewService {
     // REMOVED: The old JavaMailSender is gone.
     // private final JavaMailSender mailSender;
 
-    // ADDED: The new MailjetEmailService.
-    private final MailjetEmailService emailService;
+    // ADDED: The generic EmailService.
+    private final EmailService emailService;
 
     // The senderEmail property is no longer needed here because it's configured
-    // inside SendGridEmailService.
+    // inside the email service.
 
     @Autowired
     public InterviewService(InterviewRepository interviewRepository,
             JobApplicationRepository jobApplicationRepository,
-            MailjetEmailService emailService) { // UPDATED constructor
+            EmailService emailService) { // UPDATED constructor
         this.interviewRepository = interviewRepository;
         this.jobApplicationRepository = jobApplicationRepository;
         this.emailService = emailService; // UPDATED constructor

@@ -35,13 +35,9 @@ public class UserService {
     @Autowired
     private BCryptPasswordEncoder encoder;
 
-    // REMOVED: The old EmailService is gone.
-    // @Autowired
-    // private EmailService emailService;
-
-    // ADDED: The new MailjetEmailService.
+    // ADDED: The generic EmailService.
     @Autowired
-    private MailjetEmailService emailService;
+    private EmailService emailService;
 
     private String generateOTP() {
         Random random = new Random();

@@ -28,13 +28,10 @@ public class InterviewApplicationController {
     private FileStorageService fileStorageService;
 
     @Autowired
-    private com.abhi.authProject.service.EmailService emailService;
+    private EmailService emailService;
 
     @Autowired
     private com.abhi.authProject.repo.UserRepo userRepo;
-
-    @Autowired
-    private com.abhi.authProject.service.MailjetEmailService mailjetEmailService;
 
     @Value("${placement.portal.application.recipient-email:hack2hired.official@gmail.com}")
     private String recipientEmail;
@@ -82,7 +79,7 @@ public class InterviewApplicationController {
                     "<p><strong>Applicant Phone:</strong> " + applicantPhone + "</p>";
 
             try {
-                mailjetEmailService.sendEmailWithAttachment(recipientEmail, adminSubject, adminBody, resumePath);
+                emailService.sendEmailWithLocalFile(recipientEmail, adminSubject, adminBody, resumePath);
             } catch (Exception e) {
                 // Log but don't fail the request
                 System.err.println("Failed to send Admin notification: " + e.getMessage());

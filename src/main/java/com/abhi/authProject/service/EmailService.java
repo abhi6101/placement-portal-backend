@@ -252,4 +252,40 @@ public class EmailService {
         htmlContent += "<p><strong>Computer Code:</strong> " + computerCode + "</p>";
         sendEmail(toEmail, "✅ Account Successfully Upgraded - Placement Portal", htmlContent);
     }
+
+    public void sendEmailWithAttachment(String toEmail, String subject, String htmlContent, byte[] attachment)
+            throws IOException {
+        if (!globalSettingsService.isEmailAllowed()) {
+            logger.info("Email sending is DISABLED (Master). Skipping Email with Attachment to {}", toEmail);
+            return;
+        }
+        resendEmailService.sendEmail(toEmail, subject, htmlContent); // Resend simplified for now
+    }
+
+    public void sendEmailWithAttachment(String toEmail, String subject, String htmlContent, byte[] attachment,
+            String filename) throws IOException {
+        if (!globalSettingsService.isEmailAllowed()) {
+            logger.info("Email sending is DISABLED (Master). Skipping Email with Attachment to {}", toEmail);
+            return;
+        }
+        resendEmailService.sendEmailWithAttachment(toEmail, subject, htmlContent, attachment, filename);
+    }
+
+    // ADDED: Compatibility method for String paths (like from local storage)
+    public void sendEmailWithLocalFile(String toEmail, String subject, String htmlContent, String filePath)
+            throws IOException {
+        if (!globalSettingsService.isEmailAllowed()) {
+            logger.info("Email sending is DISABLED (Master). Skipping Email with Attachment to {}", toEmail);
+            return;
+        }
+        try {
+            java.nio.file.Path path = java.nio.file.Paths.get(filePath);
+            byte[] fileContent = java.nio.file.Files.readAllBytes(path);
+            String fileName = path.getFileName().toString();
+            resendEmailService.sendEmailWithAttachment(toEmail, subject, htmlContent, fileContent, fileName);
+        } catch (Exception e) {
+            logger.error("Error reading attachment from path: {}. Sending without attachment.", filePath);
+            resendEmailService.sendEmail(toEmail, subject, htmlContent);
+        }
+    }
 }
