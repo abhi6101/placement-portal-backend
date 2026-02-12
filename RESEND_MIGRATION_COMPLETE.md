@@ -50,7 +50,7 @@ Successfully migrated from **Mailjet** to **Resend** email service.
 
 **ADD these new variables:**
 ```
-RESEND_API_KEY=re_BfZXJU1M_KFa7NZa2JPnFccvA8WwX6QBD
+RESEND_API_KEY=YOUR_RESEND_API_KEY_HERE
 RESEND_FROM_EMAIL=onboarding@resend.dev
 RESEND_FROM_NAME=Hack2Hired Team
 ```
