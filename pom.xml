@@ -119,11 +119,6 @@
             <artifactId>java-dotenv</artifactId>
             <version>5.2.2</version>
         </dependency>
-        <dependency>
-            <groupId>com.mailjet</groupId>
-            <artifactId>mailjet-client</artifactId>
-            <version>6.0.1</version>
-        </dependency>
         <!-- Resend Email Service -->
         <dependency>
             <groupId>com.resend</groupId>
