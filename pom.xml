@@ -135,6 +135,22 @@
             <artifactId>json</artifactId>
             <version>20231013</version>
         </dependency>
+        <!-- Forcing compatible versions for Brevo SDK -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>4.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okio</groupId>
+            <artifactId>okio</artifactId>
+            <version>3.9.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okio</groupId>
+            <artifactId>okio-jvm</artifactId>
+            <version>3.9.0</version>
+        </dependency>
 
     </dependencies>
 
