@@ -1,6 +1,5 @@
 package com.abhi.authProject.service;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,93 +18,54 @@ public class EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
-    @Value("${brevo.api.key}")
-    private String apiKey;
-
-    @Value("${mail.from.email}")
-    private String fromEmail;
-
-    @Value("${mail.from.name}")
-    private String fromName;
+    @Value("${google.script.url}")
+    private String googleScriptUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private static final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
     public void sendEmail(String toEmail, String subject, String htmlContent) throws IOException {
-        sendEmailWithAttachment(toEmail, subject, htmlContent, null, null);
-    }
-
-    public void sendEmailWithAttachment(String toEmail, String subject, String htmlContent, byte[] attachment,
-            String filename) throws IOException {
         try {
             JSONObject emailRequest = new JSONObject();
-
-            // Sender
-            JSONObject sender = new JSONObject();
-            sender.put("name", fromName);
-            sender.put("email", fromEmail);
-            emailRequest.put("sender", sender);
-
-            // Recipient
-            JSONObject to = new JSONObject();
-            to.put("email", toEmail);
-            JSONArray toArray = new JSONArray();
-            toArray.put(to);
-            emailRequest.put("to", toArray);
-
-            // Content
+            emailRequest.put("to", toEmail);
             emailRequest.put("subject", subject);
-            emailRequest.put("htmlContent", htmlContent);
+            emailRequest.put("html", htmlContent);
 
-            // Attachment
-            if (attachment != null && attachment.length > 0) {
-                JSONObject attach = new JSONObject();
-                attach.put("name", filename != null ? filename : "attachment.pdf");
-                attach.put("content", Base64.getEncoder().encodeToString(attachment));
-                JSONArray attachments = new JSONArray();
-                attachments.put(attach);
-                emailRequest.put("attachment", attachments);
-            }
-
-            // Headers
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("api-key", apiKey);
 
             HttpEntity<String> entity = new HttpEntity<>(emailRequest.toString(), headers);
 
-            ResponseEntity<String> response = restTemplate.postForEntity(BREVO_API_URL, entity, String.class);
+            ResponseEntity<String> response = restTemplate.postForEntity(googleScriptUrl, entity, String.class);
 
-            if (response.getStatusCode().is2xxSuccessful()) {
-                logger.info("✅ Email sent successfully via Brevo API to: {}", toEmail);
+            if (response.getBody() != null && response.getBody().equals("SUCCESS")) {
+                logger.info("✅ Email sent successfully via Google Bridge to: {}", toEmail);
             } else {
-                logger.error("❌ Failed to send email. Brevo returned: {}", response.getBody());
-                throw new IOException("Brevo API error: " + response.getBody());
+                logger.error("❌ Google Bridge Error: {}", response.getBody());
+                throw new IOException("Google Script error: " + response.getBody());
             }
 
         } catch (Exception e) {
-            logger.error("❌ Error sending email via Brevo API: {}", e.getMessage());
+            logger.error("❌ Error sending email via Google Bridge: {}", e.getMessage());
             throw new IOException("Email sending failed", e);
         }
     }
 
+    public void sendEmailWithAttachment(String toEmail, String subject, String htmlContent, byte[] attachment,
+            String filename) throws IOException {
+        // For Hack-2-Hired MVP, we prioritize text/HTML OTPs and alerts.
+        // Attachments can be added later by updating the Google Script.
+        logger.warn("⚠️ Attachments are currently disabled in the Google Bridge. Sending text-only instead.");
+        sendEmail(toEmail, subject, htmlContent);
+    }
+
     public void sendEmailWithAttachment(String toEmail, String subject, String htmlContent, byte[] attachment)
             throws IOException {
-        sendEmailWithAttachment(toEmail, subject, htmlContent, attachment, "attachment.pdf");
+        sendEmail(toEmail, subject, htmlContent);
     }
 
     public void sendEmailWithLocalFile(String toEmail, String subject, String htmlContent, String filePath)
             throws IOException {
-        byte[] fileBytes = null;
-        String filename = "attachment.pdf";
-        if (filePath != null) {
-            java.io.File file = new java.io.File(filePath);
-            if (file.exists()) {
-                fileBytes = Files.readAllBytes(Paths.get(filePath));
-                filename = file.getName();
-            }
-        }
-        sendEmailWithAttachment(toEmail, subject, htmlContent, fileBytes, filename);
+        sendEmail(toEmail, subject, htmlContent);
     }
 
     // --- TEMPLATE METHODS ---
