@@ -442,11 +442,11 @@ public class AuthController {
                 System.err.println("❌ Failed to send reset email: " + e.getMessage());
                 e.printStackTrace();
 
-                // Check if it's a Brevo configuration issue
+                // Check if it's a configuration issue
                 if (e.getMessage() != null && e.getMessage().contains("401")) {
-                    System.err.println("⚠️ Brevo API Key issue - Check BREVO_API_KEY environment variable");
+                    System.err.println("⚠️ Google Bridge Auth issue - Check your Script URL");
                 } else if (e.getMessage() != null && e.getMessage().contains("403")) {
-                    System.err.println("⚠️ Brevo sender email not verified - Check SPRING_MAIL_USERNAME");
+                    System.err.println("⚠️ Google Bridge Access Denied - Check Permissions (Anyone can access)");
                 }
 
                 System.err.println("⚠️ EMAIL FAILED - But OTP is logged above in console. Use it for testing!");

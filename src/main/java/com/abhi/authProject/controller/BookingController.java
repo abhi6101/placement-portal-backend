@@ -46,7 +46,7 @@ public class BookingController {
         }
 
         try {
-            // --- Send notification email to admin using Brevo ---
+            // --- Send notification email to admin using Google Bridge ---
             String adminSubject = "New Interview Slot Booking: " + name + " for " + company;
             String adminBody = "<h3>New Interview Slot Booking</h3>"
                     + "<p>A student has booked an interview slot.</p>"
@@ -63,7 +63,7 @@ public class BookingController {
             emailService.sendEmailWithAttachment(adminEmail, adminSubject, adminBody, (byte[]) null); // No attachment
                                                                                                       // to admin
 
-            // --- Send a confirmation email to the student using Brevo ---
+            // --- Send a confirmation email to the student using Google Bridge ---
             String studentSubject = "Confirmation: Your Interview Slot for " + company + " is Booked";
             String studentBody = "<h3>Interview Slot Confirmed!</h3>"
                     + "<p>Dear " + name + ",</p>"
