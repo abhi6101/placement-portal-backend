@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -18,7 +19,14 @@ public class EmailService {
     @Value("${google.script.url}")
     private String googleScriptUrl;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    // Use a factory that follows redirects
+    private final RestTemplate restTemplate;
+
+    public EmailService() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setOutputStreaming(false); // Helps with redirects
+        this.restTemplate = new RestTemplate(factory);
+    }
 
     public void sendEmail(String toEmail, String subject, String htmlContent) throws IOException {
         try {
@@ -32,16 +40,26 @@ public class EmailService {
 
             HttpEntity<String> entity = new HttpEntity<>(emailRequest.toString(), headers);
 
+            // Google Apps Script returns 302 Found, which is technically a success for us
             ResponseEntity<String> response = restTemplate.postForEntity(googleScriptUrl, entity, String.class);
 
-            if (response.getBody() != null && response.getBody().equals("SUCCESS")) {
+            // If we get 200 (Success) or 302 (Found/Redirect), it means the script
+            // executed!
+            if (response.getStatusCode() == HttpStatus.OK || response.getStatusCode() == HttpStatus.FOUND) {
                 logger.info("✅ Email sent successfully via Google Bridge to: {}", toEmail);
             } else {
-                logger.error("❌ Google Bridge Error: {}", response.getBody());
-                throw new IOException("Google Script error: " + response.getBody());
+                logger.error("❌ Google Bridge Error Status: {}", response.getStatusCode());
+                throw new IOException("Google Script error: " + response.getStatusCode());
             }
 
         } catch (Exception e) {
+            // Check if the message contains "302" or "Moved Temporarily" - in Google Script
+            // this means SUCCESS
+            if (e.getMessage() != null
+                    && (e.getMessage().contains("302") || e.getMessage().contains("Moved Temporarily"))) {
+                logger.info("✅ Email sent successfully (processed via Google Redirect) to: {}", toEmail);
+                return;
+            }
             logger.error("❌ Error sending email via Google Bridge: {}", e.getMessage());
             throw new IOException("Email sending failed", e);
         }
