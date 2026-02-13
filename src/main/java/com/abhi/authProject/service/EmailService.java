@@ -9,9 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Base64;
 
 @Service
 public class EmailService {
@@ -52,8 +49,6 @@ public class EmailService {
 
     public void sendEmailWithAttachment(String toEmail, String subject, String htmlContent, byte[] attachment,
             String filename) throws IOException {
-        // For Hack-2-Hired MVP, we prioritize text/HTML OTPs and alerts.
-        // Attachments can be added later by updating the Google Script.
         logger.warn("⚠️ Attachments are currently disabled in the Google Bridge. Sending text-only instead.");
         sendEmail(toEmail, subject, htmlContent);
     }
@@ -82,10 +77,13 @@ public class EmailService {
         sendEmail(toEmail, subject, html);
     }
 
-    public void sendAccountCreatedEmail(String toEmail, String name, String tempPassword) throws IOException {
+    public void sendAccountCreatedEmail(String toEmail, String name, String role, String tempPassword)
+            throws IOException {
         String subject = "Welcome to the Placement Portal";
-        String html = "<h3>Welcome, " + name + "!</h3><p>Your account has been created. Temporary password: <strong>"
-                + tempPassword + "</strong></p>";
+        String html = "<h3>Welcome, " + name + "!</h3>" +
+                "<p>Your account has been created with the role: <strong>" + role + "</strong>.</p>" +
+                "<p>Temporary password: <strong>" + tempPassword + "</strong></p>" +
+                "<p>Please log in and change your password immediately.</p>";
         sendEmail(toEmail, subject, html);
     }
 
@@ -121,10 +119,6 @@ public class EmailService {
         sendEmail(to, subject, html);
     }
 
-    public void sendRejectedEmail(String to, String name, String job, String company) throws IOException {
-        sendRejectionEmail(to, name, job, company);
-    }
-
     public void sendRejectionEmail(String to, String name, String job, String company) throws IOException {
         String subject = "Application Status Update - " + company;
         String html = "<p>Dear " + name + ",</p>" +
@@ -134,12 +128,19 @@ public class EmailService {
         sendEmail(to, subject, html);
     }
 
-    public void sendNewJobAlert(String to, String job, String company, String salary) throws IOException {
+    public void sendRejectedEmail(String to, String name, String job, String company) throws IOException {
+        sendRejectionEmail(to, name, job, company);
+    }
+
+    public void sendNewJobAlert(String to, String studentName, String jobTitle, String company, String salary,
+            String applyLink) throws IOException {
         String subject = "New Job Opportunity at " + company;
-        String html = "<h3>New Job Posted</h3>" +
+        String html = "<h3>Hi " + studentName + ", New Job Posted!</h3>" +
                 "<p><strong>Company:</strong> " + company + "</p>" +
-                "<p><strong>Position:</strong> " + job + "</p>" +
-                "<p><strong>Salary:</strong> " + salary + "</p>";
+                "<p><strong>Position:</strong> " + jobTitle + "</p>" +
+                "<p><strong>Salary:</strong> " + salary + "</p>" +
+                "<p><a href='" + applyLink
+                + "' style='background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Apply Now</a></p>";
         sendEmail(to, subject, html);
     }
 
