@@ -18,8 +18,12 @@ public class Paper {
 
     private String title;
     private String subject; // e.g., "aptitude", "coding", "reasoning"
+    private int year;
     private int semester; // 1 to 8
     private String branch; // e.g., "CSE", "MCA"
+    private String company; // e.g., "TCS", "Infosys"
+    private String pdfUrl; // Path to the uploaded file on the server
+    private Date uploadedAt; // Auto-generated timestamp
 
     // --- Constructors ---
     // Default constructor (required by JPA)
