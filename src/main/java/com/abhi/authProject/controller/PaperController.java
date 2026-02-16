@@ -74,19 +74,13 @@ public class PaperController {
             @RequestParam("semester") int semester,
             @RequestParam("branch") String branch,
             @RequestParam(value = "company", required = false) String company,
+            @RequestParam(value = "category", required = false, defaultValue = "End-Sem") String category,
             @RequestParam("file") MultipartFile file) {
         try {
-            String fileName = fileStorageService.saveFile(file, "papers"); // Save to "papers" subdirectory
-            // Construct the entity with the LOCAL file URL/Path logic handled by download
-            // endpoint
-            // For now we persist the filename or relative path
-            // But the frontend expects a full URL. We can construct it.
-            // Or we just save the filename and have a specific download endpoint.
-            // Let's save a relative URL format like "/api/papers/download/{filename}"
-
+            String fileName = fileStorageService.saveFile(file, "papers");
             String downloadUrl = "/api/papers/download/" + fileName;
 
-            Paper paper = new Paper(title, subject, year, semester, branch, company, downloadUrl);
+            Paper paper = new Paper(title, subject, year, semester, branch, company, category, downloadUrl);
             Paper savedPaper = paperRepository.save(paper);
             return ResponseEntity.ok(savedPaper);
         } catch (IOException e) {
