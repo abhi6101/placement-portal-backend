@@ -10,11 +10,16 @@ import java.util.List;
 public interface PaperRepository extends JpaRepository<Paper, Long> { // Paper is the entity, Long is the ID type
 
     // Spring Data automatically generates the SQL query for this method:
-    // It fetches all papers and orders them by 'uploadedAt' in descending order (newest first).
+    // It fetches all papers and orders them by 'uploadedAt' in descending order
+    // (newest first).
     List<Paper> findAllByOrderByUploadedAtDesc();
 
-    // You can add more custom query methods here if needed, for example:
-    // List<Paper> findBySubject(String subject);
-    // List<Paper> findByYear(int year);
-    // List<Paper> findByTitleContainingIgnoreCase(String title);
+    // Find papers by semester, ordered by year descending
+    List<Paper> findBySemesterOrderByYearDesc(int semester);
+
+    // Find by Semester AND Branch
+    List<Paper> findBySemesterAndBranchOrderByYearDesc(int semester, String branch);
+
+    // Find by Branch only
+    List<Paper> findByBranchOrderByYearDesc(String branch);
 }

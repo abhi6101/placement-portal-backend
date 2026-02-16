@@ -41,4 +41,20 @@ public class FileStorageService {
         String sanitizedName = applicantName.replaceAll("[^a-zA-Z0-9.-]", "_");
         return sanitizedName + "_" + System.currentTimeMillis() + extension;
     }
+
+    public String saveFile(MultipartFile file, String subDir) throws IOException {
+        Path uploadPath = Paths.get(uploadDir, subDir);
+
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        String fileName = System.currentTimeMillis() + "_"
+                + file.getOriginalFilename().replaceAll("[^a-zA-Z0-9.-]", "_");
+        Path filePath = uploadPath.resolve(fileName);
+
+        Files.copy(file.getInputStream(), filePath);
+
+        return fileName;
+    }
 }
