@@ -93,7 +93,7 @@ public class PaperBulkUploadService {
         return uploadedPapers;
     }
 
-    private int extractYear(String fileName, int defaultYear) {
+    public int extractYear(String fileName, int defaultYear) {
         // Look for 4 digit years starting with 20 or 19 (e.g. 2022, 2019)
         Pattern pattern = Pattern.compile("(20|19)\\d{2}");
         Matcher matcher = pattern.matcher(fileName);
@@ -113,7 +113,7 @@ public class PaperBulkUploadService {
         return 1; // Default
     }
 
-    private void ensureBranchExists(String code) {
+    public void ensureBranchExists(String code) {
         if (!departmentRepo.existsByCode(code)) {
             Department dept = new Department();
             dept.setName(code + " Department");

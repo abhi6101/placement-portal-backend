@@ -111,9 +111,15 @@ public class PaperController {
             @RequestParam("files") MultipartFile[] files) {
         java.util.List<Paper> savedPapers = new java.util.ArrayList<>();
         try {
+            // Ensure Branch exists
+            bulkUploadService.ensureBranchExists(branch);
+
             for (MultipartFile file : files) {
                 String fileName = fileStorageService.saveFile(file, "papers");
                 String downloadUrl = "/api/papers/download/" + fileName;
+
+                // Priority: Extract year from filename if year is 0
+                int finalYear = (year > 0) ? year : bulkUploadService.extractYear(file.getOriginalFilename(), 2024);
 
                 // Use the original filename to distinguish between multiple papers if title is
                 // generic
@@ -126,7 +132,7 @@ public class PaperController {
                     paperTitle = title + " (" + originalName + ")";
                 }
 
-                Paper paper = new Paper(paperTitle, subject, year, semester, branch, company, category, university,
+                Paper paper = new Paper(paperTitle, subject, finalYear, semester, branch, company, category, university,
                         downloadUrl);
                 savedPapers.add(paperRepository.save(paper));
             }
