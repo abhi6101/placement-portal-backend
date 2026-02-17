@@ -16,9 +16,13 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+import java.io.ByteArrayOutputStream;
 
 @RestController
 @RequestMapping("/api")
@@ -176,7 +180,53 @@ public class PaperController {
     /**
      * Endpoint to serve the PDF file.
      */
-    @GetMapping("/papers/download/{fileName:.+}")
+    @GetMapping("/papers/batch-download")
+    public ResponseEntity<byte[]> downloadBatch(
+            @RequestParam String branch,
+            @RequestParam int semester,
+            @RequestParam(required = false) String subject) {
+
+        List<Paper> papers;
+        if (subject != null && !subject.isEmpty()) {
+            papers = paperRepository.findBySemesterAndBranchAndSubjectOrderByYearDesc(semester, branch, subject);
+        } else {
+            papers = paperRepository.findBySemesterAndBranchOrderByYearDesc(semester, branch);
+        }
+
+        if (papers.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ZipOutputStream zos = new ZipOutputStream(baos)) {
+
+            for (Paper paper : papers) {
+                // Correctly resolve file path
+                String fileName = paper.getDownloadUrl().replace("/api/papers/download/", "");
+                Path filePath = Paths.get(uploadDir, "papers").resolve(fileName).normalize();
+
+                if (Files.exists(filePath)) {
+                    ZipEntry entry = new ZipEntry(
+                            paper.getSubject() + "/" + paper.getTitle() + "_" + paper.getYear() + ".pdf");
+                    zos.putNextEntry(entry);
+                    Files.copy(filePath, zos);
+                    zos.closeEntry();
+                }
+            }
+            zos.finish();
+
+            String zipName = branch + "_Sem" + semester + (subject != null ? "_" + subject : "") + "_Papers.zip";
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + zipName + "\"")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(baos.toByteArray());
+
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     public ResponseEntity<Resource> downloadPaper(@PathVariable String fileName) {
         try {
             Path filePath = Paths.get(uploadDir, "papers").resolve(fileName).normalize();

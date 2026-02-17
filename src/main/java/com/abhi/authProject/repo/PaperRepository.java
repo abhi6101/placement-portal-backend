@@ -20,6 +20,9 @@ public interface PaperRepository extends JpaRepository<Paper, Long> { // Paper i
     // Find by Semester AND Branch
     List<Paper> findBySemesterAndBranchOrderByYearDesc(int semester, String branch);
 
+    // Find by Semester, Branch AND Subject
+    List<Paper> findBySemesterAndBranchAndSubjectOrderByYearDesc(int semester, String branch, String subject);
+
     // Find by Branch only
     List<Paper> findByBranchOrderByYearDesc(String branch);
 }
