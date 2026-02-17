@@ -111,8 +111,7 @@ public class PaperBulkUploadService {
         }
 
         if (branchRepo.findByBranchCode(code).isEmpty()) {
-            java.util.Optional<Department> deptOpt = departmentRepo.findAll().stream()
-                    .filter(d -> d.getCode().equals(code)).findFirst();
+            java.util.Optional<Department> deptOpt = departmentRepo.findByCode(code);
             if (deptOpt.isPresent()) {
                 Department dept = deptOpt.get();
                 DepartmentBranch branch = new DepartmentBranch();
