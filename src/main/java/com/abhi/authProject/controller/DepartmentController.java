@@ -42,7 +42,7 @@ public class DepartmentController {
 
     // Add New Department with Branches (Super Admin Only)
     @PostMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('ADMIN')")
     public ResponseEntity<?> addDepartment(@RequestBody DepartmentWithBranchesDto dto) {
         if (departmentRepo.existsByCode(dto.getCode())) {
             return ResponseEntity.badRequest().body("Department code already exists!");
@@ -80,7 +80,7 @@ public class DepartmentController {
 
     // Add Branch to Existing Department
     @PostMapping("/{deptId}/branches")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('ADMIN')")
     public ResponseEntity<?> addBranch(@PathVariable Long deptId, @RequestBody BranchDto branchDto) {
         return departmentRepo.findById(deptId)
                 .map(dept -> {

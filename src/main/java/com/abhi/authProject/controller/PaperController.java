@@ -61,11 +61,14 @@ public class PaperController {
         return ResponseEntity.ok(papers);
     }
 
+    @Autowired
+    private PaperBulkUploadService bulkUploadService;
+
     /**
      * Handles POST requests to /api/papers/upload (Admin only).
      * Uploads a file and creates a paper record.
      */
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('DEPT_ADMIN')")
     @PostMapping(value = "/papers/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadPaper(
             @RequestParam("title") String title,
@@ -75,12 +78,13 @@ public class PaperController {
             @RequestParam("branch") String branch,
             @RequestParam(value = "company", required = false) String company,
             @RequestParam(value = "category", required = false, defaultValue = "End-Sem") String category,
+            @RequestParam(value = "university", required = false, defaultValue = "DAVV") String university,
             @RequestParam("file") MultipartFile file) {
         try {
             String fileName = fileStorageService.saveFile(file, "papers");
             String downloadUrl = "/api/papers/download/" + fileName;
 
-            Paper paper = new Paper(title, subject, year, semester, branch, company, category, downloadUrl);
+            Paper paper = new Paper(title, subject, year, semester, branch, company, category, university, downloadUrl);
             Paper savedPaper = paperRepository.save(paper);
             return ResponseEntity.ok(savedPaper);
         } catch (IOException e) {
@@ -89,9 +93,73 @@ public class PaperController {
     }
 
     /**
+     * Handles POST requests to /api/papers/upload-multiple.
+     * Allows uploading multiple files for the same subject/branch/semester.
+     */
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('DEPT_ADMIN')")
+    @PostMapping(value = "/papers/upload-multiple", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadMultiplePapers(
+            @RequestParam("title") String title,
+            @RequestParam("subject") String subject,
+            @RequestParam("year") int year,
+            @RequestParam("semester") int semester,
+            @RequestParam("branch") String branch,
+            @RequestParam(value = "company", required = false) String company,
+            @RequestParam(value = "category", required = false, defaultValue = "End-Sem") String category,
+            @RequestParam(value = "university", required = false, defaultValue = "DAVV") String university,
+            @RequestParam("files") MultipartFile[] files) {
+        java.util.List<Paper> savedPapers = new java.util.ArrayList<>();
+        try {
+            for (MultipartFile file : files) {
+                String fileName = fileStorageService.saveFile(file, "papers");
+                String downloadUrl = "/api/papers/download/" + fileName;
+
+                // Use the original filename to distinguish between multiple papers if title is
+                // generic
+                String paperTitle = title;
+                if (files.length > 1) {
+                    String originalName = file.getOriginalFilename();
+                    if (originalName != null && originalName.contains(".")) {
+                        originalName = originalName.substring(0, originalName.lastIndexOf("."));
+                    }
+                    paperTitle = title + " (" + originalName + ")";
+                }
+
+                Paper paper = new Paper(paperTitle, subject, year, semester, branch, company, category, university,
+                        downloadUrl);
+                savedPapers.add(paperRepository.save(paper));
+            }
+            return ResponseEntity.ok(savedPapers);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body("Failed to upload files: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Bulk upload via ZIP file.
+     * Structure: Branch/Semester X/Subject/File.pdf
+     */
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('DEPT_ADMIN')")
+    @PostMapping(value = "/papers/bulk-upload-zip", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> bulkUploadPapers(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "university", defaultValue = "DAVV") String university,
+            @RequestParam(value = "year", defaultValue = "2024") int year) {
+        try {
+            if (!file.getOriginalFilename().toLowerCase().endsWith(".zip")) {
+                return ResponseEntity.badRequest().body("Please upload a ZIP file.");
+            }
+            java.util.List<Paper> papers = bulkUploadService.processZipFile(file, university, year);
+            return ResponseEntity.ok(papers);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Bulk upload failed: " + e.getMessage());
+        }
+    }
+
+    /**
      * Legacy endpoint for JSON only if needed, but we prefer the upload one.
      */
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('DEPT_ADMIN')")
     @PostMapping("/papers")
     public ResponseEntity<Paper> addPaper(@RequestBody Paper paper) {
         Paper savedPaper = paperRepository.save(paper);
@@ -120,7 +188,7 @@ public class PaperController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('DEPT_ADMIN')")
     @DeleteMapping("/papers/{id}")
     public ResponseEntity<?> deletePaper(@PathVariable Long id) {
         if (!paperRepository.existsById(id)) {

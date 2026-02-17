@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,6 +44,11 @@ public class FileStorageService {
     }
 
     public String saveFile(MultipartFile file, String subDir) throws IOException {
+        return saveFileFromStream(file.getInputStream(), file.getOriginalFilename(), subDir);
+    }
+
+    public String saveFileFromStream(InputStream inputStream, String originalFilename, String subDir)
+            throws IOException {
         Path uploadPath = Paths.get(uploadDir, subDir);
 
         if (!Files.exists(uploadPath)) {
@@ -50,10 +56,10 @@ public class FileStorageService {
         }
 
         String fileName = System.currentTimeMillis() + "_"
-                + file.getOriginalFilename().replaceAll("[^a-zA-Z0-9.-]", "_");
+                + originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_");
         Path filePath = uploadPath.resolve(fileName);
 
-        Files.copy(file.getInputStream(), filePath);
+        Files.copy(inputStream, filePath);
 
         return fileName;
     }
