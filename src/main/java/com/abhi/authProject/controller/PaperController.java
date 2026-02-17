@@ -202,7 +202,7 @@ public class PaperController {
 
             for (Paper paper : papers) {
                 // Correctly resolve file path
-                String fileName = paper.getDownloadUrl().replace("/api/papers/download/", "");
+                String fileName = paper.getPdfUrl().replace("/api/papers/download/", "");
                 Path filePath = Paths.get(uploadDir, "papers").resolve(fileName).normalize();
 
                 if (Files.exists(filePath)) {
