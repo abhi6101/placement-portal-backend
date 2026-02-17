@@ -66,6 +66,7 @@ public class PaperBulkUploadService {
                 String fileName = parts[parts.length - 1].trim();
 
                 int semester = extractSemesterNumber(semesterStr);
+                int year = extractYear(fileName, defaultYear);
 
                 // 1. Ensure Department/Branch exists
                 ensureBranchExists(branchCode);
@@ -78,9 +79,9 @@ public class PaperBulkUploadService {
                 }
 
                 String downloadUrl = "/api/papers/download/" + savedFileName;
-                String title = fileName.replace(".pdf", "").replace(".PDF", "");
+                String title = fileName.replace(".pdf", "").replace(".PDF", "").trim();
 
-                Paper paper = new Paper(title, subjectName, defaultYear, semester, branchCode, null, "End-Sem",
+                Paper paper = new Paper(title, subjectName, year, semester, branchCode, null, "End-Sem",
                         university, downloadUrl);
                 uploadedPapers.add(paperRepository.save(paper));
             }
@@ -90,6 +91,17 @@ public class PaperBulkUploadService {
         }
 
         return uploadedPapers;
+    }
+
+    private int extractYear(String fileName, int defaultYear) {
+        // Look for 4 digit years starting with 20 or 19 (e.g. 2022, 2019)
+        Pattern pattern = Pattern.compile("(20|19)\\d{2}");
+        Matcher matcher = pattern.matcher(fileName);
+        int bestYear = defaultYear;
+        while (matcher.find()) {
+            bestYear = Integer.parseInt(matcher.group());
+        }
+        return bestYear;
     }
 
     private int extractSemesterNumber(String semesterStr) {
