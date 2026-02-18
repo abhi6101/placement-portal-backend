@@ -73,14 +73,19 @@ public class FileStorageService {
 
     public String savePaperToCloudinary(MultipartFile file) throws IOException {
         // Generate a unique public ID (filename) on Cloudinary
+        // For 'raw' resource type, we should include the extension in the public_id if
+        // we want it preserved cleanly
         String originalFilename = file.getOriginalFilename();
-        String publicId = "papers/" + System.currentTimeMillis() + "_"
-                + originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_").replace(".pdf", "");
+        String baseName = originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_");
+        String publicId = "papers/" + System.currentTimeMillis() + "_" + baseName;
 
-        Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
+        // Use InputStream for better memory handling with large files
+        // Use 'raw' to prevent Cloudinary from attempting to process the PDF as an
+        // image (which can cause corruption)
+        Map uploadResult = cloudinary.uploader().upload(file.getInputStream(),
                 ObjectUtils.asMap(
                         "public_id", publicId,
-                        "resource_type", "auto", // Automatically detect PDF
+                        "resource_type", "raw",
                         "folder", "placement_portal_papers"));
 
         return (String) uploadResult.get("secure_url");
