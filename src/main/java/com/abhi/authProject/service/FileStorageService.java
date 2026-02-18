@@ -134,4 +134,41 @@ public class FileStorageService {
     public Path load(String filename) {
         return Paths.get(localUploadDir).resolve(filename);
     }
+
+    // --- Compatibility Methods ---
+
+    public String saveResume(MultipartFile file, String subDir) throws IOException {
+        return saveFile(file, subDir);
+    }
+
+    public String savePaperToCloudinary(MultipartFile file) throws IOException {
+        return uploadFileToDrive(file);
+    }
+
+    public String saveFileFromStream(InputStream inputStream, String originalFilename, String subDir)
+            throws IOException {
+        // For Bulk Upload: Upload directly to Drive
+        if (driveService == null) {
+            throw new IOException("Google Drive Service not initialized.");
+        }
+
+        File fileMetadata = new File();
+        fileMetadata.setName(originalFilename);
+        if (driveFolderId != null && !driveFolderId.isEmpty() && !driveFolderId.contains("YOUR_FOLDER_ID")) {
+            fileMetadata.setParents(Collections.singletonList(driveFolderId));
+        }
+
+        // Assume PDF for bulk upload context, or stream generic
+        InputStreamContent mediaContent = new InputStreamContent("application/pdf", inputStream);
+
+        File uploadedFile = driveService.files().create(fileMetadata, mediaContent)
+                .setFields("id, webViewLink, webContentLink")
+                .execute();
+
+        // Make Public
+        Permission permission = new Permission().setType("anyone").setRole("reader");
+        driveService.permissions().create(uploadedFile.getId(), permission).execute();
+
+        return uploadedFile.getWebViewLink();
+    }
 }
