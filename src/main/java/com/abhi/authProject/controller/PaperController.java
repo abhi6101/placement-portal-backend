@@ -227,21 +227,34 @@ public class PaperController {
         }
     }
 
-    @GetMapping("/papers/download/{fileName}")
+    @GetMapping("/papers/download/{fileName:.+}")
     public ResponseEntity<Resource> downloadPaper(@PathVariable String fileName) {
         try {
-            Path filePath = Paths.get(uploadDir, "papers").resolve(fileName).normalize();
+            // DEBUGGING LOGS
+            System.out.println("Processing Download Request for: " + fileName);
+            System.out.println("Configured uploadDir: " + uploadDir);
+
+            Path baseDir = Paths.get(uploadDir, "papers");
+            System.out.println("Base Directory: " + baseDir.toAbsolutePath());
+
+            Path filePath = baseDir.resolve(fileName).normalize();
+            System.out.println("Attempting to read file at: " + filePath.toAbsolutePath());
+
             Resource resource = new UrlResource(filePath.toUri());
 
             if (resource.exists()) {
+                System.out.println("File FOUND! Serving content.");
                 return ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_PDF)
                         .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                         .body(resource);
             } else {
+                System.out.println("File NOT FOUND at path: " + filePath.toAbsolutePath());
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
+            System.out.println("Exception during download: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.notFound().build();
         }
     }
