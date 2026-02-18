@@ -160,6 +160,17 @@ public class Users {
     @Column(name = "aadhar_card_image", columnDefinition = "TEXT")
     private String aadharCardImage;
 
+    @Column(name = "address", columnDefinition = "TEXT")
+    private String address;
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
     // --- Manual Getters to fix Lombok compilation issues ---
     public String getUsername() {
         return username;
