@@ -64,7 +64,7 @@ public class SecurityConfig {
                                 "/api/student-profile/aadhar/**", "/api/student-profile/admit-card/**",
                                 "/api/universities")
                         .permitAll()
-                        .requestMatchers("/api/papers/download/**").permitAll()
+                        .requestMatchers("/api/papers/download/**", "/api/papers/proxy/**").permitAll()
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/register", "/api/auth/login", "/api/auth/verify-code",
                                 "/api/auth/logout", "/api/resume/generate-pdf",

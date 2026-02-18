@@ -286,4 +286,36 @@ public class PaperController {
         paperRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/papers/proxy/{id}")
+    public ResponseEntity<Resource> proxyDownload(@PathVariable Long id) {
+        try {
+            Paper paper = paperRepository.findById(id).orElseThrow(() -> new RuntimeException("Paper not found"));
+            String fileUrl = paper.getDownloadUrl();
+            if (fileUrl == null)
+                fileUrl = paper.getPdfUrl();
+
+            System.out.println("Proxying download for ID: " + id + ", URL: " + fileUrl);
+
+            if (fileUrl == null || !fileUrl.startsWith("http")) {
+                // If it's a local file (old uploads), try checking local disk or return error
+                return ResponseEntity.notFound().build();
+            }
+
+            // Fetch file from Cloudinary/External URL
+            java.net.URL url = new java.net.URL(fileUrl);
+            java.io.InputStream in = url.openStream();
+            InputStreamResource resource = new InputStreamResource(in);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "inline; filename=\"" + paper.getTitle().replaceAll("[^a-zA-Z0-9.-]", "_") + ".pdf\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(resource);
+        } catch (Exception e) {
+            System.out.println("Error in proxy download: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }
