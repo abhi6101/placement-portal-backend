@@ -20,9 +20,7 @@ public class PublicPaperController {
     public ResponseEntity<Void> downloadPaper(@PathVariable Long id) {
         try {
             Paper paper = paperRepository.findById(id).orElseThrow(() -> new RuntimeException("Paper not found"));
-            String fileUrl = paper.getDownloadUrl();
-            if (fileUrl == null)
-                fileUrl = paper.getPdfUrl();
+            String fileUrl = paper.getPdfUrl();
 
             if (fileUrl == null || !fileUrl.startsWith("http")) {
                 return ResponseEntity.notFound().build();
