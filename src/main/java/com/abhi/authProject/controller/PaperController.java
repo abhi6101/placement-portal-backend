@@ -5,6 +5,7 @@ import com.abhi.authProject.repo.PaperRepository;
 import com.abhi.authProject.service.FileStorageService;
 import com.abhi.authProject.service.PaperBulkUploadService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -68,9 +69,6 @@ public class PaperController {
         List<Paper> papers = paperRepository.findBySemesterOrderByYearDesc(semester);
         return ResponseEntity.ok(papers);
     }
-
-    @Autowired
-    private PaperBulkUploadService bulkUploadService;
 
     /**
      * Handles POST requests to /api/papers/upload (Admin only).
