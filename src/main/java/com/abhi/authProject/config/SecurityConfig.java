@@ -58,7 +58,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,
                                 "/", "/home", "/index", "/login.html", "/register.html", "/verify-account.html",
                                 "/css/**", "/js/**", "/images/**", "/jobs", "/api/resume/download/**",
-                                "/error.html", "/papers.html", "/papers.css", "/papers.js",
+                                "/error", "/error.html", "/papers.html", "/papers.css", "/papers.js",
                                 "/api/interview-drives", "/api/profile/picture/**", "/api/gallery", "/uploads/**",
                                 "/resumes/**", "/api/health", "/api/health/**", "/api/student-profile/id-card/**",
                                 "/api/student-profile/aadhar/**", "/api/student-profile/admit-card/**",
