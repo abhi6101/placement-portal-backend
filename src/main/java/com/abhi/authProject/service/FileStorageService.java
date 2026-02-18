@@ -1,5 +1,8 @@
 package com.abhi.authProject.service;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -9,12 +12,16 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 
 @Service
 public class FileStorageService {
 
     @Value("${pdf.storage.directory:/tmp/resumes}")
     private String uploadDir;
+
+    @Autowired
+    private Cloudinary cloudinary;
 
     public String saveResume(MultipartFile file, String applicantName) throws IOException {
         Path uploadPath = Paths.get(uploadDir);
@@ -62,5 +69,20 @@ public class FileStorageService {
         Files.copy(inputStream, filePath);
 
         return fileName;
+    }
+
+    public String savePaperToCloudinary(MultipartFile file) throws IOException {
+        // Generate a unique public ID (filename) on Cloudinary
+        String originalFilename = file.getOriginalFilename();
+        String publicId = "papers/" + System.currentTimeMillis() + "_"
+                + originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_").replace(".pdf", "");
+
+        Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
+                ObjectUtils.asMap(
+                        "public_id", publicId,
+                        "resource_type", "auto", // Automatically detect PDF
+                        "folder", "placement_portal_papers"));
+
+        return (String) uploadResult.get("secure_url");
     }
 }

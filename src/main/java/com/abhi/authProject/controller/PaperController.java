@@ -86,8 +86,8 @@ public class PaperController {
             @RequestParam(value = "university", required = false, defaultValue = "DAVV") String university,
             @RequestParam("file") MultipartFile file) {
         try {
-            String fileName = fileStorageService.saveFile(file, "papers");
-            String downloadUrl = "/api/papers/download/" + fileName;
+            // UPLOAD TO CLOUDINARY
+            String downloadUrl = fileStorageService.savePaperToCloudinary(file);
 
             Paper paper = new Paper(title, subject, year, semester, branch, company, category, university, downloadUrl);
             Paper savedPaper = paperRepository.save(paper);
@@ -119,8 +119,8 @@ public class PaperController {
             bulkUploadService.ensureBranchExists(branch);
 
             for (MultipartFile file : files) {
-                String fileName = fileStorageService.saveFile(file, "papers");
-                String downloadUrl = "/api/papers/download/" + fileName;
+                // UPLOAD TO CLOUDINARY
+                String downloadUrl = fileStorageService.savePaperToCloudinary(file);
 
                 // Priority: Extract year from filename if year is 0
                 int finalYear = (year > 0) ? year : bulkUploadService.extractYear(file.getOriginalFilename(), 2024);
