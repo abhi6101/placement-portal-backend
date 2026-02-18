@@ -160,7 +160,111 @@ public class Users {
     @Column(name = "aadhar_card_image", columnDefinition = "TEXT")
     private String aadharCardImage;
 
-    // NEW: Address from Aadhar
-    @Column(name = "address", columnDefinition = "TEXT")
-    private String address;
+    // --- Manual Getters to fix Lombok compilation issues ---
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    // isVerified already has default getter via Lombok or standard naming, but
+    // let's be explicit if needed
+    public boolean isVerified() {
+        return isVerified;
+    }
+
+    public void setVerified(boolean isVerified) {
+        this.isVerified = isVerified;
+    }
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public String getAdminBranch() {
+        return adminBranch;
+    }
+
+    public void setAdminBranch(String adminBranch) {
+        this.adminBranch = adminBranch;
+    }
+
+    public String getAllowedDepartments() {
+        return allowedDepartments;
+    }
+
+    public void setAllowedDepartments(String allowedDepartments) {
+        this.allowedDepartments = allowedDepartments;
+    }
+
+    public String getComputerCode() {
+        return computerCode;
+    }
+
+    public void setComputerCode(String computerCode) {
+        this.computerCode = computerCode;
+    }
+
+    public String getBatch() {
+        return batch;
+    }
+
+    public void setBatch(String batch) {
+        this.batch = batch;
+    }
+
+    public String getBranch() {
+        return branch;
+    }
+
+    public void setBranch(String branch) {
+        this.branch = branch;
+    }
+
+    public Integer getSemester() {
+        return semester;
+    }
+
+    public void setSemester(Integer semester) {
+        this.semester = semester;
+    }
+
+    // Add missing getter for id
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 }
