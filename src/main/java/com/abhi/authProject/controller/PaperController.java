@@ -248,10 +248,28 @@ public class PaperController {
                         .contentType(MediaType.APPLICATION_PDF)
                         .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                         .body(resource);
-            } else {
-                System.out.println("File NOT FOUND at path: " + filePath.toAbsolutePath());
-                return ResponseEntity.notFound().build();
             }
+
+            // FALLBACK: Try resolving by replacing spaces with underscores
+            // This handles cases where DB has "File Name.pdf" but Disk has "File_Name.pdf"
+            if (fileName.contains(" ") || fileName.contains("%20")) {
+                String sanitizedName = fileName.replace(" ", "_").replace("%20", "_");
+                System.out.println("File not found. Trying sanitized fallback: " + sanitizedName);
+                Path fallbackPath = baseDir.resolve(sanitizedName).normalize();
+                Resource fallbackResource = new UrlResource(fallbackPath.toUri());
+
+                if (fallbackResource.exists()) {
+                    System.out.println("Fallback File FOUND!");
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.APPLICATION_PDF)
+                            .header(HttpHeaders.CONTENT_DISPOSITION,
+                                    "inline; filename=\"" + fallbackResource.getFilename() + "\"")
+                            .body(fallbackResource);
+                }
+            }
+
+            System.out.println("File NOT FOUND at path: " + filePath.toAbsolutePath());
+            return ResponseEntity.notFound().build();
         } catch (Exception e) {
             System.out.println("Exception during download: " + e.getMessage());
             e.printStackTrace();
