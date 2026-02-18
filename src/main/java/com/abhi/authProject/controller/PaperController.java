@@ -288,6 +288,7 @@ public class PaperController {
     }
 
     @GetMapping("/papers/proxy/{id}")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Resource> proxyDownload(@PathVariable Long id) {
         try {
             Paper paper = paperRepository.findById(id).orElseThrow(() -> new RuntimeException("Paper not found"));
