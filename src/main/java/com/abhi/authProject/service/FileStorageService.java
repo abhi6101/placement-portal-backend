@@ -93,14 +93,35 @@ public class FileStorageService {
             fileMetadata.setParents(Collections.singletonList(driveFolderId));
         }
 
-        InputStreamContent mediaContent = new InputStreamContent(
-                multipartFile.getContentType(),
-                multipartFile.getInputStream());
+        File uploadedFile;
+        try {
+            InputStreamContent mediaContent = new InputStreamContent(
+                    multipartFile.getContentType(),
+                    multipartFile.getInputStream());
 
-        // Upload
-        File uploadedFile = driveService.files().create(fileMetadata, mediaContent)
-                .setFields("id, webViewLink, webContentLink")
-                .execute();
+            uploadedFile = driveService.files().create(fileMetadata, mediaContent)
+                    .setFields("id, webViewLink, webContentLink")
+                    .execute();
+        } catch (com.google.api.client.googleapis.json.GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 404) {
+                System.err.println("❌ Folder not found or permission denied: " + driveFolderId);
+                System.out.println("⚠️ Falling back to upload to Root Directory.");
+
+                // Clear parent (fallback to root)
+                fileMetadata.setParents(null);
+
+                // Re-open stream for retry (prevent Stream Closed)
+                InputStreamContent mediaContentRetry = new InputStreamContent(
+                        multipartFile.getContentType(),
+                        multipartFile.getInputStream());
+
+                uploadedFile = driveService.files().create(fileMetadata, mediaContentRetry)
+                        .setFields("id, webViewLink, webContentLink")
+                        .execute();
+            } else {
+                throw e;
+            }
+        }
 
         // Make Public (Visible to anyone with link - Reader access)
         Permission permission = new Permission()
@@ -152,6 +173,7 @@ public class FileStorageService {
             throw new IOException("Google Drive Service not initialized.");
         }
 
+        // Create File Metadata
         File fileMetadata = new File();
         fileMetadata.setName(originalFilename);
         if (driveFolderId != null && !driveFolderId.isEmpty() && !driveFolderId.contains("YOUR_FOLDER_ID")) {
@@ -161,9 +183,26 @@ public class FileStorageService {
         // Assume PDF for bulk upload context, or stream generic
         InputStreamContent mediaContent = new InputStreamContent("application/pdf", inputStream);
 
-        File uploadedFile = driveService.files().create(fileMetadata, mediaContent)
-                .setFields("id, webViewLink, webContentLink")
-                .execute();
+        File uploadedFile;
+        try {
+            // Attempt upload to specified folder
+            uploadedFile = driveService.files().create(fileMetadata, mediaContent)
+                    .setFields("id, webViewLink, webContentLink")
+                    .execute();
+        } catch (com.google.api.client.googleapis.json.GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 404) {
+                System.err.println("❌ Folder not found or permission denied: " + driveFolderId);
+                System.out.println("⚠️ Falling back to upload to Root Directory.");
+
+                // Clear parent (fallback to root)
+                fileMetadata.setParents(null);
+                uploadedFile = driveService.files().create(fileMetadata, mediaContent)
+                        .setFields("id, webViewLink, webContentLink")
+                        .execute();
+            } else {
+                throw e;
+            }
+        }
 
         // Make Public
         Permission permission = new Permission().setType("anyone").setRole("reader");
