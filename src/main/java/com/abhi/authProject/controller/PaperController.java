@@ -30,14 +30,17 @@ public class PaperController {
 
     private final PaperRepository paperRepository;
     private final FileStorageService fileStorageService;
+    private final PaperBulkUploadService bulkUploadService;
 
     @Value("${pdf.storage.directory:/tmp/resumes}")
     private String uploadDir;
 
     @Autowired
-    public PaperController(PaperRepository paperRepository, FileStorageService fileStorageService) {
+    public PaperController(PaperRepository paperRepository, FileStorageService fileStorageService,
+            PaperBulkUploadService bulkUploadService) {
         this.paperRepository = paperRepository;
         this.fileStorageService = fileStorageService;
+        this.bulkUploadService = bulkUploadService;
     }
 
     /**
