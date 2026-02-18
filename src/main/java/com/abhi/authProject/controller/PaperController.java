@@ -295,9 +295,7 @@ public class PaperController {
     public ResponseEntity<Resource> proxyDownload(@PathVariable Long id) {
         try {
             Paper paper = paperRepository.findById(id).orElseThrow(() -> new RuntimeException("Paper not found"));
-            String fileUrl = paper.getDownloadUrl();
-            if (fileUrl == null)
-                fileUrl = paper.getPdfUrl();
+            String fileUrl = paper.getPdfUrl();
 
             System.out.println("Proxying download for ID: " + id + ", URL: " + fileUrl);
 
