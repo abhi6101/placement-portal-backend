@@ -227,6 +227,7 @@ public class PaperController {
         }
     }
 
+    @GetMapping("/papers/download/{fileName}")
     public ResponseEntity<Resource> downloadPaper(@PathVariable String fileName) {
         try {
             Path filePath = Paths.get(uploadDir, "papers").resolve(fileName).normalize();
