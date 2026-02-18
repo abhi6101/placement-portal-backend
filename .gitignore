@@ -69,5 +69,8 @@ Thumbs.db
 /uploads/
 /pdf/
 
+# Secrets
+src/main/resources/google-drive-credentials.json
+
 # Other common ignores
 HELP.md

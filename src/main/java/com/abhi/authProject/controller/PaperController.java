@@ -87,8 +87,8 @@ public class PaperController {
             @RequestParam(value = "university", required = false, defaultValue = "DAVV") String university,
             @RequestParam("file") MultipartFile file) {
         try {
-            // UPLOAD TO CLOUDINARY
-            String downloadUrl = fileStorageService.savePaperToCloudinary(file);
+            // UPLOAD TO GOOGLE DRIVE
+            String downloadUrl = fileStorageService.uploadFileToDrive(file);
 
             Paper paper = new Paper(title, subject, year, semester, branch, company, category, university, downloadUrl);
             Paper savedPaper = paperRepository.save(paper);
@@ -290,30 +290,22 @@ public class PaperController {
 
     @GetMapping("/papers/proxy/{id}")
     @PreAuthorize("permitAll()")
-    public ResponseEntity<Resource> proxyDownload(@PathVariable Long id) {
+    public ResponseEntity<?> proxyDownload(@PathVariable Long id) {
         try {
             Paper paper = paperRepository.findById(id).orElseThrow(() -> new RuntimeException("Paper not found"));
             String fileUrl = paper.getPdfUrl();
 
-            System.out.println("Proxying download for ID: " + id + ", URL: " + fileUrl);
+            System.out.println("Redirecting download for ID: " + id + ", URL: " + fileUrl);
 
             if (fileUrl == null || !fileUrl.startsWith("http")) {
-                // If it's a local file (old uploads), try checking local disk or return error
                 return ResponseEntity.notFound().build();
             }
 
-            // Fetch file from Cloudinary/External URL
-            java.net.URL url = new java.net.URL(fileUrl);
-            java.io.InputStream in = url.openStream();
-            InputStreamResource resource = new InputStreamResource(in);
-
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "inline; filename=\"" + paper.getTitle().replaceAll("[^a-zA-Z0-9.-]", "_") + ".pdf\"")
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .body(resource);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
+                    .location(java.net.URI.create(fileUrl))
+                    .build();
         } catch (Exception e) {
-            System.out.println("Error in proxy download: " + e.getMessage());
+            System.out.println("Error in proxy download transform: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }
