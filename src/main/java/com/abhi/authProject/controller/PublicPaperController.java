@@ -21,7 +21,7 @@ public class PublicPaperController {
     private PaperRepository paperRepository;
 
     @GetMapping("/papers/download/{id}")
-    public ResponseEntity<Resource> downloadPaper(@PathVariable Long id) {
+    public ResponseEntity<Void> downloadPaper(@PathVariable Long id) {
         try {
             Paper paper = paperRepository.findById(id).orElseThrow(() -> new RuntimeException("Paper not found"));
             String fileUrl = paper.getDownloadUrl();
@@ -32,15 +32,12 @@ public class PublicPaperController {
                 return ResponseEntity.notFound().build();
             }
 
-            java.net.URL url = new java.net.URL(fileUrl);
-            java.io.InputStream in = url.openStream();
-            InputStreamResource resource = new InputStreamResource(in);
-
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "inline; filename=\"" + paper.getTitle().replaceAll("[^a-zA-Z0-9.-]", "_") + ".pdf\"")
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .body(resource);
+            // Redirect the client to the Cloudinary URL directly
+            // This solves CORS (since it's a navigation) and Load (server doesn't proxy
+            // bytes)
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
+                    .location(java.net.URI.create(fileUrl))
+                    .build();
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
