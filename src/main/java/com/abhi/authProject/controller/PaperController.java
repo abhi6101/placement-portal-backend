@@ -289,31 +289,100 @@ public class PaperController {
     }
 
     /**
-     * Proxies the download/view request.
-     * Use this if you want to hide the real URL or track downloads.
-     * Currently just redirects to the Google Drive WebViewLink.
+     * Securely streams the PDF content to authenticated users only.
+     * Prevents direct link sharing by proxying through the backend.
      */
     @GetMapping("/papers/proxy/{id}")
-    @PreAuthorize("permitAll()")
-    public ResponseEntity<?> proxyDownload(@PathVariable Long id) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Resource> proxyDownload(@PathVariable Long id) {
         try {
             Paper paper = paperRepository.findById(id).orElseThrow(() -> new RuntimeException("Paper not found"));
             String fileUrl = paper.getPdfUrl();
 
-            System.out.println("Redirecting download for ID: " + id + ", URL: " + fileUrl);
+            System.out.println("Streaming secure content for ID: " + id);
 
             if (fileUrl == null || !fileUrl.startsWith("http")) {
                 return ResponseEntity.notFound().build();
             }
 
-            return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
-                    .location(java.net.URI.create(fileUrl))
-                    .build();
+            // Extract Google Drive File ID
+            String fileId = null;
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("/d/([^/]+)");
+            java.util.regex.Matcher matcher = pattern.matcher(fileUrl);
+            if (matcher.find()) {
+                fileId = matcher.group(1);
+            }
+
+            if (fileId == null) {
+                System.out.println("Could not extract File ID from URL: " + fileUrl);
+                return ResponseEntity.badRequest().build();
+            }
+
+            // Stream from Google Drive
+            java.io.InputStream inputStream = fileStorageService.getFileStream(fileId);
+            InputStreamResource resource = new InputStreamResource(inputStream);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    // "inline" means "show in browser". We remove "filename" to make "Save As"
+                    // harder.
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+                    .body(resource);
+
         } catch (Exception e) {
-            System.out.println("Error in proxy download transform: " + e.getMessage());
+            System.out.println("Error in proxy stream: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    /**
+     * Admin Utility: Secure ALL existing files.
+     * Removes "anyone" permission and disables download/copy for all papers in DB.
+     * Call this ONCE to fix old uploads.
+     */
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('DEPT_ADMIN')")
+    @GetMapping("/permissions/secure-all")
+    public ResponseEntity<String> secureAllFiles() {
+        List<Paper> papers = paperRepository.findAll();
+        int success = 0;
+        int fail = 0;
+        int skipped = 0;
+        StringBuilder logs = new StringBuilder();
+        logs.append("Starting Security Update for " + papers.size() + " papers...\n");
+
+        for (Paper paper : papers) {
+            try {
+                String url = paper.getPdfUrl();
+                // Extract clean File ID
+                String fileId = null;
+                if (url != null && url.contains("/d/")) {
+                    java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("/d/([^/]+)");
+                    java.util.regex.Matcher matcher = pattern.matcher(url);
+                    if (matcher.find()) {
+                        fileId = matcher.group(1);
+                    }
+                }
+
+                if (fileId != null) {
+                    fileStorageService.secureFile(fileId);
+                    success++;
+                } else {
+                    skipped++;
+                }
+            } catch (Exception e) {
+                fail++;
+                logs.append("Failed ID " + paper.getId() + ": " + e.getMessage() + "\n");
+            }
+        }
+
+        String report = "Security Update Complete!\n" +
+                "✅ Secured: " + success + "\n" +
+                "❌ Failed: " + fail + "\n" +
+                "⚠️ Skipped (No ID): " + skipped + "\n\n" +
+                (fail > 0 ? "Errors:\n" + logs.toString() : "All successful!");
+
+        return ResponseEntity.ok(report);
     }
 
 }
