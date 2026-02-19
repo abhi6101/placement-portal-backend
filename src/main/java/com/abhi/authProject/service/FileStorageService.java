@@ -102,7 +102,13 @@ public class FileStorageService {
 
             uploadedFile = driveService.files().create(fileMetadata, mediaContent)
                     .setFields("id, webViewLink, webContentLink")
+                    .setSupportsAllDrives(true) // comprehensive support
                     .execute();
+
+            // Disable downloading/copying/printing for viewers
+            File patchMetadata = new File();
+            patchMetadata.setViewersCanCopyContent(false);
+            driveService.files().update(uploadedFile.getId(), patchMetadata).execute();
         } catch (com.google.api.client.googleapis.json.GoogleJsonResponseException e) {
             if (e.getStatusCode() == 404) {
                 System.err.println("❌ Folder not found or permission denied: " + driveFolderId);
@@ -118,7 +124,13 @@ public class FileStorageService {
 
                 uploadedFile = driveService.files().create(fileMetadata, mediaContentRetry)
                         .setFields("id, webViewLink, webContentLink")
+                        .setSupportsAllDrives(true)
                         .execute();
+
+                // Disable downloading/copying/printing for viewers (Retry)
+                File patchMetadata = new File();
+                patchMetadata.setViewersCanCopyContent(false);
+                driveService.files().update(uploadedFile.getId(), patchMetadata).execute();
             } else {
                 throw e;
             }
@@ -194,7 +206,13 @@ public class FileStorageService {
             // Attempt upload to specified folder
             uploadedFile = driveService.files().create(fileMetadata, mediaContent)
                     .setFields("id, webViewLink, webContentLink")
+                    .setSupportsAllDrives(true) // comprehensive support
                     .execute();
+
+            // Disable downloading/copying/printing for viewers
+            File patchMetadata = new File();
+            patchMetadata.setViewersCanCopyContent(false);
+            driveService.files().update(uploadedFile.getId(), patchMetadata).execute();
         } catch (com.google.api.client.googleapis.json.GoogleJsonResponseException e) {
             if (e.getStatusCode() == 404) {
                 System.err.println("❌ Folder not found or permission denied: " + driveFolderId);
@@ -206,7 +224,13 @@ public class FileStorageService {
                 // Reuse FileContent (it points to the same temp file)
                 uploadedFile = driveService.files().create(fileMetadata, mediaContent)
                         .setFields("id, webViewLink, webContentLink")
+                        .setSupportsAllDrives(true) // comprehensive support
                         .execute();
+
+                // Disable downloading/copying/printing for viewers (Bulk Retry)
+                File patchMetadata = new File();
+                patchMetadata.setViewersCanCopyContent(false);
+                driveService.files().update(uploadedFile.getId(), patchMetadata).execute();
             } else {
                 throw e;
             }
