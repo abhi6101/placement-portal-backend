@@ -288,24 +288,49 @@ public class PaperController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Securely streams the PDF content to authenticated users only.
+     * Prevents direct link sharing by proxying through the backend.
+     */
     @GetMapping("/papers/proxy/{id}")
-    @PreAuthorize("permitAll()")
-    public ResponseEntity<?> proxyDownload(@PathVariable Long id) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Resource> proxyDownload(@PathVariable Long id) {
         try {
             Paper paper = paperRepository.findById(id).orElseThrow(() -> new RuntimeException("Paper not found"));
             String fileUrl = paper.getPdfUrl();
 
-            System.out.println("Redirecting download for ID: " + id + ", URL: " + fileUrl);
+            System.out.println("Streaming secure content for ID: " + id);
 
             if (fileUrl == null || !fileUrl.startsWith("http")) {
                 return ResponseEntity.notFound().build();
             }
 
-            return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
-                    .location(java.net.URI.create(fileUrl))
-                    .build();
+            // Extract Google Drive File ID
+            String fileId = null;
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("/d/([^/]+)");
+            java.util.regex.Matcher matcher = pattern.matcher(fileUrl);
+            if (matcher.find()) {
+                fileId = matcher.group(1);
+            }
+
+            if (fileId == null) {
+                System.out.println("Could not extract File ID from URL: " + fileUrl);
+                return ResponseEntity.badRequest().build();
+            }
+
+            // Stream from Google Drive
+            java.io.InputStream inputStream = fileStorageService.getFileStream(fileId);
+            InputStreamResource resource = new InputStreamResource(inputStream);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    // "inline" means "show in browser". We remove "filename" to make "Save As"
+                    // harder.
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+                    .body(resource);
+
         } catch (Exception e) {
-            System.out.println("Error in proxy download transform: " + e.getMessage());
+            System.out.println("Error in proxy stream: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }

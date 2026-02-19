@@ -136,12 +136,10 @@ public class FileStorageService {
             }
         }
 
-        // Make Public (Visible to anyone with link - Reader access)
-        Permission permission = new Permission()
-                .setType("anyone")
-                .setRole("reader");
-
-        driveService.permissions().create(uploadedFile.getId(), permission).execute();
+        // Do NOT make public. Keep restricted for secure streaming only.
+        // Permission permission = new Permission().setType("anyone").setRole("reader");
+        // driveService.permissions().create(uploadedFile.getId(),
+        // permission).execute();
 
         // Return the WebViewLink (for viewing in browser/iframe)
         return uploadedFile.getWebViewLink();
@@ -241,10 +239,23 @@ public class FileStorageService {
             }
         }
 
-        // Make Public
-        Permission permission = new Permission().setType("anyone").setRole("reader");
-        driveService.permissions().create(uploadedFile.getId(), permission).execute();
+        // Do NOT make public. Keep restricted for secure streaming only.
+        // Permission permission = new Permission().setType("anyone").setRole("reader");
+        // driveService.permissions().create(uploadedFile.getId(),
+        // permission).execute();
 
         return uploadedFile.getWebViewLink();
+    }
+
+    /**
+     * Securely streams file content from Google Drive.
+     * Use this in a Controller endpoint secured with @PreAuthorize.
+     */
+    public java.io.InputStream getFileStream(String fileId) throws java.io.IOException {
+        if (driveService == null) {
+            init();
+        }
+        // Direct stream from Google Drive
+        return driveService.files().get(fileId).executeMediaAsInputStream();
     }
 }
