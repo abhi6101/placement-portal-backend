@@ -257,5 +257,40 @@ public class FileStorageService {
         }
         // Direct stream from Google Drive
         return driveService.files().get(fileId).executeMediaAsInputStream();
+
+    }
+
+    /**
+     * Secures an existing file by:
+     * 1. Disabling "Viewers can copy/download".
+     * 2. Removing "Anyone with the link" permission (making it restricted).
+     */
+    public void secureFile(String fileId) throws java.io.IOException {
+        if (driveService == null) {
+            init();
+        }
+
+        try {
+            // 1. Disable downloading/copying/printing
+            File patchMetadata = new File();
+            patchMetadata.setViewersCanCopyContent(false);
+            driveService.files().update(fileId, patchMetadata).execute();
+
+            // 2. Remove "anyone" permission (Make Restricted)
+            // We need to list permissions first to find the ID of the "anyone" permission
+            com.google.api.services.drive.model.PermissionList permissions = driveService.permissions().list(fileId)
+                    .execute();
+            if (permissions.getPermissions() != null) {
+                for (Permission p : permissions.getPermissions()) {
+                    if ("anyone".equals(p.getType())) {
+                        System.out.println("Removing 'anyone' permission from file: " + fileId);
+                        driveService.permissions().delete(fileId, p.getId()).execute();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error securing file " + fileId + ": " + e.getMessage());
+            // Don't throw, just log. We want the loop to continue for other files.
+        }
     }
 }
