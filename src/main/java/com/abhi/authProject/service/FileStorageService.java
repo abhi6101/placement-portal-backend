@@ -2,6 +2,7 @@ package com.abhi.authProject.service;
 
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.InputStreamContent;
+import com.google.api.client.http.FileContent;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
@@ -180,10 +181,15 @@ public class FileStorageService {
             fileMetadata.setParents(Collections.singletonList(driveFolderId));
         }
 
-        // Assume PDF for bulk upload context, or stream generic
-        InputStreamContent mediaContent = new InputStreamContent("application/pdf", inputStream);
+        // Buffer InputStream to a Temp File to allow retry
+        java.io.File tempFile = java.nio.file.Files.createTempFile("upload-retry-", ".tmp").toFile();
+        try (java.io.OutputStream os = new java.io.FileOutputStream(tempFile)) {
+            inputStream.transferTo(os);
+        }
 
+        FileContent mediaContent = new FileContent("application/pdf", tempFile);
         File uploadedFile;
+
         try {
             // Attempt upload to specified folder
             uploadedFile = driveService.files().create(fileMetadata, mediaContent)
@@ -196,11 +202,18 @@ public class FileStorageService {
 
                 // Clear parent (fallback to root)
                 fileMetadata.setParents(null);
+
+                // Reuse FileContent (it points to the same temp file)
                 uploadedFile = driveService.files().create(fileMetadata, mediaContent)
                         .setFields("id, webViewLink, webContentLink")
                         .execute();
             } else {
                 throw e;
+            }
+        } finally {
+            // Cleanup Temp File
+            if (tempFile.exists()) {
+                tempFile.delete();
             }
         }
 

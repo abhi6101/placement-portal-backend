@@ -74,11 +74,16 @@ public class PaperBulkUploadService {
                 // 2. Save the file
                 String savedFileName;
                 try (InputStream is = zipFile.getInputStream(entry)) {
-                    // Mocking a multipart file for the storage service or reusing its logic
+                    // This returns URL for Google Drive, or filename for local storage
                     savedFileName = fileStorageService.saveFileFromStream(is, fileName, "papers");
                 }
 
-                String downloadUrl = "/api/papers/download/" + savedFileName;
+                String downloadUrl;
+                if (savedFileName.startsWith("http")) {
+                    downloadUrl = savedFileName;
+                } else {
+                    downloadUrl = "/api/papers/download/" + savedFileName;
+                }
                 String title = fileName.replace(".pdf", "").replace(".PDF", "").trim();
 
                 Paper paper = new Paper(title, subjectName, year, semester, branchCode, null, "End-Sem",
