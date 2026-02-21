@@ -116,7 +116,10 @@ public class SecurityConfig {
                 frontendUrl,
                 "https://hack-2-hired.onrender.com",
                 "https://hack-2-hired.vercel.app",
-                "https://hack-2-hired.vercel.app/"));
+                "https://hack-2-hired.vercel.app/",
+                "http://localhost:8081",
+                "http://localhost:8082",
+                "http://localhost:19006"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
