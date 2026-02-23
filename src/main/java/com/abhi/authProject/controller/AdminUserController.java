@@ -91,9 +91,24 @@ public class AdminUserController {
     }
 
     @PostMapping("/users")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<?> createUser(@RequestBody Users user) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN')")
+    public ResponseEntity<?> createUser(@RequestBody Users user, java.security.Principal principal) {
         try {
+            // Role-based creation limits
+            if (principal != null) {
+                String username = principal.getName();
+                Users currentUser = userRepo.findByUsername(username).orElse(null);
+
+                if (currentUser != null && "DEPT_ADMIN".equals(currentUser.getRole())) {
+                    // DEPT_ADMIN can only create students (USER role) for their branch
+                    if (!"USER".equals(user.getRole())) {
+                        return ResponseEntity.status(403).body("DEPT_ADMIN can only create student (USER) accounts");
+                    }
+                    user.setBranch(currentUser.getAdminBranch());
+                    // Force the branch to match the admin's branch
+                }
+            }
+
             // Basic validation
             if (userRepo.findByUsername(user.getUsername()).isPresent()) {
                 return ResponseEntity.badRequest().body("Username already exists");
@@ -102,7 +117,7 @@ public class AdminUserController {
                 return ResponseEntity.badRequest().body("Email already exists");
             }
 
-            // DEPT_ADMIN Validation: Only ONE DEPT_ADMIN per branch
+            // DEPT_ADMIN Creation Validation: Only ONE DEPT_ADMIN per branch
             if ("DEPT_ADMIN".equals(user.getRole())) {
                 if (user.getAdminBranch() == null || user.getAdminBranch().isEmpty()) {
                     return ResponseEntity.badRequest().body("Admin branch is required for DEPT_ADMIN role");
@@ -127,9 +142,12 @@ public class AdminUserController {
 
             String rawPassword = user.getPassword(); // Capture raw password for email
 
-            // Encrypt password if provided (simplistic, better to force it)
+            // Encrypt password if provided (force it if new user)
             if (user.getPassword() != null && !user.getPassword().isEmpty()) {
                 user.setPassword(passwordEncoder.encode(user.getPassword()));
+            } else if (!"DEPT_ADMIN".equals(user.getRole())) { // Allow blank password ONLY if placeholder or special
+                                                               // case
+                return ResponseEntity.badRequest().body("Password is required for new accounts");
             }
 
             // AUTO-VERIFY: Any user created by an Admin should be verified by default

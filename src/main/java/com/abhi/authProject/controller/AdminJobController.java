@@ -123,7 +123,20 @@ public class AdminJobController {
             job.setApply_link(updatedJob.getApply_link());
             job.setLast_date(updatedJob.getLast_date());
             job.setSalary(updatedJob.getSalary());
-            job.setInterview_details(updatedJob.getInterview_details()); // Added missing field update
+            job.setInterview_details(updatedJob.getInterview_details());
+
+            // Fix: Clear and update collections instead of just setting them
+            // Hibernate/JPA collections should be handled carefully
+            job.getEligibleBranches().clear();
+            if (updatedJob.getEligibleBranches() != null) {
+                job.getEligibleBranches().addAll(updatedJob.getEligibleBranches());
+            }
+
+            job.getEligibleSemesters().clear();
+            if (updatedJob.getEligibleSemesters() != null) {
+                job.getEligibleSemesters().addAll(updatedJob.getEligibleSemesters());
+            }
+
             try {
                 return ResponseEntity.ok(jobService.addJob(job));
             } catch (Exception e) {
