@@ -123,10 +123,16 @@ public class AdminUserController {
                     return ResponseEntity.badRequest().body("Admin branch is required for DEPT_ADMIN role");
                 }
 
+                System.out.println("[ADMIN API] Attempting to create user: " + user.getUsername() +
+                        " | Role: " + user.getRole() +
+                        " | Branch: " + user.getAdminBranch());
+
                 // Check if a DEPT_ADMIN already exists for this branch
                 List<Users> existingDeptAdmins = userRepo.findByRoleAndAdminBranch("DEPT_ADMIN", user.getAdminBranch());
                 if (!existingDeptAdmins.isEmpty()) {
                     String existingAdmin = existingDeptAdmins.get(0).getUsername();
+                    System.out.println(
+                            "[ADMIN API] Creation rejected: DEPT_ADMIN already exists for " + user.getAdminBranch());
                     return ResponseEntity.badRequest().body(
                             "A Department Admin already exists for " + user.getAdminBranch() +
                                     " (" + existingAdmin + "). Only one DEPT_ADMIN is allowed per department.");
