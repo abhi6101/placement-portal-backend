@@ -350,9 +350,19 @@ public class PaperController {
 
             if (!isAdmin) {
                 Users user = userRepo.findByUsername(auth.getName()).orElse(null);
+                System.out.println("Security Check for " + auth.getName());
+                
+                if (user != null) {
+                    System.out.println("User Semester: " + user.getSemester() + ", Paper Semester: " + paper.getSemester());
+                    System.out.println("User Branch: " + user.getBranch() + ", Paper Branch: " + paper.getBranch());
+                } else {
+                    System.out.println("User not found in DB: " + auth.getName());
+                }
+
                 if (user == null || user.getBranch() == null || user.getSemester() == null || 
                     !user.getBranch().equalsIgnoreCase(paper.getBranch()) || 
                     !user.getSemester().equals(paper.getSemester())) {
+                    System.out.println("SECURITY DENIED for paper " + id);
                     return ResponseEntity.status(403).build();
                 }
             }
