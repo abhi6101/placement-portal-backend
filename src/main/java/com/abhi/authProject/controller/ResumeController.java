@@ -1,0 +1,81 @@
+package com.abhi.authProject.controller;
+
+import com.abhi.authProject.model.ResumeData;
+
+import com.abhi.authProject.service.ResumePdfService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/resume")
+public class ResumeController {
+
+    private final ResumePdfService resumePdfService;
+
+    public ResumeController(ResumePdfService resumePdfService) {
+        this.resumePdfService = resumePdfService;
+    }
+
+    @PostMapping("/generate-pdf")
+    public ResponseEntity<?> generatePdf(@Valid @RequestBody ResumeData resumeData, java.security.Principal principal) {
+        try {
+            String username = (principal != null) ? principal.getName() : null;
+            String uniqueFileName = resumePdfService.generateResumePdf(resumeData, username);
+            // CORRECTED: Return only the filename. The frontend will build the full URL.
+            return ResponseEntity.ok(Map.of("filename", uniqueFileName));
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body(Map.of("error", "Error generating resume: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/download/{filename}")
+    public ResponseEntity<?> downloadResume(@PathVariable String filename) {
+        try {
+            ByteArrayResource resource = resumePdfService.loadPdfAsResource(filename);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
+            headers.add(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate");
+            headers.add(HttpHeaders.PRAGMA, "no-cache");
+            headers.add(HttpHeaders.EXPIRES, "0");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentLength(resource.contentLength())
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(resource);
+        } catch (IOException e) {
+            return ResponseEntity.status(404)
+                    .body("File not found: " + filename);
+        }
+    }
+
+    @GetMapping("/admin/view/{userId}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> viewUserResume(@PathVariable int userId) {
+        com.abhi.authProject.model.ResumeFile file = resumePdfService.getResumeByUserId(userId);
+
+        if (file == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        // Inline view for admins
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getFileName() + "\"");
+        headers.add(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(new ByteArrayResource(file.getFileData()));
+    }
+}

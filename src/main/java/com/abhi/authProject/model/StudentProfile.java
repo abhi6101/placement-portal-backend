@@ -1,0 +1,258 @@
+package com.abhi.authProject.model;
+
+import jakarta.persistence.*;
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "student_profiles")
+public class StudentProfile {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToOne
+    @JoinColumn(name = "user_id", unique = true, nullable = false)
+    private Users user;
+
+    // Personal Details
+    private String fullName;
+    private String phoneNumber;
+    private LocalDate dateOfBirth;
+    private String address;
+
+    // Academic Details
+    private String enrollmentNumber;
+    private String branch;
+    private String semester;
+    private String batch;
+    private Double cgpa;
+    private Integer backlogs;
+
+    @Column(length = 20)
+    private String approvalStatus = "PENDING"; // PENDING, APPROVED, REJECTED
+
+    // Additional Details
+    private String skills; // Comma-separated
+    private String resumeUrl; // Link to uploaded resume
+    private String idCardUrl; // Link to uploaded ID card
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_card_image_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private IdCardImage idCardImageEntity;
+
+    // Enhanced Verification
+    private String collegeName;
+    private String aadharCardUrl;
+    private String admitCardUrl;
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "aadhar_image_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private IdCardImage aadharImageEntity;
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "admit_card_image_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private IdCardImage admitCardImageEntity;
+
+    private String linkedinProfile;
+    private String githubProfile;
+
+    public StudentProfile() {
+    }
+
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Users getUser() {
+        return user;
+    }
+
+    public void setUser(Users user) {
+        this.user = user;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getEnrollmentNumber() {
+        return enrollmentNumber;
+    }
+
+    public void setEnrollmentNumber(String enrollmentNumber) {
+        this.enrollmentNumber = enrollmentNumber;
+    }
+
+    public String getBranch() {
+        return branch;
+    }
+
+    public void setBranch(String branch) {
+        this.branch = branch;
+    }
+
+    public String getSemester() {
+        return semester;
+    }
+
+    public void setSemester(String semester) {
+        this.semester = semester;
+    }
+
+    public String getBatch() {
+        return batch;
+    }
+
+    public void setBatch(String batch) {
+        this.batch = batch;
+    }
+
+    public Double getCgpa() {
+        return cgpa;
+    }
+
+    public void setCgpa(Double cgpa) {
+        this.cgpa = cgpa;
+    }
+
+    public Integer getBacklogs() {
+        return backlogs;
+    }
+
+    public void setBacklogs(Integer backlogs) {
+        this.backlogs = backlogs;
+    }
+
+    public String getApprovalStatus() {
+        return approvalStatus;
+    }
+
+    public void setApprovalStatus(String approvalStatus) {
+        this.approvalStatus = approvalStatus;
+    }
+
+    public String getSkills() {
+        return skills;
+    }
+
+    public void setSkills(String skills) {
+        this.skills = skills;
+    }
+
+    public String getResumeUrl() {
+        return resumeUrl;
+    }
+
+    public void setResumeUrl(String resumeUrl) {
+        this.resumeUrl = resumeUrl;
+    }
+
+    public String getIdCardUrl() {
+        return idCardUrl;
+    }
+
+    public void setIdCardUrl(String idCardUrl) {
+        this.idCardUrl = idCardUrl;
+    }
+
+    public IdCardImage getIdCardImageEntity() {
+        return idCardImageEntity;
+    }
+
+    public void setIdCardImageEntity(IdCardImage idCardImageEntity) {
+        this.idCardImageEntity = idCardImageEntity;
+    }
+
+    public String getCollegeName() {
+        return collegeName;
+    }
+
+    public void setCollegeName(String collegeName) {
+        this.collegeName = collegeName;
+    }
+
+    public String getAadharCardUrl() {
+        return aadharCardUrl;
+    }
+
+    public void setAadharCardUrl(String aadharCardUrl) {
+        this.aadharCardUrl = aadharCardUrl;
+    }
+
+    public String getAdmitCardUrl() {
+        return admitCardUrl;
+    }
+
+    public void setAdmitCardUrl(String admitCardUrl) {
+        this.admitCardUrl = admitCardUrl;
+    }
+
+    public IdCardImage getAadharImageEntity() {
+        return aadharImageEntity;
+    }
+
+    public void setAadharImageEntity(IdCardImage aadharImageEntity) {
+        this.aadharImageEntity = aadharImageEntity;
+    }
+
+    public IdCardImage getAdmitCardImageEntity() {
+        return admitCardImageEntity;
+    }
+
+    public void setAdmitCardImageEntity(IdCardImage admitCardImageEntity) {
+        this.admitCardImageEntity = admitCardImageEntity;
+    }
+
+    public String getLinkedinProfile() {
+        return linkedinProfile;
+    }
+
+    public void setLinkedinProfile(String linkedinProfile) {
+        this.linkedinProfile = linkedinProfile;
+    }
+
+    public String getGithubProfile() {
+        return githubProfile;
+    }
+
+    public void setGithubProfile(String githubProfile) {
+        this.githubProfile = githubProfile;
+    }
+}

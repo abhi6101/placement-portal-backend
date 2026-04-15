@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${resume.name} + ' Resume'"></title>
+    <style>
+        /* ====== Base Styles ====== */
+        :root {
+            --primary: #00d4ff;
+            --secondary: #0077b6;
+            --dark: #03045e;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --accent: #ff7b00;
+            --text-dark: #333;
+            --border-light: #e0e0e0;
+        }
+
+        /* ====== Document Styles ====== */
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.5;
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20mm;
+            font-size: 11pt;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* ====== Typography ====== */
+        h1, h2, h3 {
+            color: var(--dark);
+            margin-bottom: 0.5em;
+            font-weight: 600;
+        }
+
+        h1 {
+            font-size: 24pt;
+            text-align: left;
+            margin-bottom: 0.2em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 8px;
+        }
+
+        h2 {
+            font-size: 14pt;
+            border-bottom: 1px solid var(--primary);
+            padding-bottom: 3px;
+            margin-top: 1.2em;
+            margin-bottom: 0.8em;
+        }
+
+        h3 {
+            font-size: 12pt;
+            margin-bottom: 0.5em;
+        }
+
+        /* ====== Contact Information ====== */
+        .contact-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 1.2em;
+            font-size: 10pt;
+            color: var(--gray);
+        }
+
+        .contact-info span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .contact-info a {
+            color: var(--secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .contact-info a:hover {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        /* ====== Section Content ====== */
+        .section-content {
+            margin-bottom: 1.2em;
+        }
+
+        .section-content p {
+            margin-bottom: 0.4em;
+            margin-top: 0;
+            line-height: 1.5;
+            text-align: justify;
+        }
+
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin: 0.5em 0;
+        }
+
+        ul li {
+            position: relative;
+            padding-left: 1.2em;
+            margin-bottom: 0.3em;
+            line-height: 1.4;
+        }
+
+        ul li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* ====== Education & Project Items ====== */
+        .edu-item, .project-item, .experience-item {
+            margin-bottom: 0.8em;
+            page-break-inside: avoid;
+        }
+
+        .edu-details, .project-header, .experience-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 0.3em;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .edu-degree, .project-title, .experience-position {
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 11.5pt;
+        }
+
+        .edu-university, .project-tech-stack, .experience-company {
+            font-style: italic;
+            font-size: 10pt;
+            color: var(--gray);
+        }
+
+        .edu-dates, .project-dates, .experience-dates {
+            font-size: 10pt;
+            color: var(--gray);
+            white-space: nowrap;
+        }
+
+        .project-description, .experience-description {
+            margin-top: 0.4em;
+            font-size: 10.5pt;
+        }
+
+        /* ====== Skills Section ====== */
+        .skills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .skill-category {
+            margin-bottom: 0.8em;
+        }
+
+        .skill-category h4 {
+            margin-bottom: 0.3em;
+            font-size: 11pt;
+            color: var(--secondary);
+        }
+
+        .skill-tag {
+            display: inline-block;
+            background-color: rgba(0, 212, 255, 0.1);
+            color: var(--dark);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 9.5pt;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            margin-right: 6px;
+            margin-bottom: 6px;
+        }
+
+        /* ====== Personal Details & Declaration ====== */
+        .personal-details, .declaration {
+            font-size: 10.5pt;
+        }
+
+        .personal-details p, .declaration p {
+            margin-bottom: 0.3em;
+        }
+
+        .declaration {
+            font-style: italic;
+        }
+
+        /* ====== Print Optimization ====== */
+        @media print {
+            body {
+                padding: 0;
+            }
+            
+            .container {
+                max-width: 100%;
+                padding: 20mm;
+            }
+            
+            a {
+                text-decoration: none;
+                color: var(--secondary) !important;
+            }
+            
+            .no-print {
+                display: none;
+            }
+        }
+
+        /* ====== Responsive Adjustments ====== */
+        @media (max-width: 768px) {
+            body {
+                padding: 15mm;
+                font-size: 10.5pt;
+            }
+            
+            h1 {
+                font-size: 20pt;
+            }
+            
+            h2 {
+                font-size: 13pt;
+            }
+            
+            .contact-info {
+                flex-direction: column;
+                gap: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header>
+            <h1 th:text="${resume.name}">SURAJ BHAWSAR</h1>
+            <div class="contact-info">
+                <span th:if="${resume.phone}">
+                    <i class="fas fa-phone no-print"></i> 
+                    <span th:text="${resume.phone}">8602288406</span>
+                </span>
+                <span th:if="${resume.email}">
+                    <i class="fas fa-envelope no-print"></i> 
+                    <span th:text="${resume.email}">bhawsarsuraj70@gmail.com</span>
+                </span>
+                <span th:if="${resume.linkedin}">
+                    <i class="fab fa-linkedin no-print"></i> 
+                    <a th:href="${resume.linkedin}" target="_blank" th:text="${resume.linkedin}">LinkedIn Profile</a>
+                </span>
+                <span th:if="${resume.portfolio}">
+                    <i class="fas fa-globe no-print"></i> 
+                    <a th:href="${resume.portfolio}" target="_blank" th:text="${resume.portfolio}">Portfolio</a>
+                </span>
+                <span th:if="${resume.address}">
+                    <i class="fas fa-map-marker-alt no-print"></i> 
+                    <span th:text="${resume.address}">Current Address</span>
+                </span>
+            </div>
+        </header>
+
+        <!-- Objective Section -->
+        <section th:if="${resume.objective != null and resume.objective.length() > 0}">
+            <h2>Objective</h2>
+            <div class="section-content" th:utext="${objectiveHtml}"></div>
+        </section>
+
+        <!-- Education Section -->
+        <section th:if="${resume.education != null and resume.education.length() > 0}">
+            <h2>Education</h2>
+            <div class="section-content">
+                <div th:utext="${educationHtml}"></div>
+            </div>
+        </section>
+
+        <!-- Experience Section -->
+        <section th:if="${resume.experience != null and resume.experience.length() > 0}">
+            <h2>Work Experience</h2>
+            <div class="section-content">
+                <div th:utext="${experienceHtml}"></div>
+            </div>
+        </section>
+
+        <!-- Skills Section -->
+        <section th:if="${resume.skills != null and resume.skills.length() > 0}">
+            <h2>Skills</h2>
+            <div class="section-content" th:utext="${skillsHtml}"></div>
+        </section>
+
+        <!-- Projects Section -->
+        <section th:if="${resume.projects != null and resume.projects.length() > 0}">
+            <h2>Projects</h2>
+            <div class="section-content">
+                <div th:utext="${projectsHtml}"></div>
+            </div>
+        </section>
+
+        <!-- Certifications Section -->
+        <section th:if="${resume.certifications != null and resume.certifications.length() > 0}">
+            <h2>Certifications</h2>
+            <div class="section-content">
+                <div th:utext="${certificationsHtml}"></div>
+            </div>
+        </section>
+
+        <!-- Hobbies Section -->
+        <section th:if="${resume.hobbies != null and resume.hobbies.length() > 0}">
+            <h2>Hobbies & Interests</h2>
+            <div class="section-content" th:utext="${hobbiesHtml}"></div>
+        </section>
+
+        <!-- Personal Details Section -->
+        <section class="personal-details">
+            <h2>Personal Details</h2>
+            <div class="section-content">
+                <p th:if="${resume.dateOfBirth}">
+                    <strong>Date of Birth:</strong> 
+                    <span th:text="${resume.dateOfBirth}"></span>
+                </p>
+                <p th:if="${resume.languages}">
+                    <strong>Languages:</strong> 
+                    <span th:text="${resume.languages}"></span>
+                </p>
+                <p th:if="${resume.permanentAddress}">
+                    <strong>Permanent Address:</strong> 
+                    <span th:text="${resume.permanentAddress}"></span>
+                </p>
+                <p th:if="${resume.nationality}">
+                    <strong>Nationality:</strong> 
+                    <span th:text="${resume.nationality}"></span>
+                </p>
+            </div>
+        </section>
+
+        <!-- Declaration Section -->
+        <section th:if="${resume.declaration != null and resume.declaration.length() > 0}">
+            <h2>Declaration</h2>
+            <div class="section-content declaration" th:utext="${declarationHtml}"></div>
+            <div th:if="${resume.name}" style="margin-top: 1em;">
+                <p><strong>Signature:</strong> _________________________</p>
+                <p><strong>Date:</strong> _________________________</p>
+                <p><strong>Place:</strong> _________________________</p>
+            </div>
+        </section>
+
+        <!-- Print Button (visible only on screen) -->
+        <div class="no-print" style="text-align: center; margin-top: 2em;">
+            <button onclick="window.print()" style="
+                background: var(--primary);
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12pt;
+            ">
+                Print Resume
+            </button>
+        </div>
+    </div>
+
+    <!-- Font Awesome for icons (only loaded when not printing) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" 
+          media="print" onload="this.media='all'" class="no-print">
+</body>
+</html>

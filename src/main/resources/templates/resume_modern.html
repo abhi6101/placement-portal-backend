@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${resume.name} + ' Resume - Modern'"></title>
+    <style>
+        body {
+            font-family: 'Open Sans', Arial, sans-serif;
+            line-height: 1.6;
+            color: #444;
+            margin: 0;
+            padding: 25mm; /* Slightly larger margins */
+            font-size: 10.5pt;
+            background-color: #f5f5f5;
+        }
+        .container {
+            display: flex;
+            background: white;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .left-column {
+            flex: 1;
+            background-color: #03045e; /* Dark blue */
+            color: white;
+            padding: 25px;
+            min-width: 250px;
+            box-sizing: border-box;
+        }
+        .right-column {
+            flex: 2.5;
+            padding: 25px 40px;
+            box-sizing: border-box;
+        }
+        h1 {
+            font-size: 26pt;
+            margin-bottom: 0.1em;
+            color: #00d4ff; /* Primary color */
+            text-align: center;
+        }
+        .tagline {
+            text-align: center;
+            margin-bottom: 1.5em;
+            font-size: 11pt;
+            color: #ADD8E6; /* Light blue */
+        }
+        .contact-info-left {
+            margin-bottom: 2em;
+            padding-bottom: 1em;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .contact-info-left p {
+            margin: 0.5em 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10pt;
+        }
+        .contact-info-left i {
+            color: #00d4ff; /* Primary color */
+            font-size: 1em;
+        }
+        .contact-info-left a {
+            color: white;
+            text-decoration: none;
+        }
+        .contact-info-left a:hover {
+            text-decoration: underline;
+        }
+
+        .section-title-left {
+            font-size: 14pt;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2em;
+            margin-bottom: 1em;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+        }
+        .section-title-right {
+            font-size: 18pt;
+            color: #03045e;
+            margin-bottom: 1em;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #00d4ff;
+        }
+        .section-content-left p, .section-content-left ul {
+            font-size: 10pt;
+            margin-bottom: 1em;
+        }
+        .section-content-left ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .section-content-left li {
+            margin-bottom: 0.3em;
+        }
+
+        .section-content-right {
+            margin-bottom: 2em;
+        }
+        .section-content-right p {
+            margin-bottom: 0.8em;
+        }
+        .section-content-right h3 {
+            font-size: 12pt;
+            color: #0077b6;
+            margin-bottom: 0.5em;
+        }
+        .section-content-right .date-range {
+            font-size: 10pt;
+            color: #6c757d;
+            margin-bottom: 0.5em;
+        }
+        ul.bullet-list {
+            list-style: disc;
+            padding-left: 20px;
+        }
+        ul.bullet-list li {
+            margin-bottom: 0.5em;
+        }
+        /* Handle <br/> for textarea content */
+        .section-content-right br {
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-column">
+            <h1><span th:text="${resume.name}"></span></h1>
+            <div class="tagline">YOUR PROFESSIONAL TAGLINE</div>
+
+            <div class="contact-info-left">
+                <p><i class="fas fa-envelope"></i> <span th:text="${resume.email}"></span></p>
+                <p><i class="fas fa-phone"></i> <span th:text="${resume.phone}"></span></p>
+                <p><i class="fas fa-map-marker-alt"></i> <span th:text="${resume.address}"></span></p>
+                <p th:if="${resume.linkedin != null and resume.linkedin.length() > 0}"><i class="fab fa-linkedin"></i> <a th:href="${resume.linkedin}" th:text="${resume.linkedin}"></a></p>
+            </div>
+
+            <h2 class="section-title-left">Skills</h2>
+            <div class="section-content-left" th:utext="${skillsHtml}">
+                </div>
+            </div>
+
+        <div class="right-column">
+            <h2 class="section-title-right">Education</h2>
+            <div class="section-content-right" th:utext="${educationHtml}">
+                </div>
+
+            <h2 class="section-title-right">Experience</h2>
+            <div class="section-content-right" th:utext="${experienceHtml}">
+                </div>
+
+            <div th:if="${resume.projects != null and resume.projects.length() > 0}">
+                <h2 class="section-title-right">Projects</h2>
+                <div class="section-content-right" th:utext="${projectsHtml}">
+                    </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
