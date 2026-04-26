@@ -225,8 +225,13 @@ public class PaperController {
 
         if (!isAdmin) {
             Users user = userRepo.findByUsername(auth.getName()).orElse(null);
-            if (user == null || user.getBranch() == null || user.getSemester() == null || 
-                !user.getBranch().equalsIgnoreCase(branch) || !user.getSemester().equals(semester)) {
+            String userBranch = (user != null) ? user.getBranch() : null;
+            Integer userSem = (user != null) ? user.getSemester() : null;
+
+            boolean isMatch = userBranch != null && userBranch.trim().equalsIgnoreCase(branch.trim()) && 
+                              userSem != null && userSem.equals(semester);
+
+            if (!isMatch) {
                 return ResponseEntity.status(403).build(); // Forbidden
             }
         }
@@ -352,16 +357,18 @@ public class PaperController {
                 Users user = userRepo.findByUsername(auth.getName()).orElse(null);
                 System.out.println("Security Check for " + auth.getName());
                 
-                if (user != null) {
-                    System.out.println("User Semester: " + user.getSemester() + ", Paper Semester: " + paper.getSemester());
-                    System.out.println("User Branch: " + user.getBranch() + ", Paper Branch: " + paper.getBranch());
-                } else {
-                    System.out.println("User not found in DB: " + auth.getName());
-                }
+                String userBranch = (user != null) ? user.getBranch() : null;
+                Integer userSem = (user != null) ? user.getSemester() : null;
+                String paperBranch = paper.getBranch();
+                Integer paperSem = paper.getSemester();
 
-                if (user == null || user.getBranch() == null || user.getSemester() == null || 
-                    !user.getBranch().equalsIgnoreCase(paper.getBranch()) || 
-                    !user.getSemester().equals(paper.getSemester())) {
+                System.out.println("User: " + userBranch + "/" + userSem + " | Paper: " + paperBranch + "/" + paperSem);
+
+                boolean isMatch = userBranch != null && paperBranch != null && 
+                                  userBranch.trim().equalsIgnoreCase(paperBranch.trim()) && 
+                                  userSem != null && userSem.equals(paperSem);
+
+                if (!isMatch) {
                     System.out.println("SECURITY DENIED for paper " + id);
                     return ResponseEntity.status(403).build();
                 }
