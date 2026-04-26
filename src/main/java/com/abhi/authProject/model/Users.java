@@ -57,14 +57,17 @@ public class Users {
 
     @jakarta.persistence.OneToMany(mappedBy = "student", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     @lombok.ToString.Exclude
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private java.util.List<Application> applications;
 
     @jakarta.persistence.OneToOne(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     @lombok.ToString.Exclude
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private StudentProfile studentProfile;
 
     @jakarta.persistence.OneToOne(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     @lombok.ToString.Exclude
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private ResumeFile resumeFile;
 
     @jakarta.persistence.OneToOne(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
