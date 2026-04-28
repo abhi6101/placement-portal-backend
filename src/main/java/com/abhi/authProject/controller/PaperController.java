@@ -354,7 +354,7 @@ public class PaperController {
                                    a.getAuthority().equals("ROLE_DEPT_ADMIN"));
 
             if (!isAdmin) {
-                Users user = userRepo.findByUsername(auth.getName()).orElse(null);
+                Users user = userRepo.findByComputerCodeOrUsername(auth.getName()).orElse(null);
                 System.out.println("Security Check for " + auth.getName());
                 
                 String userBranch = (user != null) ? user.getBranch() : null;
