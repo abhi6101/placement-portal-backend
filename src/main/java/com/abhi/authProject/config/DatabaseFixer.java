@@ -25,5 +25,25 @@ public class DatabaseFixer implements CommandLineRunner {
         } catch (Exception e) {
             System.err.println("⚠️ DatabaseFixer warning: " + e.getMessage());
         }
+
+        System.out.println("🔨 Ensuring paper_view_logs table exists...");
+        try {
+            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS paper_view_logs (" +
+                    "id BIGSERIAL PRIMARY KEY, " +
+                    "username VARCHAR(255) NOT NULL, " +
+                    "student_name VARCHAR(255), " +
+                    "computer_code VARCHAR(255), " +
+                    "paper_id BIGINT NOT NULL, " +
+                    "paper_title VARCHAR(255) NOT NULL, " +
+                    "subject VARCHAR(255), " +
+                    "branch VARCHAR(255), " +
+                    "semester INTEGER NOT NULL, " +
+                    "year INTEGER NOT NULL, " +
+                    "viewed_at TIMESTAMP NOT NULL" +
+                    ")");
+            System.out.println("✅ Table paper_view_logs check completed successfully.");
+        } catch (Exception e) {
+            System.err.println("⚠️ DatabaseFixer warning creating paper_view_logs: " + e.getMessage());
+        }
     }
 }
