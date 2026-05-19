@@ -37,6 +37,7 @@ public class PaperController {
     private final UserRepo userRepo;
     private final FileStorageService fileStorageService;
     private final PaperBulkUploadService bulkUploadService;
+    private final com.abhi.authProject.repo.PaperViewLogRepository paperViewLogRepository;
 
     @Value("${pdf.storage.directory:/tmp/resumes}")
     private String uploadDir;
@@ -44,11 +45,13 @@ public class PaperController {
     @Autowired
     public PaperController(PaperRepository paperRepository, UserRepo userRepo,
             FileStorageService fileStorageService,
-            PaperBulkUploadService bulkUploadService) {
+            PaperBulkUploadService bulkUploadService,
+            com.abhi.authProject.repo.PaperViewLogRepository paperViewLogRepository) {
         this.paperRepository = paperRepository;
         this.userRepo = userRepo;
         this.fileStorageService = fileStorageService;
         this.bulkUploadService = bulkUploadService;
+        this.paperViewLogRepository = paperViewLogRepository;
     }
 
     /**
@@ -347,6 +350,31 @@ public class PaperController {
         try {
             Paper paper = paperRepository.findById(id).orElseThrow(() -> new RuntimeException("Paper not found"));
             
+            // Retrieve current authenticated user and log the view
+            try {
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+                    String username = auth.getName();
+                    Users user = userRepo.findByComputerCodeOrUsername(username).orElse(null);
+                    if (user != null) {
+                        com.abhi.authProject.model.PaperViewLog viewLog = new com.abhi.authProject.model.PaperViewLog(
+                            user.getUsername(),
+                            user.getName(),
+                            user.getComputerCode(),
+                            paper.getId(),
+                            paper.getTitle(),
+                            paper.getSubject(),
+                            paper.getBranch(),
+                            paper.getSemester(),
+                            paper.getYear()
+                        );
+                        paperViewLogRepository.save(viewLog);
+                    }
+                }
+            } catch (Exception logEx) {
+                System.err.println("Failed to write paper view log: " + logEx.getMessage());
+            }
+            
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             boolean isAdmin = auth.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || 
@@ -473,6 +501,12 @@ public class PaperController {
                 (fail > 0 ? "Errors:\n" + logs.toString() : "All successful!");
 
         return ResponseEntity.ok(report);
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('DEPT_ADMIN')")
+    @GetMapping("/admin/papers/view-logs")
+    public ResponseEntity<List<com.abhi.authProject.model.PaperViewLog>> getPaperViewLogs() {
+        return ResponseEntity.ok(paperViewLogRepository.findAllByOrderByViewedAtDesc());
     }
 
 }

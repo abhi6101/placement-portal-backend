@@ -23,10 +23,42 @@ public class PublicPaperController {
     @Autowired
     private FileStorageService fileStorageService;
 
+    @Autowired
+    private com.abhi.authProject.repo.UserRepo userRepo;
+
+    @Autowired
+    private com.abhi.authProject.repo.PaperViewLogRepository paperViewLogRepository;
+
     @GetMapping("/papers/download/{id}")
     public ResponseEntity<?> downloadPaper(@PathVariable Long id) {
         try {
             Paper paper = paperRepository.findById(id).orElseThrow(() -> new RuntimeException("Paper not found"));
+            
+            // Retrieve current authenticated user and log the view
+            try {
+                org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+                    String username = auth.getName();
+                    com.abhi.authProject.model.Users user = userRepo.findByComputerCodeOrUsername(username).orElse(null);
+                    if (user != null) {
+                        com.abhi.authProject.model.PaperViewLog viewLog = new com.abhi.authProject.model.PaperViewLog(
+                            user.getUsername(),
+                            user.getName(),
+                            user.getComputerCode(),
+                            paper.getId(),
+                            paper.getTitle(),
+                            paper.getSubject(),
+                            paper.getBranch(),
+                            paper.getSemester(),
+                            paper.getYear()
+                        );
+                        paperViewLogRepository.save(viewLog);
+                    }
+                }
+            } catch (Exception logEx) {
+                System.err.println("Failed to write paper view log: " + logEx.getMessage());
+            }
+
             String fileUrl = paper.getPdfUrl();
 
             if (fileUrl == null || !fileUrl.startsWith("http")) {
