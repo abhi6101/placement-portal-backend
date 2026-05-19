@@ -33,23 +33,42 @@ public class PublicPaperController {
                 return ResponseEntity.notFound().build();
             }
 
-            // If Google Drive link, stream/proxy it securely using the Service Account credentials
-            if (fileUrl.contains("drive.google.com")) {
+            boolean isGoogleDrive = fileUrl.contains("drive.google.com") || fileUrl.contains("docs.google.com");
+
+            if (isGoogleDrive) {
                 String fileId = null;
-                java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("/d/([^/]+)");
-                java.util.regex.Matcher matcher = pattern.matcher(fileUrl);
-                if (matcher.find()) {
-                    fileId = matcher.group(1);
+                
+                // Format 1: /d/FILE_ID
+                java.util.regex.Pattern pattern1 = java.util.regex.Pattern.compile("/d/([^/&?]+)");
+                java.util.regex.Matcher matcher1 = pattern1.matcher(fileUrl);
+                if (matcher1.find()) {
+                    fileId = matcher1.group(1);
+                } else {
+                    // Format 2: ?id=FILE_ID or &id=FILE_ID
+                    java.util.regex.Pattern pattern2 = java.util.regex.Pattern.compile("[?&]id=([^/&?]+)");
+                    java.util.regex.Matcher matcher2 = pattern2.matcher(fileUrl);
+                    if (matcher2.find()) {
+                        fileId = matcher2.group(1);
+                    }
                 }
 
                 if (fileId != null) {
-                    java.io.InputStream inputStream = fileStorageService.getFileStream(fileId);
-                    InputStreamResource resource = new InputStreamResource(inputStream);
+                    try {
+                        java.io.InputStream inputStream = fileStorageService.getFileStream(fileId);
+                        InputStreamResource resource = new InputStreamResource(inputStream);
 
-                    return ResponseEntity.ok()
-                            .contentType(MediaType.APPLICATION_PDF)
-                            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + paper.getTitle().replaceAll("[^a-zA-Z0-9]", "_") + ".pdf\"")
-                            .body(resource);
+                        return ResponseEntity.ok()
+                                .contentType(MediaType.APPLICATION_PDF)
+                                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + paper.getTitle().replaceAll("[^a-zA-Z0-9]", "_") + ".pdf\"")
+                                .body(resource);
+                    } catch (Exception e) {
+                        System.err.println("Secure Streaming Failed for File ID " + fileId + ": " + e.getMessage());
+                        return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                                .body("Unable to stream secure document. Access Denied.");
+                    }
+                } else {
+                    return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                            .body("Invalid Google Drive URL structure.");
                 }
             }
 

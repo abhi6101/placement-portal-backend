@@ -382,29 +382,42 @@ public class PaperController {
                 return ResponseEntity.notFound().build();
             }
 
-            // Extract Google Drive File ID
+            // Extract Google Drive File ID robustly
             String fileId = null;
-            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("/d/([^/]+)");
-            java.util.regex.Matcher matcher = pattern.matcher(fileUrl);
-            if (matcher.find()) {
-                fileId = matcher.group(1);
+            
+            // Format 1: /d/FILE_ID
+            java.util.regex.Pattern pattern1 = java.util.regex.Pattern.compile("/d/([^/&?]+)");
+            java.util.regex.Matcher matcher1 = pattern1.matcher(fileUrl);
+            if (matcher1.find()) {
+                fileId = matcher1.group(1);
+            } else {
+                // Format 2: ?id=FILE_ID or &id=FILE_ID
+                java.util.regex.Pattern pattern2 = java.util.regex.Pattern.compile("[?&]id=([^/&?]+)");
+                java.util.regex.Matcher matcher2 = pattern2.matcher(fileUrl);
+                if (matcher2.find()) {
+                    fileId = matcher2.group(1);
+                }
             }
 
             if (fileId == null) {
                 System.out.println("Could not extract File ID from URL: " + fileUrl);
-                return ResponseEntity.badRequest().build();
+                return ResponseEntity.badRequest().body(null);
             }
 
             // Stream from Google Drive
-            java.io.InputStream inputStream = fileStorageService.getFileStream(fileId);
-            InputStreamResource resource = new InputStreamResource(inputStream);
+            try {
+                java.io.InputStream inputStream = fileStorageService.getFileStream(fileId);
+                InputStreamResource resource = new InputStreamResource(inputStream);
 
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_PDF)
-                    // "inline" means "show in browser". We remove "filename" to make "Save As"
-                    // harder.
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
-                    .body(resource);
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_PDF)
+                        // "inline" means "show in browser". We remove "filename" to make "Save As" harder.
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+                        .body(resource);
+            } catch (Exception e) {
+                System.err.println("Secure Streaming Failed for File ID " + fileId + ": " + e.getMessage());
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+            }
 
         } catch (Exception e) {
             System.out.println("Error in proxy stream: " + e.getMessage());
