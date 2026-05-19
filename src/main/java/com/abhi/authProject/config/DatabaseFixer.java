@@ -17,30 +17,13 @@ public class DatabaseFixer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        /*
-         * System.out.println("Running DatabaseFixer to update check constraints...");
-         * try {
-         * // Drop existing constraint
-         * jdbcTemplate
-         * .execute("ALTER TABLE job_applications DROP CONSTRAINT IF EXISTS job_applications_status_check"
-         * );
-         * System.out.println("Dropped old job_applications_status_check constraint.");
-         * 
-         * // Add new constraint with SELECTED included
-         * String sql =
-         * "ALTER TABLE job_applications ADD CONSTRAINT job_applications_status_check "
-         * +
-         * "CHECK (status IN ('PENDING','SHORTLISTED','ACCEPTED','REJECTED','INTERVIEW_SCHEDULED','INTERVIEW_BOOKED','INTERVIEW_COMPLETED','SELECTED','HIRING_DECISION_MADE'))"
-         * ;
-         * jdbcTemplate.execute(sql);
-         * System.out.
-         * println("Added new job_applications_status_check constraint with SELECTED status."
-         * );
-         * } catch (Exception e) {
-         * System.err.println("DatabaseFixer warning: " + e.getMessage());
-         * // Proceed anyway, maybe it's already done or different DB flavor
-         * }
-         */
-        System.out.println("⚠️ DatabaseFixer disabled. Schema modifications should be done manually.");
+        System.out.println("🚀 Running DatabaseFixer to clear old test/demo applications...");
+        try {
+            int deletedJobApps = jdbcTemplate.update("DELETE FROM job_applications");
+            int deletedApps = jdbcTemplate.update("DELETE FROM applications");
+            System.out.println("✅ Purged " + deletedJobApps + " from job_applications and " + deletedApps + " from applications.");
+        } catch (Exception e) {
+            System.err.println("⚠️ DatabaseFixer warning: " + e.getMessage());
+        }
     }
 }
