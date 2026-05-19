@@ -45,5 +45,14 @@ public class DatabaseFixer implements CommandLineRunner {
         } catch (Exception e) {
             System.err.println("⚠️ DatabaseFixer warning creating paper_view_logs: " + e.getMessage());
         }
+
+        System.out.println("🔨 Ensuring security columns exist in users table...");
+        try {
+            jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS security_strikes INTEGER DEFAULT 0");
+            jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMP");
+            System.out.println("✅ Security columns checked/added successfully.");
+        } catch (Exception e) {
+            System.err.println("⚠️ DatabaseFixer warning altering users table: " + e.getMessage());
+        }
     }
 }

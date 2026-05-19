@@ -32,6 +32,29 @@ public class PublicPaperController {
     @GetMapping("/papers/download/{id}")
     public ResponseEntity<?> downloadPaper(@PathVariable Long id) {
         try {
+            // Check if suspended
+            try {
+                org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+                    String username = auth.getName();
+                    com.abhi.authProject.model.Users user = userRepo.findByComputerCodeOrUsername(username).orElse(null);
+                    if (user != null && user.getLockedUntil() != null) {
+                        if (user.getLockedUntil().isAfter(java.time.LocalDateTime.now())) {
+                            long secondsLeft = java.time.Duration.between(java.time.LocalDateTime.now(), user.getLockedUntil()).getSeconds();
+                            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                                    .body("Your account is temporarily suspended due to security violations. Please try again in " + secondsLeft + " seconds.");
+                        } else {
+                            // Automatically clear strikes once locked period expires
+                            user.setSecurityStrikes(0);
+                            user.setLockedUntil(null);
+                            userRepo.save(user);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Suspension check failed: " + e.getMessage());
+            }
+
             Paper paper = paperRepository.findById(id).orElseThrow(() -> new RuntimeException("Paper not found"));
             
             // Retrieve current authenticated user and log the view
@@ -108,6 +131,49 @@ public class PublicPaperController {
             return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
                     .location(java.net.URI.create(fileUrl))
                     .build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/papers/violation")
+    public ResponseEntity<?> logSecurityViolation() {
+        try {
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body("User not authenticated");
+            }
+            
+            String username = auth.getName();
+            com.abhi.authProject.model.Users user = userRepo.findByComputerCodeOrUsername(username).orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).body("User not found");
+            }
+
+            int currentStrikes = user.getSecurityStrikes() + 1;
+            user.setSecurityStrikes(currentStrikes);
+
+            boolean isLocked = false;
+            long secondsLeft = 0;
+
+            if (currentStrikes >= 3) {
+                // Lock for exactly 2 minutes (120 seconds)
+                java.time.LocalDateTime lockedUntil = java.time.LocalDateTime.now().plusMinutes(2);
+                user.setLockedUntil(lockedUntil);
+                isLocked = true;
+                secondsLeft = 120;
+            }
+
+            userRepo.save(user);
+
+            java.util.Map<String, Object> response = new java.util.HashMap<>();
+            response.put("strikes", currentStrikes);
+            response.put("isLocked", isLocked);
+            response.put("secondsLeft", secondsLeft);
+            response.put("message", isLocked ? "Your account has been locked for 2 minutes due to repeated security violations." : "Security violation registered.");
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();

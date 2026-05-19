@@ -76,6 +76,25 @@ public class AuthController {
                         .body(Map.of("message", "User not found. Please check your credentials."));
             }
 
+            // Check if account is temporarily suspended
+            if (user.getLockedUntil() != null) {
+                if (user.getLockedUntil().isAfter(java.time.LocalDateTime.now())) {
+                    long secondsLeft = java.time.Duration.between(java.time.LocalDateTime.now(), user.getLockedUntil()).getSeconds();
+                    System.err.println("❌ Login attempt blocked: Suspension active for user " + identifier);
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(Map.of(
+                                "message", "Your account is temporarily suspended due to security violations. Please try again after " + secondsLeft + " seconds.",
+                                "locked", true,
+                                "secondsLeft", secondsLeft
+                            ));
+                } else {
+                    // Auto-clear once expired
+                    user.setSecurityStrikes(0);
+                    user.setLockedUntil(null);
+                    userRepo.save(user);
+                }
+            }
+
             System.out.println("✅ User found: " + user.getUsername());
             System.out.println("User ID: " + user.getId());
             System.out.println("User Email: " + user.getEmail());
