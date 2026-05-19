@@ -2,7 +2,11 @@ package com.abhi.authProject.controller;
 
 import com.abhi.authProject.model.Paper;
 import com.abhi.authProject.repo.PaperRepository;
+import com.abhi.authProject.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,8 +20,11 @@ public class PublicPaperController {
     @Autowired
     private PaperRepository paperRepository;
 
+    @Autowired
+    private FileStorageService fileStorageService;
+
     @GetMapping("/papers/download/{id}")
-    public ResponseEntity<Void> downloadPaper(@PathVariable Long id) {
+    public ResponseEntity<?> downloadPaper(@PathVariable Long id) {
         try {
             Paper paper = paperRepository.findById(id).orElseThrow(() -> new RuntimeException("Paper not found"));
             String fileUrl = paper.getPdfUrl();
@@ -26,9 +33,27 @@ public class PublicPaperController {
                 return ResponseEntity.notFound().build();
             }
 
-            // Redirect the client to the Cloudinary URL directly
-            // This solves CORS (since it's a navigation) and Load (server doesn't proxy
-            // bytes)
+            // If Google Drive link, stream/proxy it securely using the Service Account credentials
+            if (fileUrl.contains("drive.google.com")) {
+                String fileId = null;
+                java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("/d/([^/]+)");
+                java.util.regex.Matcher matcher = pattern.matcher(fileUrl);
+                if (matcher.find()) {
+                    fileId = matcher.group(1);
+                }
+
+                if (fileId != null) {
+                    java.io.InputStream inputStream = fileStorageService.getFileStream(fileId);
+                    InputStreamResource resource = new InputStreamResource(inputStream);
+
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.APPLICATION_PDF)
+                            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + paper.getTitle().replaceAll("[^a-zA-Z0-9]", "_") + ".pdf\"")
+                            .body(resource);
+                }
+            }
+
+            // Redirect the client to the Cloudinary URL directly (Fallback)
             return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
                     .location(java.net.URI.create(fileUrl))
                     .build();
