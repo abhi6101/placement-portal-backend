@@ -131,6 +131,9 @@ public class Users {
     @Column(name = "locked_until")
     private LocalDateTime lockedUntil;
 
+    @Column(name = "lockout_count", nullable = false)
+    private int lockoutCount = 0;
+
     // Verified Identity Data (from ID card scan)
     @Column(name = "full_name")
     private String fullName;
@@ -295,5 +298,13 @@ public class Users {
 
     public void setLockedUntil(LocalDateTime lockedUntil) {
         this.lockedUntil = lockedUntil;
+    }
+
+    public int getLockoutCount() {
+        return lockoutCount;
+    }
+
+    public void setLockoutCount(int lockoutCount) {
+        this.lockoutCount = lockoutCount;
     }
 }

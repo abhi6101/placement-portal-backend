@@ -90,6 +90,10 @@ public class AuthController {
                 } else {
                     // Auto-clear once expired
                     user.setSecurityStrikes(0);
+                    // Reset lockout count if the last lockout ended on a previous calendar day
+                    if (user.getLockedUntil() != null && user.getLockedUntil().toLocalDate().isBefore(java.time.LocalDate.now())) {
+                        user.setLockoutCount(0);
+                    }
                     user.setLockedUntil(null);
                     userRepo.save(user);
                 }

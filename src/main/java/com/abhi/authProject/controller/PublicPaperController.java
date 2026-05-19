@@ -158,20 +158,51 @@ public class PublicPaperController {
             long secondsLeft = 0;
 
             if (currentStrikes >= 3) {
-                // Lock for exactly 2 minutes (120 seconds)
-                java.time.LocalDateTime lockedUntil = java.time.LocalDateTime.now().plusMinutes(2);
+                // If their last lockout was on a previous calendar day, reset count to 0 first
+                if (user.getLockedUntil() != null && user.getLockedUntil().toLocalDate().isBefore(java.time.LocalDate.now())) {
+                    user.setLockoutCount(0);
+                }
+
+                int lockoutCount = user.getLockoutCount() + 1;
+                user.setLockoutCount(lockoutCount);
+
+                int durationMinutes;
+                switch (lockoutCount) {
+                    case 1:  durationMinutes = 2; break;
+                    case 2:  durationMinutes = 5; break;
+                    case 3:  durationMinutes = 10; break;
+                    case 4:  durationMinutes = 20; break;
+                    case 5:  durationMinutes = 30; break;
+                    case 6:  durationMinutes = 60; break;
+                    case 7:  durationMinutes = 120; break;
+                    case 8:  durationMinutes = 240; break;
+                    case 9:  durationMinutes = 480; break;
+                    case 10: durationMinutes = 600; break;
+                    default: durationMinutes = 1440; break; // 24 hours
+                }
+
+                java.time.LocalDateTime lockedUntil = java.time.LocalDateTime.now().plusMinutes(durationMinutes);
                 user.setLockedUntil(lockedUntil);
+                user.setSecurityStrikes(0); // Clean slate for strikes
                 isLocked = true;
-                secondsLeft = 120;
+                secondsLeft = durationMinutes * 60L;
             }
 
             userRepo.save(user);
 
+            int finalLockoutCount = user.getLockoutCount();
+            long finalSecondsLeft = secondsLeft;
+            boolean finalIsLocked = isLocked;
+
             java.util.Map<String, Object> response = new java.util.HashMap<>();
-            response.put("strikes", currentStrikes);
-            response.put("isLocked", isLocked);
-            response.put("secondsLeft", secondsLeft);
-            response.put("message", isLocked ? "Your account has been locked for 2 minutes due to repeated security violations." : "Security violation registered.");
+            response.put("strikes", finalIsLocked ? 0 : currentStrikes);
+            response.put("isLocked", finalIsLocked);
+            response.put("secondsLeft", finalSecondsLeft);
+            
+            String lockoutMsg = "Your account has been locked for " + 
+                (finalSecondsLeft >= 3600 ? (finalSecondsLeft / 3600 + " hour(s)") : (finalSecondsLeft / 60 + " minute(s)")) + 
+                " due to repeated security violations.";
+            response.put("message", finalIsLocked ? lockoutMsg : "Security violation registered.");
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
