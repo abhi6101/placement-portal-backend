@@ -248,6 +248,9 @@ public class AuthController {
                         existingUser.setEnrollmentNumber(registerRequest.getEnrollmentNumber());
                         existingUser.setStartYear(registerRequest.getStartYear());
 
+                        // Address
+                        existingUser.setAddress(registerRequest.getAddress());
+
                         // Images
                         existingUser.setIdCardImage(registerRequest.getIdCardImage());
                         existingUser.setProfilePictureUrl(registerRequest.getProfilePictureUrl());
@@ -316,6 +319,9 @@ public class AuthController {
                 // Save additional academic info
                 newUser.setEnrollmentNumber(registerRequest.getEnrollmentNumber());
                 newUser.setStartYear(registerRequest.getStartYear());
+
+                // Save Address
+                newUser.setAddress(registerRequest.getAddress());
 
                 // Save Images
                 newUser.setIdCardImage(registerRequest.getIdCardImage());
@@ -794,6 +800,9 @@ public class AuthController {
         // Images
         private String idCardImage;
         private String profilePictureUrl; // Added for selfie/avatar
+
+        // Address
+        private String address;
     }
 
     // NEW DTO for verification code request
