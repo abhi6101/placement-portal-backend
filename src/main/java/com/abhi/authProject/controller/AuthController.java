@@ -148,7 +148,7 @@ public class AuthController {
             response.put("semester", user.getSemester() != null ? user.getSemester() : 0);
             response.put("batch", user.getBatch() != null ? user.getBatch() : "");
             response.put("computerCode", user.getComputerCode() != null ? user.getComputerCode() : "");
-            response.put("aadharNumber", user.getAadharNumber() != null ? user.getAadharNumber() : "");
+            response.put("computerCode", user.getComputerCode() != null ? user.getComputerCode() : "");
             response.put("fullName", user.getFullName() != null ? user.getFullName() : "");
             response.put("fatherName", user.getFatherName() != null ? user.getFatherName() : "");
             response.put("institution", user.getInstitution() != null ? user.getInstitution() : "");
@@ -162,7 +162,7 @@ public class AuthController {
 
             // Return Images
             response.put("idCardImage", user.getIdCardImage() != null ? user.getIdCardImage() : "");
-            response.put("aadharCardImage", user.getAadharCardImage() != null ? user.getAadharCardImage() : "");
+            response.put("idCardImage", user.getIdCardImage() != null ? user.getIdCardImage() : "");
             response.put("profilePictureUrl", user.getProfilePictureUrl() != null ? user.getProfilePictureUrl() : "");
 
             return ResponseEntity.ok(response);
@@ -248,21 +248,8 @@ public class AuthController {
                         existingUser.setEnrollmentNumber(registerRequest.getEnrollmentNumber());
                         existingUser.setStartYear(registerRequest.getStartYear());
 
-                        // Aadhar Check (Ensure no one else used this Aadhar)
-                        if (registerRequest.getAadharNumber() != null) {
-                            java.util.Optional<Users> aadharUser = userRepo
-                                    .findByAadharNumber(registerRequest.getAadharNumber());
-                            if (aadharUser.isPresent() && aadharUser.get().getId() != existingUser.getId()) {
-                                return ResponseEntity.badRequest().body(
-                                        Map.of("message", "Aadhar Number is already registered with another account."));
-                            }
-                            existingUser.setAadharNumber(registerRequest.getAadharNumber());
-                            existingUser.setAddress(registerRequest.getAddress());
-                        }
-
                         // Images
                         existingUser.setIdCardImage(registerRequest.getIdCardImage());
-                        existingUser.setAadharCardImage(registerRequest.getAadharCardImage());
                         existingUser.setProfilePictureUrl(registerRequest.getProfilePictureUrl());
 
                         existingUser.setLastProfileUpdate(java.time.LocalDate.now());
@@ -330,19 +317,8 @@ public class AuthController {
                 newUser.setEnrollmentNumber(registerRequest.getEnrollmentNumber());
                 newUser.setStartYear(registerRequest.getStartYear());
 
-                // SECURITY CRITICAL: Duplicate Aadhar Check
-                if (registerRequest.getAadharNumber() != null) {
-                    if (userRepo.findByAadharNumber(registerRequest.getAadharNumber()).isPresent()) {
-                        return ResponseEntity.badRequest()
-                                .body(Map.of("message", "Aadhar Number is already registered with another account."));
-                    }
-                    newUser.setAadharNumber(registerRequest.getAadharNumber());
-                    newUser.setAddress(registerRequest.getAddress());
-                }
-
                 // Save Images
                 newUser.setIdCardImage(registerRequest.getIdCardImage());
-                newUser.setAadharCardImage(registerRequest.getAadharCardImage());
                 newUser.setProfilePictureUrl(registerRequest.getProfilePictureUrl());
 
                 newUser.setLastProfileUpdate(java.time.LocalDate.now());
@@ -520,20 +496,13 @@ public class AuthController {
 
         // Check if user has complete data (NEW USER CHECK)
         boolean hasComputerCode = user.getComputerCode() != null && !user.getComputerCode().isEmpty();
-        boolean hasAadhar = user.getAadharNumber() != null && !user.getAadharNumber().isEmpty();
 
         System.out.println("🔍 User Completeness Check for: " + user.getEmail());
         System.out.println("Computer Code: " + user.getComputerCode() + " (has: " + hasComputerCode + ")");
-        System.out
-                .println(
-                        "Aadhar Number: "
-                                + (user.getAadharNumber() != null ? "***" + user.getAadharNumber()
-                                        .substring(Math.max(0, user.getAadharNumber().length() - 4)) : "null")
-                                + " (has: " + hasAadhar + ")");
 
-        // NEW USERS ONLY: Must have computerCode + aadharNumber
+        // NEW USERS ONLY: Must have computerCode
         // OLD USERS: Will be told to create a new account
-        boolean isNewUser = hasComputerCode && hasAadhar;
+        boolean isNewUser = hasComputerCode;
 
         // EXCEPTION: Admins do NOT need computerCode/Aadhar
         boolean isAdmin = user.getRole() != null && user.getRole().toUpperCase().contains("ADMIN");
@@ -543,7 +512,7 @@ public class AuthController {
 
         if (!isNewUser && !isAdmin) {
             // OLD USER - Delete their account and tell them to re-register
-            System.out.println("❌ OLD USER detected - Missing computerCode or Aadhar");
+            System.out.println("❌ OLD USER detected - Missing computerCode");
             System.out.println("🗑️ Auto-deleting old account to allow re-registration...");
 
             try {
@@ -558,7 +527,7 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.GONE).body(Map.of(
                         "success", false,
                         "message",
-                        "Your old account has been removed. You can now register again with your College ID and Aadhar card.",
+                        "Your old account has been removed. You can now register again with your College ID.",
                         "action", "REGISTER_NEW_ACCOUNT",
                         "accountDeleted", true));
             } catch (Exception e) {
@@ -690,8 +659,6 @@ public class AuthController {
             student.setFatherName((String) payload.get("fatherName"));
         if (payload.containsKey("institution"))
             student.setInstitution((String) payload.get("institution"));
-        // Aadhar is usually not editable after registration for security, but we skip
-        // it here
 
         if (payload.containsKey("mobilePrimary"))
             student.setMobilePrimary((String) payload.get("mobilePrimary"));
@@ -809,8 +776,6 @@ public class AuthController {
         private Integer semester; // For students: varies by branch
         private String batch; // e.g. 2022-2027
         private String computerCode;
-        private String aadharNumber;
-        private String address; // NEW: Address from Aadhar
 
         // Verified Identity Data (from ID card scan)
         private String fullName;
@@ -828,7 +793,6 @@ public class AuthController {
 
         // Images
         private String idCardImage;
-        private String aadharCardImage;
         private String profilePictureUrl; // Added for selfie/avatar
     }
 

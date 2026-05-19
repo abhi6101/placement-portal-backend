@@ -18,6 +18,7 @@ public class DepartmentBranch {
 
     @ManyToOne
     @JoinColumn(name = "department_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Department department;
 
     @Column(name = "branch_name", nullable = false)

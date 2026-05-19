@@ -101,10 +101,6 @@ public class Users {
     @Column(name = "phone")
     private String phone; // Phone number
 
-    // NEW: Aadhar Number for unique identity tracking
-    @Column(name = "aadhar_number", unique = true)
-    private String aadharNumber;
-
     // NEW: Date of Birth (from Aadhar verification)
     @Column(name = "dob")
     private String dob; // Format: DD/MM/YYYY or YYYY-MM-DD
@@ -159,9 +155,6 @@ public class Users {
     // Images (Base64 or URL)
     @Column(name = "id_card_image", columnDefinition = "TEXT")
     private String idCardImage;
-
-    @Column(name = "aadhar_card_image", columnDefinition = "TEXT")
-    private String aadharCardImage;
 
     @Column(name = "address", columnDefinition = "TEXT")
     private String address;

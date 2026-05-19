@@ -61,7 +61,7 @@ public class SecurityConfig {
                                 "/error", "/error.html", "/papers.html", "/papers.css", "/papers.js",
                                 "/api/interview-drives", "/api/profile/picture/**", "/api/gallery", "/uploads/**",
                                 "/resumes/**", "/api/health", "/api/health/**", "/api/student-profile/id-card/**",
-                                "/api/student-profile/aadhar/**", "/api/student-profile/admit-card/**",
+                                "/api/student-profile/admit-card/**",
                                 "/api/universities")
                         .permitAll()
                         .requestMatchers("/api/papers/download/**").permitAll()
