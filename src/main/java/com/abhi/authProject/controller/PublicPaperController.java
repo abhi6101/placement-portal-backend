@@ -151,13 +151,19 @@ public class PublicPaperController {
                 return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).body("User not found");
             }
 
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            if (user.getLastStrikeTime() != null && now.isAfter(user.getLastStrikeTime().plusMinutes(10))) {
+                user.setSecurityStrikes(0);
+            }
+
             int currentStrikes = user.getSecurityStrikes() + 1;
             user.setSecurityStrikes(currentStrikes);
+            user.setLastStrikeTime(now);
 
             boolean isLocked = false;
             long secondsLeft = 0;
 
-            if (currentStrikes >= 3) {
+            if (currentStrikes >= 5) {
                 // If their last lockout was on a previous calendar day, reset count to 0 first
                 if (user.getLockedUntil() != null && user.getLockedUntil().toLocalDate().isBefore(java.time.LocalDate.now())) {
                     user.setLockoutCount(0);

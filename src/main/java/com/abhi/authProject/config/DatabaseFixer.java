@@ -51,6 +51,7 @@ public class DatabaseFixer implements CommandLineRunner {
             jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS security_strikes INTEGER DEFAULT 0");
             jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMP");
             jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS lockout_count INTEGER DEFAULT 0");
+            jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_strike_time TIMESTAMP");
             System.out.println("✅ Security columns checked/added successfully.");
         } catch (Exception e) {
             System.err.println("⚠️ DatabaseFixer warning altering users table: " + e.getMessage());

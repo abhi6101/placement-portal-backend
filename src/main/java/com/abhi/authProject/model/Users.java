@@ -128,6 +128,9 @@ public class Users {
     @Column(name = "security_strikes", nullable = false)
     private int securityStrikes = 0;
 
+    @Column(name = "last_strike_time")
+    private LocalDateTime lastStrikeTime;
+
     @Column(name = "locked_until")
     private LocalDateTime lockedUntil;
 
@@ -298,6 +301,14 @@ public class Users {
 
     public void setLockedUntil(LocalDateTime lockedUntil) {
         this.lockedUntil = lockedUntil;
+    }
+
+    public LocalDateTime getLastStrikeTime() {
+        return lastStrikeTime;
+    }
+
+    public void setLastStrikeTime(LocalDateTime lastStrikeTime) {
+        this.lastStrikeTime = lastStrikeTime;
     }
 
     public int getLockoutCount() {
