@@ -41,6 +41,8 @@ public class GlobalSettingsService {
         existing.setNewJobEmailEnabled(newSettings.isNewJobEmailEnabled());
         existing.setStatusUpdateEmailEnabled(newSettings.isStatusUpdateEmailEnabled());
         existing.setAccountEmailEnabled(newSettings.isAccountEmailEnabled());
+        existing.setPaperDownloadEnabled(newSettings.isPaperDownloadEnabled());
+        existing.setScreenshotRestrictionEnabled(newSettings.isScreenshotRestrictionEnabled());
 
         cachedSettings = repo.save(existing);
         return cachedSettings;

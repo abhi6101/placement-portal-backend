@@ -56,5 +56,21 @@ public class DatabaseFixer implements CommandLineRunner {
         } catch (Exception e) {
             System.err.println("⚠️ DatabaseFixer warning altering users table: " + e.getMessage());
         }
+
+        System.out.println("🔨 Ensuring paper_download_enabled column exists in global_settings table...");
+        try {
+            jdbcTemplate.execute("ALTER TABLE global_settings ADD COLUMN IF NOT EXISTS paper_download_enabled BOOLEAN DEFAULT FALSE");
+            System.out.println("✅ GlobalSettings paper download column checked/added successfully.");
+        } catch (Exception e) {
+            System.err.println("⚠️ DatabaseFixer warning altering global_settings table: " + e.getMessage());
+        }
+
+        System.out.println("🔨 Ensuring screenshot_restriction_enabled column exists in global_settings table...");
+        try {
+            jdbcTemplate.execute("ALTER TABLE global_settings ADD COLUMN IF NOT EXISTS screenshot_restriction_enabled BOOLEAN DEFAULT TRUE");
+            System.out.println("✅ GlobalSettings screenshot restriction column checked/added successfully.");
+        } catch (Exception e) {
+            System.err.println("⚠️ DatabaseFixer warning altering global_settings table: " + e.getMessage());
+        }
     }
 }

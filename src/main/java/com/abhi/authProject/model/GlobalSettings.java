@@ -26,4 +26,12 @@ public class GlobalSettings {
     // Toggle for Company/User Account related emails (Welcome, Verify, etc.)
     @Column(nullable = false)
     private boolean accountEmailEnabled = true; // ✅ ENABLED by default
+
+    // Toggle for Previous Year Paper Download Feature
+    @Column(nullable = false)
+    private boolean paperDownloadEnabled = false; // ❌ DISABLED by default
+
+    // Toggle for Previous Year Paper Screenshot and Key Restriction Feature
+    @Column(nullable = false)
+    private boolean screenshotRestrictionEnabled = true; // ✅ ENABLED by default
 }

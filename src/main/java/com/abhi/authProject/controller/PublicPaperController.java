@@ -3,6 +3,7 @@ package com.abhi.authProject.controller;
 import com.abhi.authProject.model.Paper;
 import com.abhi.authProject.repo.PaperRepository;
 import com.abhi.authProject.service.FileStorageService;
+import com.abhi.authProject.service.GlobalSettingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -28,6 +29,19 @@ public class PublicPaperController {
 
     @Autowired
     private com.abhi.authProject.repo.PaperViewLogRepository paperViewLogRepository;
+
+    @Autowired
+    private GlobalSettingsService settingsService;
+
+    @GetMapping("/papers/settings")
+    public ResponseEntity<?> getPaperSettings() {
+        boolean downloadEnabled = settingsService.getSettings().isPaperDownloadEnabled();
+        boolean screenshotRestrictionEnabled = settingsService.getSettings().isScreenshotRestrictionEnabled();
+        java.util.Map<String, Boolean> response = new java.util.HashMap<>();
+        response.put("paperDownloadEnabled", downloadEnabled);
+        response.put("screenshotRestrictionEnabled", screenshotRestrictionEnabled);
+        return ResponseEntity.ok(response);
+    }
 
     @GetMapping("/papers/download/{id}")
     public ResponseEntity<?> downloadPaper(@PathVariable Long id) {
