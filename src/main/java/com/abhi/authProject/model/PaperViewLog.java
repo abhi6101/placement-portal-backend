@@ -27,13 +27,17 @@ public class PaperViewLog {
     private int year;
     
     private Date viewedAt;
+    
+    @Column(nullable = false, length = 20)
+    private String action = "VIEW"; // Defaults to VIEW for backward compatibility
 
     public PaperViewLog() {
         this.viewedAt = new Date();
     }
 
     public PaperViewLog(String username, String studentName, String computerCode, Long paperId, 
-                        String paperTitle, String subject, String branch, int semester, int year) {
+                        String paperTitle, String subject, String branch, int semester, int year,
+                        String action) {
         this.username = username;
         this.studentName = studentName;
         this.computerCode = computerCode;
@@ -44,6 +48,9 @@ public class PaperViewLog {
         this.semester = semester;
         this.year = year;
         this.viewedAt = new Date();
+        if (action != null && !action.isEmpty()) {
+            this.action = action;
+        }
     }
 
     public Long getId() {
@@ -132,5 +139,13 @@ public class PaperViewLog {
 
     public void setViewedAt(Date viewedAt) {
         this.viewedAt = viewedAt;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
     }
 }

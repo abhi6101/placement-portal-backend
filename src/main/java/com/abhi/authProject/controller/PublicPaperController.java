@@ -44,7 +44,9 @@ public class PublicPaperController {
     }
 
     @GetMapping("/papers/download/{id}")
-    public ResponseEntity<?> downloadPaper(@PathVariable Long id) {
+    public ResponseEntity<?> downloadPaper(
+            @PathVariable Long id,
+            @org.springframework.web.bind.annotation.RequestParam(required = false, defaultValue = "VIEW") String action) {
         try {
             // Check if suspended
             try {
@@ -71,7 +73,7 @@ public class PublicPaperController {
 
             Paper paper = paperRepository.findById(id).orElseThrow(() -> new RuntimeException("Paper not found"));
             
-            // Retrieve current authenticated user and log the view
+            // Retrieve current authenticated user and log the view/download
             try {
                 org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
                 if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
@@ -87,7 +89,8 @@ public class PublicPaperController {
                             paper.getSubject(),
                             paper.getBranch(),
                             paper.getSemester(),
-                            paper.getYear()
+                            paper.getYear(),
+                            action
                         );
                         paperViewLogRepository.save(viewLog);
                     }
