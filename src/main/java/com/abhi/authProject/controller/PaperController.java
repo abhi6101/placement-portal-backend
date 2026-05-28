@@ -366,7 +366,8 @@ public class PaperController {
                             paper.getSubject(),
                             paper.getBranch(),
                             paper.getSemester(),
-                            paper.getYear()
+                            paper.getYear(),
+                            "VIEW"
                         );
                         paperViewLogRepository.save(viewLog);
                     }
