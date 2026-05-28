@@ -29,7 +29,7 @@ public class PaperViewLog {
     
     private Date viewedAt;
     
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private String action = "VIEW"; // Defaults to VIEW for backward compatibility
 
     public PaperViewLog() {
@@ -143,7 +143,7 @@ public class PaperViewLog {
     }
 
     public String getAction() {
-        return action;
+        return action == null ? "VIEW" : action;
     }
 
     public void setAction(String action) {
