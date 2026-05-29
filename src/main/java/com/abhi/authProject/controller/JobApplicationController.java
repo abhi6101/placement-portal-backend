@@ -54,7 +54,7 @@ public class JobApplicationController {
             @RequestParam("resume") MultipartFile resume,
             Principal principal) { // Added Principal
         if (resume.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Resume file is required.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Resume file is required.");
         }
 
         // Use the authenticated user's actual email from the database
@@ -65,8 +65,7 @@ public class JobApplicationController {
 
         com.abhi.authProject.model.StudentProfile profile = profileRepo.findByUserId(user.getId()).orElse(null);
         if (profile == null || !"APPROVED".equalsIgnoreCase(profile.getApprovalStatus())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Your student profile is not verified. Please complete the verification process via Onboarding.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Your student profile is not verified. Please complete the verification process via Onboarding.");
         }
 
         JobApplicationRequest1 applicationRequest = new JobApplicationRequest1(
@@ -78,11 +77,10 @@ public class JobApplicationController {
             return ResponseEntity.ok("Job application submitted successfully. Confirmation email sent.");
         } catch (IOException e) {
             logger.error("Error processing job application (saving file or sending email): {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to process resume or send confirmation email.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to process resume or send confirmation email.");
         } catch (Exception e) {
             logger.error("An unexpected error occurred during application processing: {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
         }
     }
 
