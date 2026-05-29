@@ -55,10 +55,13 @@ public class SecurityConfig {
                         // Allow HEAD requests for health checks (UptimeRobot, monitoring tools)
                         .requestMatchers(HttpMethod.HEAD, "/api/health", "/api/health/**").permitAll()
 
+                        // Globally permit access to default error paths for ALL HTTP methods
+                        .requestMatchers("/error", "/error.html").permitAll()
+
                         .requestMatchers(HttpMethod.GET,
                                 "/", "/home", "/index", "/login.html", "/register.html", "/verify-account.html",
                                 "/css/**", "/js/**", "/images/**", "/jobs", "/api/resume/download/**",
-                                "/error", "/error.html", "/papers.html", "/papers.css", "/papers.js",
+                                "/papers.html", "/papers.css", "/papers.js",
                                 "/api/interview-drives", "/api/profile/picture/**", "/api/gallery", "/uploads/**",
                                 "/resumes/**", "/api/health", "/api/health/**", "/api/student-profile/id-card/**",
                                 "/api/student-profile/admit-card/**",
