@@ -69,6 +69,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("/api/papers/download/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/papers/proxy/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/notes").permitAll()
+                        .requestMatchers("/api/notes/download/**").permitAll()
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/register", "/api/auth/login", "/api/auth/verify-code",
                                 "/api/auth/logout", "/api/resume/generate-pdf",
