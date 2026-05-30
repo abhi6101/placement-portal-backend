@@ -281,7 +281,15 @@ public class PaperController {
     }
 
     @GetMapping("/papers/download/{fileName:.+}")
-    public ResponseEntity<Resource> downloadPaper(@PathVariable String fileName) {
+    public ResponseEntity<?> downloadPaper(@PathVariable String fileName) {
+        
+        // STRICT SECURITY: Only authenticated users can download or view PDFs
+        org.springframework.security.core.Authentication currentAuth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (currentAuth == null || !currentAuth.isAuthenticated() || "anonymousUser".equals(currentAuth.getName())) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body("Please Login or Register to access this paper.");
+        }
+
         try {
             // DEBUGGING LOGS
             System.out.println("Processing Download Request for: " + fileName);

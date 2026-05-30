@@ -47,10 +47,18 @@ public class PublicPaperController {
     public ResponseEntity<?> downloadPaper(
             @PathVariable Long id,
             @org.springframework.web.bind.annotation.RequestParam(required = false, defaultValue = "VIEW") String action) {
+        
+        // STRICT SECURITY: Only authenticated users can download or view PDFs
+        org.springframework.security.core.Authentication currentAuth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (currentAuth == null || !currentAuth.isAuthenticated() || "anonymousUser".equals(currentAuth.getName())) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body("Please Login or Register to access this paper.");
+        }
+
         try {
             // Check if suspended
             try {
-                org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                org.springframework.security.core.Authentication auth = currentAuth;
                 if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
                     String username = auth.getName();
                     com.abhi.authProject.model.Users user = userRepo.findByComputerCodeOrUsername(username).orElse(null);
