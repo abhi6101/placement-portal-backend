@@ -43,6 +43,7 @@ public class GlobalSettingsService {
         existing.setAccountEmailEnabled(newSettings.isAccountEmailEnabled());
         existing.setPaperDownloadEnabled(newSettings.isPaperDownloadEnabled());
         existing.setScreenshotRestrictionEnabled(newSettings.isScreenshotRestrictionEnabled());
+        existing.setNotesDownloadEnabled(newSettings.isNotesDownloadEnabled());
 
         cachedSettings = repo.save(existing);
         return cachedSettings;
