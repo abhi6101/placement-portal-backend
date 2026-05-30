@@ -63,10 +63,7 @@ public class JobApplicationController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         String authenticatedEmail = user.getEmail();
 
-        com.abhi.authProject.model.StudentProfile profile = profileRepo.findByUserId(user.getId()).orElse(null);
-        if (profile == null || !"APPROVED".equalsIgnoreCase(profile.getApprovalStatus())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Your student profile is not verified. Please complete the verification process via Onboarding.");
-        }
+
 
         JobApplicationRequest1 applicationRequest = new JobApplicationRequest1(
                 jobId, jobTitle, companyName, applicantName, authenticatedEmail, applicantPhone,
