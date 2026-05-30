@@ -249,11 +249,26 @@ public class NoteController {
             InputStream inputStream = fileStorageService.getFileStream(fileId);
             InputStreamResource resource = new InputStreamResource(inputStream);
 
+            String originalName = note.getRelativePath() != null ? note.getRelativePath() : note.getTitle();
+            String extension = "";
+            int lastDot = originalName.lastIndexOf('.');
+            if (lastDot > 0 && lastDot < originalName.length() - 1) {
+                extension = originalName.substring(lastDot);
+            }
+            if (extension.isEmpty() && note.getPdfUrl() != null && note.getPdfUrl().toLowerCase().contains(".pdf")) {
+                extension = ".pdf";
+            }
+
+            MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
+            if (extension.equalsIgnoreCase(".pdf")) {
+                mediaType = MediaType.APPLICATION_PDF;
+            }
+
             String disposition = "DOWNLOAD".equalsIgnoreCase(action) ? "attachment" : "inline";
 
             return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, disposition + "; filename=\"" + note.getTitle().replaceAll("[^a-zA-Z0-9]", "_") + ".pdf\"")
+                    .contentType(mediaType)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, disposition + "; filename=\"" + note.getTitle().replaceAll("[^a-zA-Z0-9.-]", "_") + extension + "\"")
                     .body(resource);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error retrieving file stream: " + e.getMessage());
