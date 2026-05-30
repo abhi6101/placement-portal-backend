@@ -37,9 +37,11 @@ public class PublicPaperController {
     public ResponseEntity<?> getPaperSettings() {
         boolean downloadEnabled = settingsService.getSettings().isPaperDownloadEnabled();
         boolean screenshotRestrictionEnabled = settingsService.getSettings().isScreenshotRestrictionEnabled();
+        boolean notesDownloadEnabled = settingsService.getSettings().isNotesDownloadEnabled();
         java.util.Map<String, Boolean> response = new java.util.HashMap<>();
         response.put("paperDownloadEnabled", downloadEnabled);
         response.put("screenshotRestrictionEnabled", screenshotRestrictionEnabled);
+        response.put("notesDownloadEnabled", notesDownloadEnabled);
         return ResponseEntity.ok(response);
     }
 

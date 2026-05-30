@@ -174,7 +174,9 @@ public class NoteController {
      * Streams the note PDF content securely, verifying access.
      */
     @GetMapping("/notes/download/{id}")
-    public ResponseEntity<?> downloadNote(@PathVariable Long id) {
+    public ResponseEntity<?> downloadNote(
+            @PathVariable Long id,
+            @org.springframework.web.bind.annotation.RequestParam(required = false, defaultValue = "VIEW") String action) {
         Note note = noteRepository.findById(id).orElse(null);
         if (note == null) {
             return ResponseEntity.notFound().build();
@@ -247,9 +249,11 @@ public class NoteController {
             InputStream inputStream = fileStorageService.getFileStream(fileId);
             InputStreamResource resource = new InputStreamResource(inputStream);
 
+            String disposition = "DOWNLOAD".equalsIgnoreCase(action) ? "attachment" : "inline";
+
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_PDF)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + note.getTitle() + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, disposition + "; filename=\"" + note.getTitle().replaceAll("[^a-zA-Z0-9]", "_") + ".pdf\"")
                     .body(resource);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error retrieving file stream: " + e.getMessage());
