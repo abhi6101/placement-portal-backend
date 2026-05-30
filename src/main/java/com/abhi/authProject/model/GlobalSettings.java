@@ -36,6 +36,6 @@ public class GlobalSettings {
     private boolean screenshotRestrictionEnabled = true; // ✅ ENABLED by default
 
     // Toggle for Study Notes Download Feature
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean notesDownloadEnabled = false; // ❌ DISABLED by default
 }
