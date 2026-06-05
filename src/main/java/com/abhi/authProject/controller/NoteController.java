@@ -171,12 +171,24 @@ public class NoteController {
     }
 
     /**
+     * Deletes a specific note file (Admin only).
+     */
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('DEPT_ADMIN') or hasRole('COMPANY_ADMIN')")
+    @DeleteMapping("/notes/{id}")
+    public ResponseEntity<?> deleteNote(@PathVariable Long id) {
+        Note note = noteRepository.findById(id).orElse(null);
+        if (note == null) {
+            return ResponseEntity.notFound().build();
+        }
+        noteRepository.delete(note);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
      * Streams the note PDF content securely, verifying access.
      */
     @GetMapping("/notes/download/{id}")
-    public ResponseEntity<?> downloadNote(
-            @PathVariable Long id,
-            @org.springframework.web.bind.annotation.RequestParam(required = false, defaultValue = "VIEW") String action) {
+    public ResponseEntity<?> downloadNote(@PathVariable Long id) {
         Note note = noteRepository.findById(id).orElse(null);
         if (note == null) {
             return ResponseEntity.notFound().build();
@@ -249,26 +261,9 @@ public class NoteController {
             InputStream inputStream = fileStorageService.getFileStream(fileId);
             InputStreamResource resource = new InputStreamResource(inputStream);
 
-            String originalName = note.getRelativePath() != null ? note.getRelativePath() : note.getTitle();
-            String extension = "";
-            int lastDot = originalName.lastIndexOf('.');
-            if (lastDot > 0 && lastDot < originalName.length() - 1) {
-                extension = originalName.substring(lastDot);
-            }
-            if (extension.isEmpty() && note.getPdfUrl() != null && note.getPdfUrl().toLowerCase().contains(".pdf")) {
-                extension = ".pdf";
-            }
-
-            MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
-            if (extension.equalsIgnoreCase(".pdf")) {
-                mediaType = MediaType.APPLICATION_PDF;
-            }
-
-            String disposition = "DOWNLOAD".equalsIgnoreCase(action) ? "attachment" : "inline";
-
             return ResponseEntity.ok()
-                    .contentType(mediaType)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, disposition + "; filename=\"" + note.getTitle().replaceAll("[^a-zA-Z0-9.-]", "_") + extension + "\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + note.getTitle() + "\"")
                     .body(resource);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error retrieving file stream: " + e.getMessage());

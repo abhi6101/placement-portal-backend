@@ -57,7 +57,7 @@ public class FileStorageService {
             }
 
             GoogleCredentials credentials = GoogleCredentials.fromStream(credentialsStream)
-                    .createScoped(Collections.singleton(DriveScopes.DRIVE));
+                    .createScoped(Collections.singleton(DriveScopes.DRIVE_FILE));
 
             HttpCredentialsAdapter requestInitializer = new HttpCredentialsAdapter(credentials);
 
@@ -67,17 +67,6 @@ public class FileStorageService {
 
             // Create local dir if not exists
             Files.createDirectories(Paths.get(localUploadDir));
-
-            // Log the service account email for admin reference (share Drive folder with this email)
-            if (envCredentials != null && !envCredentials.isEmpty()) {
-                try {
-                    com.google.gson.JsonObject json = com.google.gson.JsonParser
-                        .parseString(envCredentials).getAsJsonObject();
-                    String clientEmail = json.has("client_email") ? json.get("client_email").getAsString() : "unknown";
-                    System.out.println("✅ Google Drive initialized. Service account: " + clientEmail);
-                    System.out.println("   → Share Drive folder '" + driveFolderId + "' with this email as Editor.");
-                } catch (Exception ignored) {}
-            }
 
         } catch (Exception e) {
             // e.printStackTrace(); // Optional
