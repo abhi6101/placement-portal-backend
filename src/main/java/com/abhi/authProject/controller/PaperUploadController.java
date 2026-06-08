@@ -141,7 +141,8 @@ public class PaperUploadController {
                         extractedYear = Integer.parseInt(yearStr);
                     }
                 }
-                String title = paper.getSubject() + " " + extractedYear + " Exam";
+                String fullYearStr = paper.getYear() != null ? paper.getYear() : String.valueOf(extractedYear);
+                String title = paper.getSubject() + " " + fullYearStr + " Exam";
                 Paper publicPaper = new Paper(
                         title,
                         paper.getSubject(),
