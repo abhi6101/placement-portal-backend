@@ -130,6 +130,8 @@ public class AuthController {
             return ResponseEntity.ok(Map.of(
                     "token", token,
                     "username", authentication.getName(),
+                    "name", (user.getName() != null && !user.getName().isEmpty()) ? user.getName() : 
+                           ((user.getFullName() != null && !user.getFullName().isEmpty()) ? user.getFullName() : authentication.getName()),
                     "companyName", companyName != null ? companyName : "",
                     "branch", (user.getBranch() != null) ? user.getBranch() : "",
                     "roles", authentication.getAuthorities().stream()
