@@ -65,7 +65,7 @@ public class PaperUploadController {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = authentication.getName();
-            Users uploader = userRepo.findByUsername(username);
+            Users uploader = userRepo.findByUsername(username).orElse(null);
 
             if (uploader == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
@@ -116,7 +116,7 @@ public class PaperUploadController {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String adminUsername = authentication.getName();
-            Users admin = userRepo.findByUsername(adminUsername);
+            Users admin = userRepo.findByUsername(adminUsername).orElse(null);
 
             Optional<StudentPaper> optionalPaper = studentPaperRepository.findById(id);
             if (!optionalPaper.isPresent()) {
