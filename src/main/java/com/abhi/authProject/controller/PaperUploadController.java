@@ -1,7 +1,9 @@
 package com.abhi.authProject.controller;
 
+import com.abhi.authProject.model.Paper;
 import com.abhi.authProject.model.StudentPaper;
 import com.abhi.authProject.model.Users;
+import com.abhi.authProject.repo.PaperRepository;
 import com.abhi.authProject.repo.StudentPaperRepository;
 import com.abhi.authProject.repo.UserRepo;
 import com.abhi.authProject.service.PdfCompilationService;
@@ -26,6 +28,9 @@ public class PaperUploadController {
 
     @Autowired
     private StudentPaperRepository studentPaperRepository;
+
+    @Autowired
+    private PaperRepository paperRepository;
 
     @Autowired
     private UserRepo userRepo;
@@ -121,7 +126,33 @@ public class PaperUploadController {
                 userRepo.save(uploader);
             }
 
-            return ResponseEntity.ok("Paper approved and 50 points awarded to " + (uploader != null ? uploader.getUsername() : "unknown user"));
+            // Convert to a public Paper
+            try {
+                int extractedYear = 2025; // Default fallback
+                if (paper.getYear() != null) {
+                    String yearStr = paper.getYear().replaceAll("[^0-9]", "");
+                    if (!yearStr.isEmpty()) {
+                        extractedYear = Integer.parseInt(yearStr);
+                    }
+                }
+                String title = paper.getSubject() + " " + extractedYear + " Exam";
+                Paper publicPaper = new Paper(
+                        title,
+                        paper.getSubject(),
+                        extractedYear,
+                        paper.getSemester(),
+                        paper.getBranch(),
+                        "University",
+                        "End-Sem", // Default
+                        "DAVV", // Default
+                        paper.getDriveFileId()
+                );
+                paperRepository.save(publicPaper);
+            } catch (Exception ex) {
+                System.err.println("Failed to create public paper: " + ex.getMessage());
+            }
+
+            return ResponseEntity.ok("Paper approved, converted to public, and 50 points awarded to " + (uploader != null ? uploader.getUsername() : "unknown user"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error approving paper.");
         }
