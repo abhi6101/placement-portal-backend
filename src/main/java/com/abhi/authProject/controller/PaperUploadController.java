@@ -43,11 +43,13 @@ public class PaperUploadController {
         try {
             VisionAIResponseDto aiResponse = visionAIService.analyzeImages(files);
             if (!aiResponse.isQualityGood()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(aiResponse.getMessage());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("{\"message\": \"" + aiResponse.getMessage().replace("\"", "\\\"") + "\"}");
             }
             return ResponseEntity.ok(aiResponse);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error analyzing images: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"message\": \"Error analyzing images: " + e.getMessage().replace("\"", "\\\"") + "\"}");
         }
     }
 
@@ -68,7 +70,7 @@ public class PaperUploadController {
             Users uploader = userRepo.findByUsername(username).orElse(null);
 
             if (uploader == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"message\": \"User not found\"}");
             }
 
             // Compile PDF
@@ -91,7 +93,7 @@ public class PaperUploadController {
 
             return ResponseEntity.ok("Paper submitted successfully and is pending admin approval.");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error submitting paper: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"message\": \"Error submitting paper: " + e.getMessage().replace("\"", "\\\"") + "\"}");
         }
     }
 
