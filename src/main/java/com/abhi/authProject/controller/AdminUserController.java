@@ -320,6 +320,16 @@ public class AdminUserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PutMapping("/users/{id}/reset-points")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<?> resetUserPoints(@PathVariable Integer id) {
+        return userRepo.findById(id).map(user -> {
+            user.setContributionPoints(0);
+            userRepo.save(user);
+            return ResponseEntity.ok().build();
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     // Get students grouped by branch, semester, or batch
     @GetMapping("/students/grouped")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN', 'COMPANY_ADMIN')")
