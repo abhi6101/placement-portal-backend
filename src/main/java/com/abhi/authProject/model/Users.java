@@ -172,7 +172,7 @@ public class Users {
     private String address;
 
     // Gamification Points for uploading papers
-    @Column(name = "contribution_points", nullable = false)
+    @Column(name = "contribution_points", columnDefinition = "integer default 0")
     private Integer contributionPoints = 0;
 
     public String getAddress() {
