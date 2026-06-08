@@ -105,6 +105,11 @@ public class PaperUploadController {
             }
 
             StudentPaper paper = optionalPaper.get();
+            
+            if ("APPROVED".equals(paper.getStatus())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Paper is already approved.");
+            }
+
             paper.setStatus("APPROVED");
             paper.setApprovedBy(admin);
             studentPaperRepository.save(paper);
@@ -116,7 +121,7 @@ public class PaperUploadController {
                 userRepo.save(uploader);
             }
 
-            return ResponseEntity.ok("Paper approved and 50 points awarded to " + uploader.getUsername());
+            return ResponseEntity.ok("Paper approved and 50 points awarded to " + (uploader != null ? uploader.getUsername() : "unknown user"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error approving paper.");
         }
@@ -134,9 +139,26 @@ public class PaperUploadController {
             }
 
             StudentPaper paper = optionalPaper.get();
+            
+            if ("REJECTED".equals(paper.getStatus())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Paper is already rejected.");
+            }
+
+            boolean wasApproved = "APPROVED".equals(paper.getStatus());
+
             paper.setStatus("REJECTED");
             paper.setRejectionReason(reason);
             studentPaperRepository.save(paper);
+
+            // If it was previously approved, we must deduct the 50 points we gave them
+            if (wasApproved) {
+                Users uploader = paper.getUploadedBy();
+                if (uploader != null) {
+                    int newPoints = Math.max(0, uploader.getContributionPoints() - 50);
+                    uploader.setContributionPoints(newPoints);
+                    userRepo.save(uploader);
+                }
+            }
 
             return ResponseEntity.ok("Paper rejected successfully.");
         } catch (Exception e) {
