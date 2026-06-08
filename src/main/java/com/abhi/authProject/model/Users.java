@@ -171,6 +171,10 @@ public class Users {
     @Column(name = "address", columnDefinition = "TEXT")
     private String address;
 
+    // Gamification Points for uploading papers
+    @Column(name = "contribution_points", nullable = false)
+    private Integer contributionPoints = 0;
+
     public String getAddress() {
         return address;
     }
@@ -317,5 +321,13 @@ public class Users {
 
     public void setLockoutCount(int lockoutCount) {
         this.lockoutCount = lockoutCount;
+    }
+
+    public Integer getContributionPoints() {
+        return contributionPoints;
+    }
+
+    public void setContributionPoints(Integer contributionPoints) {
+        this.contributionPoints = contributionPoints;
     }
 }
