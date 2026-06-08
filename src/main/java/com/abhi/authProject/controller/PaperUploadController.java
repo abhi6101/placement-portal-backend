@@ -6,6 +6,7 @@ import com.abhi.authProject.model.Users;
 import com.abhi.authProject.repo.PaperRepository;
 import com.abhi.authProject.repo.StudentPaperRepository;
 import com.abhi.authProject.repo.UserRepo;
+import com.abhi.authProject.service.FileStorageService;
 import com.abhi.authProject.service.PdfCompilationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,9 @@ public class PaperUploadController {
 
     @Autowired
     private PdfCompilationService pdfCompilationService;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @Autowired
     private StudentPaperRepository studentPaperRepository;
@@ -60,8 +64,10 @@ public class PaperUploadController {
             // Compile PDF
             byte[] compiledPdf = pdfCompilationService.compileImagesToPdf(files, uploader.getName() != null ? uploader.getName() : uploader.getUsername());
 
-            // TODO: Here you would upload compiledPdf to Google Drive and get the driveFileId
-            String driveFileId = "MOCKED_DRIVE_ID_" + System.currentTimeMillis();
+            // Upload compiledPdf to Google Drive
+            String fileName = String.format("%s_%s_Sem%s_%s.pdf", subject, branch, semester, year).replaceAll(" ", "_");
+            java.io.InputStream is = new java.io.ByteArrayInputStream(compiledPdf);
+            String driveFileId = fileStorageService.saveFileFromStream(is, fileName, "");
 
             // Save to Database as PENDING
             StudentPaper paper = new StudentPaper();

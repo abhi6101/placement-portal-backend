@@ -16,6 +16,7 @@ public class PasswordResetToken {
 
     @OneToOne(targetEntity = Users.class, fetch = FetchType.EAGER)
     @JoinColumn(nullable = false, name = "user_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Users user;
 
     @Column(nullable = false)
