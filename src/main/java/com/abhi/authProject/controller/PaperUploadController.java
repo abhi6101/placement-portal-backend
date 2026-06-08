@@ -2,11 +2,9 @@ package com.abhi.authProject.controller;
 
 import com.abhi.authProject.model.StudentPaper;
 import com.abhi.authProject.model.Users;
-import com.abhi.authProject.model.VisionAIResponseDto;
 import com.abhi.authProject.repo.StudentPaperRepository;
 import com.abhi.authProject.repo.UserRepo;
 import com.abhi.authProject.service.PdfCompilationService;
-import com.abhi.authProject.service.VisionAIService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,9 +22,6 @@ import java.util.Optional;
 public class PaperUploadController {
 
     @Autowired
-    private VisionAIService visionAIService;
-
-    @Autowired
     private PdfCompilationService pdfCompilationService;
 
     @Autowired
@@ -35,23 +30,7 @@ public class PaperUploadController {
     @Autowired
     private UserRepo userRepo;
 
-    /**
-     * Step 3: Analyze Images using Vision AI (Gatekeeper)
-     */
-    @PostMapping("/analyze")
-    public ResponseEntity<?> analyzePaperImages(@RequestParam("files") List<MultipartFile> files) {
-        try {
-            VisionAIResponseDto aiResponse = visionAIService.analyzeImages(files);
-            if (!aiResponse.isQualityGood()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("{\"message\": \"" + aiResponse.getMessage().replace("\"", "\\\"") + "\"}");
-            }
-            return ResponseEntity.ok(aiResponse);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("{\"message\": \"Error analyzing images: " + e.getMessage().replace("\"", "\\\"") + "\"}");
-        }
-    }
+
 
     /**
      * Step 5: Submit verified data and compile PDF
