@@ -36,4 +36,7 @@ public interface UserRepo extends JpaRepository<Users, Integer> {
         return findByComputerCode(identifier)
                 .or(() -> findByUsername(identifier));
     }
+
+    // NEW: Get top 10 users for leaderboard
+    List<Users> findTop10ByOrderByContributionPointsDesc();
 }
