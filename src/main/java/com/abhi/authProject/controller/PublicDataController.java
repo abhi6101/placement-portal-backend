@@ -36,6 +36,7 @@ public class PublicDataController {
                 .map(u -> new LeaderboardDto(
                         u.getId(), 
                         u.getUsername(), 
+                        u.getFullName() != null && !u.getFullName().isEmpty() ? u.getFullName() :
                         u.getName() != null && !u.getName().isEmpty() ? u.getName() : u.getUsername(), 
                         u.getContributionPoints()
                 ))
