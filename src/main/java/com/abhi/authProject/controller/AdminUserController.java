@@ -23,6 +23,9 @@ public class AdminUserController {
     private com.abhi.authProject.service.EmailService emailService;
 
     @Autowired
+    private com.abhi.authProject.repo.StudentPaperRepository studentPaperRepo;
+
+    @Autowired
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @GetMapping("/users")
@@ -290,6 +293,19 @@ public class AdminUserController {
         }
 
         if (userRepo.existsById(id)) {
+            // Nullify foreign keys in StudentPaper before deleting user
+            java.util.List<com.abhi.authProject.model.StudentPaper> uploadedPapers = studentPaperRepo.findByUploadedById(id);
+            for (com.abhi.authProject.model.StudentPaper paper : uploadedPapers) {
+                paper.setUploadedBy(null);
+                studentPaperRepo.save(paper);
+            }
+            
+            java.util.List<com.abhi.authProject.model.StudentPaper> approvedPapers = studentPaperRepo.findByApprovedById(id);
+            for (com.abhi.authProject.model.StudentPaper paper : approvedPapers) {
+                paper.setApprovedBy(null);
+                studentPaperRepo.save(paper);
+            }
+
             userRepo.deleteById(id);
             return ResponseEntity.ok().build();
         }

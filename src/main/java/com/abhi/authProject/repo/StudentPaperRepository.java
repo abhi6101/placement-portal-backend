@@ -13,5 +13,7 @@ public interface StudentPaperRepository extends JpaRepository<StudentPaper, Long
     
     List<StudentPaper> findByUploadedById(int userId);
     
+    List<StudentPaper> findByApprovedById(int userId);
+    
     List<StudentPaper> findByBranchAndSemesterAndStatus(String branch, Integer semester, String status);
 }
