@@ -144,7 +144,7 @@ public class AdminUserController {
 
             // COMPANY_ADMIN Validation: Require allowedDepartments
             if ("COMPANY_ADMIN".equals(user.getRole())) {
-                if (user.getAllowedDepartments() == null || user.getAllowedDepartments().isEmpty()) {
+                if (user.getAllowedDepartments() == null || user.getAllowedDepartments().trim().isEmpty()) {
                     return ResponseEntity.badRequest().body("Allowed departments are required for COMPANY_ADMIN role");
                 }
             }
@@ -152,17 +152,24 @@ public class AdminUserController {
             String rawPassword = user.getPassword(); // Capture raw password for email
 
             // Encrypt password if provided (force it if new user)
-            if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-                user.setPassword(passwordEncoder.encode(user.getPassword()));
-            } else if (!"DEPT_ADMIN".equals(user.getRole())) { // Allow blank password ONLY if placeholder or special
-                                                               // case
+            if (user.getPassword() != null && !user.getPassword().trim().isEmpty()) {
+                user.setPassword(passwordEncoder.encode(user.getPassword().trim()));
+            } else if (!"DEPT_ADMIN".equals(user.getRole())) { // Allow blank password ONLY if placeholder or special case
                 return ResponseEntity.badRequest().body("Password is required for new accounts");
             }
 
             // AUTO-VERIFY: Any user created by an Admin should be verified by default
             user.setVerified(true);
 
-            Users savedUser = userRepo.save(user);
+            Users savedUser;
+            try {
+                savedUser = userRepo.save(user);
+                System.out.println("[ADMIN API] User created successfully: " + savedUser.getUsername() + " with role: " + savedUser.getRole());
+            } catch (Exception e) {
+                System.err.println("[ADMIN API] Error saving user to database: " + e.getMessage());
+                e.printStackTrace();
+                return ResponseEntity.badRequest().body("Failed to save user to database: " + e.getMessage());
+            }
 
             // Send Welcome Email
             try {
