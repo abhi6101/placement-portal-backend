@@ -16,6 +16,24 @@ import java.util.stream.Collectors; // Import collectors
 @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN')") // Allow View for Company Admin
 public class AdminUserController {
 
+    private int getRank(Users user) {
+        if (user == null) return -1;
+        if (user.getId() != null && user.getId() == 1) return 100;
+        if ("SUPER_ADMIN".equals(user.getRole())) return 80;
+        if ("ADMIN".equals(user.getRole())) return 60;
+        if ("DEPT_ADMIN".equals(user.getRole())) return 40;
+        if ("COMPANY_ADMIN".equals(user.getRole())) return 20;
+        return 0; // USER
+    }
+    
+    private int getRoleRank(String role) {
+        if ("SUPER_ADMIN".equals(role)) return 80;
+        if ("ADMIN".equals(role)) return 60;
+        if ("DEPT_ADMIN".equals(role)) return 40;
+        if ("COMPANY_ADMIN".equals(role)) return 20;
+        return 0;
+    }
+
     @Autowired
     private com.abhi.authProject.repo.UserRepo userRepo;
 
@@ -97,12 +115,22 @@ public class AdminUserController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN')")
     public ResponseEntity<?> createUser(@RequestBody Users user, java.security.Principal principal) {
         try {
-            // Role-based creation limits
+            Users currentUser = null;
             if (principal != null) {
                 String username = principal.getName();
-                Users currentUser = userRepo.findByUsername(username).orElse(null);
+                currentUser = userRepo.findByUsername(username).orElse(null);
+            }
+            
+            if (currentUser != null) {
+                int currentRank = getRank(currentUser);
+                int newRoleRank = getRoleRank(user.getRole());
+                
+                // Super Admins (Rank 80) can create Sub-Super Admins (Rank 80). Others cannot create equal/higher.
+                if (currentRank < newRoleRank || (currentRank == newRoleRank && currentRank != 80)) {
+                    return ResponseEntity.status(403).body("Insufficient Hierarchy Authority: Cannot create a user with equal or higher rank.");
+                }
 
-                if (currentUser != null && "DEPT_ADMIN".equals(currentUser.getRole())) {
+                if ("DEPT_ADMIN".equals(currentUser.getRole())) {
                     // DEPT_ADMIN can only create students (USER role) for their branch
                     if (!"USER".equals(user.getRole())) {
                         return ResponseEntity.status(403).body("DEPT_ADMIN can only create student (USER) accounts");
@@ -208,12 +236,27 @@ public class AdminUserController {
             java.security.Principal principal) {
         return userRepo.findById(id)
                 .map(user -> {
-                    // DEPT_ADMIN validation: Can only update students from their branch
+                    Users currentUser = null;
                     if (principal != null) {
                         String username = principal.getName();
-                        Users currentUser = userRepo.findByUsername(username).orElse(null);
+                        currentUser = userRepo.findByUsername(username).orElse(null);
+                    }
+                    
+                    if (currentUser != null) {
+                        int currentRank = getRank(currentUser);
+                        int targetRank = getRank(user);
+                        
+                        // Cannot modify a user of equal or higher rank
+                        if (currentRank <= targetRank) {
+                            return ResponseEntity.status(403).body("Insufficient Hierarchy Authority: Cannot edit a user of equal or higher rank.");
+                        }
+                        
+                        int newRoleRank = getRoleRank(updatedUser.getRole());
+                        if (currentRank <= newRoleRank) {
+                            return ResponseEntity.status(403).body("Cannot promote a user to a rank equal to or higher than your own");
+                        }
 
-                        if (currentUser != null && "DEPT_ADMIN".equals(currentUser.getRole())) {
+                        if ("DEPT_ADMIN".equals(currentUser.getRole())) {
                             String adminBranch = currentUser.getAdminBranch();
 
                             // Check if user being updated is a student from their branch
@@ -278,23 +321,39 @@ public class AdminUserController {
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN')")
     public ResponseEntity<?> deleteUser(@PathVariable Integer id, java.security.Principal principal) {
-        // DEPT_ADMIN validation: Can only delete students from their branch
+        Users currentUser = null;
         if (principal != null) {
             String username = principal.getName();
-            Users currentUser = userRepo.findByUsername(username).orElse(null);
+            currentUser = userRepo.findByUsername(username).orElse(null);
+        }
 
-            if (currentUser != null && "DEPT_ADMIN".equals(currentUser.getRole())) {
-                Users userToDelete = userRepo.findById(id).orElse(null);
+        Users userToDelete = userRepo.findById(id).orElse(null);
+        if (userToDelete == null) {
+            return ResponseEntity.notFound().build();
+        }
 
-                if (userToDelete != null) {
-                    String adminBranch = currentUser.getAdminBranch();
+        if (currentUser != null) {
+            int currentRank = getRank(currentUser);
+            int targetRank = getRank(userToDelete);
 
-                    // Check if user being deleted is a student from their branch
-                    if (!"USER".equals(userToDelete.getRole()) || !adminBranch.equals(userToDelete.getBranch())) {
-                        return ResponseEntity.status(403)
-                                .body("Access Denied: You can only delete students from your department (" + adminBranch
-                                        + ")");
+            if (currentRank <= targetRank) {
+                return ResponseEntity.status(403).body("Insufficient Hierarchy Authority: Cannot delete a user of equal or higher rank.");
+            }
+
+            if ("DEPT_ADMIN".equals(currentUser.getRole())) {
+                String adminBranch = currentUser.getAdminBranch();
+                
+                if ("COMPANY_ADMIN".equals(userToDelete.getRole())) {
+                    String allowed = userToDelete.getAllowedDepartments();
+                    if (allowed == null || !allowed.contains(adminBranch)) {
+                        return ResponseEntity.status(403).body("Access Denied: You can only delete Company Admins associated with your department.");
                     }
+                } else if ("USER".equals(userToDelete.getRole())) {
+                    if (!adminBranch.equals(userToDelete.getBranch())) {
+                        return ResponseEntity.status(403).body("Access Denied: You can only delete students from your department.");
+                    }
+                } else {
+                    return ResponseEntity.status(403).body("Access Denied.");
                 }
             }
         }
