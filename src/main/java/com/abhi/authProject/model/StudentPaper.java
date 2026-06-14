@@ -37,7 +37,7 @@ public class StudentPaper {
     private String status = "PENDING"; // "PENDING", "APPROVED", "REJECTED"
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "uploaded_by", nullable = false)
+    @JoinColumn(name = "uploaded_by")
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password"})
     private Users uploadedBy;
 
