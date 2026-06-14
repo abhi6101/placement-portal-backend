@@ -120,11 +120,22 @@ public class PaperUploadController {
             }
 
             String fileId = null;
-            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("/d/([^/&?]+)");
-            java.util.regex.Matcher matcher = pattern.matcher(fileUrl);
-            if (matcher.find()) {
-                fileId = matcher.group(1);
+            if (fileUrl.contains("/d/")) {
+                java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("/d/([^/&?]+)");
+                java.util.regex.Matcher matcher = pattern.matcher(fileUrl);
+                if (matcher.find()) {
+                    fileId = matcher.group(1);
+                }
+            } else if (fileUrl.contains("id=")) {
+                java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("id=([^/&?]+)");
+                java.util.regex.Matcher matcher = pattern.matcher(fileUrl);
+                if (matcher.find()) {
+                    fileId = matcher.group(1);
+                }
+            } else if (!fileUrl.contains("/") && !fileUrl.contains("http")) {
+                fileId = fileUrl;
             }
+
 
             if (fileId != null) {
                 java.io.InputStream inputStream = fileStorageService.getFileStream(fileId);
