@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -97,6 +98,48 @@ public class PaperUploadController {
             return ResponseEntity.ok(pendingPapers);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching pending papers.");
+        }
+    }
+
+    /**
+     * Admin: Securely view a pending paper
+     */
+    @GetMapping("/pending/{id}/view")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'COMPANY_ADMIN', 'DEPT_ADMIN')")
+    public ResponseEntity<?> viewPendingPaper(@PathVariable Long id) {
+        try {
+            Optional<StudentPaper> optionalPaper = studentPaperRepository.findById(id);
+            if (!optionalPaper.isPresent()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Paper not found");
+            }
+            StudentPaper paper = optionalPaper.get();
+            String fileUrl = paper.getDriveFileId();
+            
+            if (fileUrl == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            String fileId = null;
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("/d/([^/&?]+)");
+            java.util.regex.Matcher matcher = pattern.matcher(fileUrl);
+            if (matcher.find()) {
+                fileId = matcher.group(1);
+            }
+
+            if (fileId != null) {
+                java.io.InputStream inputStream = fileStorageService.getFileStream(fileId);
+                org.springframework.core.io.InputStreamResource resource = new org.springframework.core.io.InputStreamResource(inputStream);
+
+                return ResponseEntity.ok()
+                        .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                        .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"pending_paper_" + id + ".pdf\"")
+                        .body(resource);
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid Google Drive URL structure.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error streaming paper.");
         }
     }
 

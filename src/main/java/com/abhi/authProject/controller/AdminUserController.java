@@ -18,7 +18,7 @@ public class AdminUserController {
 
     private int getRank(Users user) {
         if (user == null) return -1;
-        if (user.getId() != null && user.getId() == 1) return 100;
+        if (user.getId() == 1) return 100;
         if ("SUPER_ADMIN".equals(user.getRole())) return 80;
         if ("ADMIN".equals(user.getRole())) return 60;
         if ("DEPT_ADMIN".equals(user.getRole())) return 40;
