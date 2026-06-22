@@ -30,14 +30,18 @@ public class JwtFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
-
-        // Log the header for debugging
-        System.out.println("Authorization Header: " + authHeader);
+        String token = null;
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
+            token = authHeader.substring(7);
+        } else {
+            token = request.getParameter("token");
+        }
 
-            if (token != null && !token.trim().isEmpty()) {
+        // Log the token status for debugging
+        System.out.println("Authorization Status - Header: " + (authHeader != null) + ", Query Token: " + (request.getParameter("token") != null));
+
+        if (token != null && !token.trim().isEmpty()) {
                 try {
                     String username = jwtService.extractUserName(token);
 
@@ -56,7 +60,6 @@ public class JwtFilter extends OncePerRequestFilter {
                     // Log and ignore invalid token errors
                     System.err.println("Invalid JWT token: " + e.getMessage());
                 }
-            }
         }
 
         filterChain.doFilter(request, response);

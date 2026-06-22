@@ -34,4 +34,16 @@ public class GlobalSettings {
     // Toggle for Previous Year Paper Screenshot and Key Restriction Feature
     @Column(nullable = false)
     private boolean screenshotRestrictionEnabled = true; // ✅ ENABLED by default
+
+    // Toggle for Study Notes Download Feature
+    @Column(nullable = false)
+    private boolean notesDownloadEnabled = false; // ❌ DISABLED by default
+
+    // Toggle for Previous Year Paper Stage Access without Login
+    @Column(nullable = false)
+    private boolean paperWithoutLoginEnabled = false; // ❌ DISABLED by default
+
+    // Toggle for Study Notes Page Access without Login
+    @Column(nullable = false)
+    private boolean notesWithoutLoginEnabled = false; // ❌ DISABLED by default
 }

@@ -37,9 +37,15 @@ public class PublicPaperController {
     public ResponseEntity<?> getPaperSettings() {
         boolean downloadEnabled = settingsService.getSettings().isPaperDownloadEnabled();
         boolean screenshotRestrictionEnabled = settingsService.getSettings().isScreenshotRestrictionEnabled();
+        boolean paperWithoutLoginEnabled = settingsService.getSettings().isPaperWithoutLoginEnabled();
+        boolean notesWithoutLoginEnabled = settingsService.getSettings().isNotesWithoutLoginEnabled();
+        boolean notesDownloadEnabled = settingsService.getSettings().isNotesDownloadEnabled();
         java.util.Map<String, Boolean> response = new java.util.HashMap<>();
         response.put("paperDownloadEnabled", downloadEnabled);
+        response.put("notesDownloadEnabled", notesDownloadEnabled);
         response.put("screenshotRestrictionEnabled", screenshotRestrictionEnabled);
+        response.put("paperWithoutLoginEnabled", paperWithoutLoginEnabled);
+        response.put("notesWithoutLoginEnabled", notesWithoutLoginEnabled);
         return ResponseEntity.ok(response);
     }
 
@@ -48,9 +54,12 @@ public class PublicPaperController {
             @PathVariable Long id,
             @org.springframework.web.bind.annotation.RequestParam(required = false, defaultValue = "VIEW") String action) {
         
-        // STRICT SECURITY: Only authenticated users can download or view PDFs
+        // STRICT SECURITY: Only authenticated users can download or view PDFs, unless paperWithoutLoginEnabled is enabled
+        boolean paperWithoutLogin = settingsService.getSettings().isPaperWithoutLoginEnabled();
         org.springframework.security.core.Authentication currentAuth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-        if (currentAuth == null || !currentAuth.isAuthenticated() || "anonymousUser".equals(currentAuth.getName())) {
+        boolean isAuthenticated = currentAuth != null && currentAuth.isAuthenticated() && !"anonymousUser".equals(currentAuth.getName());
+        
+        if (!paperWithoutLogin && !isAuthenticated) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
                     .body("Please Login or Register to access this paper.");
         }
@@ -102,6 +111,21 @@ public class PublicPaperController {
                         );
                         paperViewLogRepository.save(viewLog);
                     }
+                } else {
+                    // Log guest access
+                    com.abhi.authProject.model.PaperViewLog viewLog = new com.abhi.authProject.model.PaperViewLog(
+                        "anonymousUser",
+                        "Guest",
+                        "GUEST",
+                        paper.getId(),
+                        paper.getTitle(),
+                        paper.getSubject(),
+                        paper.getBranch(),
+                        paper.getSemester(),
+                        paper.getYear(),
+                        action
+                    );
+                    paperViewLogRepository.save(viewLog);
                 }
             } catch (Exception logEx) {
                 System.err.println("Failed to write paper view log: " + logEx.getMessage());

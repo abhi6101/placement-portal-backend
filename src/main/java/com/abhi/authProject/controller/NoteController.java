@@ -29,12 +29,14 @@ public class NoteController {
     private final NoteRepository noteRepository;
     private final UserRepo userRepo;
     private final FileStorageService fileStorageService;
+    private final com.abhi.authProject.service.GlobalSettingsService settingsService;
 
     @Autowired
-    public NoteController(NoteRepository noteRepository, UserRepo userRepo, FileStorageService fileStorageService) {
+    public NoteController(NoteRepository noteRepository, UserRepo userRepo, FileStorageService fileStorageService, com.abhi.authProject.service.GlobalSettingsService settingsService) {
         this.noteRepository = noteRepository;
         this.userRepo = userRepo;
         this.fileStorageService = fileStorageService;
+        this.settingsService = settingsService;
     }
 
     /**
@@ -45,6 +47,11 @@ public class NoteController {
     public ResponseEntity<List<Note>> getNotes() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         boolean isAuthenticated = auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName());
+
+        boolean notesWithoutLogin = settingsService.getSettings().isNotesWithoutLoginEnabled();
+        if (!notesWithoutLogin && !isAuthenticated) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).build();
+        }
 
         List<Note> allNotes = noteRepository.findAllByOrderByUploadedAtDesc();
 
@@ -200,9 +207,12 @@ public class NoteController {
         String vis = note.getVisibility();
 
         boolean hasAccess = false;
+        boolean notesWithoutLogin = settingsService.getSettings().isNotesWithoutLoginEnabled();
 
         if ("ALL".equalsIgnoreCase(vis)) {
-            hasAccess = true;
+            if (notesWithoutLogin || isAuthenticated) {
+                hasAccess = true;
+            }
         } else if (isAuthenticated) {
             boolean isAdmin = auth.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") ||

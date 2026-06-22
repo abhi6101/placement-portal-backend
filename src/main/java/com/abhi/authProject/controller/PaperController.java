@@ -38,6 +38,7 @@ public class PaperController {
     private final FileStorageService fileStorageService;
     private final PaperBulkUploadService bulkUploadService;
     private final com.abhi.authProject.repo.PaperViewLogRepository paperViewLogRepository;
+    private final com.abhi.authProject.service.GlobalSettingsService settingsService;
 
     @Value("${pdf.storage.directory:/tmp/resumes}")
     private String uploadDir;
@@ -46,12 +47,14 @@ public class PaperController {
     public PaperController(PaperRepository paperRepository, UserRepo userRepo,
             FileStorageService fileStorageService,
             PaperBulkUploadService bulkUploadService,
-            com.abhi.authProject.repo.PaperViewLogRepository paperViewLogRepository) {
+            com.abhi.authProject.repo.PaperViewLogRepository paperViewLogRepository,
+            com.abhi.authProject.service.GlobalSettingsService settingsService) {
         this.paperRepository = paperRepository;
         this.userRepo = userRepo;
         this.fileStorageService = fileStorageService;
         this.bulkUploadService = bulkUploadService;
         this.paperViewLogRepository = paperViewLogRepository;
+        this.settingsService = settingsService;
     }
 
     /**
@@ -64,13 +67,20 @@ public class PaperController {
             @RequestParam(required = false) String branch) {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAdmin = auth.getAuthorities().stream()
+        boolean paperWithoutLogin = settingsService.getSettings().isPaperWithoutLoginEnabled();
+        boolean isAuthenticated = auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName());
+
+        if (!paperWithoutLogin && !isAuthenticated) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).build();
+        }
+
+        boolean isAdmin = isAuthenticated && auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || 
                                a.getAuthority().equals("ROLE_SUPER_ADMIN") || 
                                a.getAuthority().equals("ROLE_DEPT_ADMIN"));
 
         // STRICT SECURITY FOR STUDENTS
-        if (!isAdmin) {
+        if (isAuthenticated && !isAdmin) {
             String username = auth.getName();
             Users user = userRepo.findByUsername(username).orElse(null);
             
@@ -283,9 +293,12 @@ public class PaperController {
     @GetMapping("/papers/download/{fileName:.+}")
     public ResponseEntity<?> downloadPaper(@PathVariable String fileName) {
         
-        // STRICT SECURITY: Only authenticated users can download or view PDFs
+        // STRICT SECURITY: Only authenticated users can download or view PDFs, unless paperWithoutLoginEnabled is enabled
+        boolean paperWithoutLogin = settingsService.getSettings().isPaperWithoutLoginEnabled();
         org.springframework.security.core.Authentication currentAuth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-        if (currentAuth == null || !currentAuth.isAuthenticated() || "anonymousUser".equals(currentAuth.getName())) {
+        boolean isAuthenticated = currentAuth != null && currentAuth.isAuthenticated() && !"anonymousUser".equals(currentAuth.getName());
+        
+        if (!paperWithoutLogin && !isAuthenticated) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
                     .body("Please Login or Register to access this paper.");
         }

@@ -3,12 +3,12 @@ package com.abhi.authProject;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableAsync; // Add this import
-import org.springframework.scheduling.annotation.EnableScheduling; // Add this import
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@EnableAsync // Enable async operations
-@EnableScheduling // Enable scheduled tasks
+@EnableAsync
+@EnableScheduling
 public class AuthProjectApplication {
 
     public static void main(String[] args) {
